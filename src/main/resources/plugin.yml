@@ -1,0 +1,17 @@
+name: PSHologramm
+version: 1.0.1
+main: org.qweyns.pshologramm.PSHologramm
+api-version: '1.21'
+author: qweyns
+
+depend:
+  - ProtectionStones
+  - WorldGuard
+softdepend:
+  - DecentHolograms
+  - FancyHolograms
+
+commands:
+  pshologramm:
+    description: Главная команда плагина
+    aliases: [psh]

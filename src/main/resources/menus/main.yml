@@ -1,0 +1,123 @@
+menu_title: "&8Управление регионом"
+size: 27
+items:
+  upgrade_btn:
+    slot: 11
+    material: ANCIENT_DEBRIS
+    display_name: "&aУлучшить прочность"
+    lore:
+      - "&7Нажмите, чтобы перейти к"
+      - "&7укреплению защиты привата."
+      - ""
+      - "&fШтраф от недавних атак: &c%penalty%"
+    click_commands:
+      - "[openguimenu] upgrade"
+      - "[sound] UI_BUTTON_CLICK"
+
+  effects_btn:
+    slot: 15
+    material: BEACON
+    display_name: "&eМагазин эффектов"
+    lore:
+      - "&7Покупка постоянных баффов,"
+      - "&7уведомлений и бустеров."
+    click_commands:
+      - "[openguimenu] effects"
+      - "[sound] UI_BUTTON_CLICK"
+
+  close_btn:
+    slot: 22
+    material: BARRIER
+    display_name: "&cЗакрыть"
+    click_commands:
+      - "[close]"
+      - "[sound] UI_BUTTON_CLICK"
+
+  # ==========================================
+  # ПРЕДМЕТЫ ДЛЯ АНИМАЦИИ
+  # ==========================================
+  anim_cover:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: "&8Запуск интерфейса..."
+  anim_bg:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: " "
+  anim_bg2:
+    material: GRAY_STAINED_GLASS_PANE
+    display_name: " "
+  anim_chain:
+    material: CHAIN
+    display_name: " "
+
+# ==========================================
+# ДВИЖОК АНИМАЦИИ (Без миганий)
+# ==========================================
+animations:
+  default:
+    - tick: 0
+      opcodes:
+        - fill: anim_cover
+    - tick: 2
+      opcodes:
+        - set: anim_bg2 4
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 4
+      opcodes:
+        - set: anim_bg 3,5
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 6
+      opcodes:
+        - set: anim_bg2 2,6
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 8
+      opcodes:
+        - set: anim_bg 1,7
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 10
+      opcodes:
+        - set: anim_chain 0,8
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+    - tick: 12
+      opcodes:
+        - set: anim_bg2 9,17
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 14
+      opcodes:
+        - set: anim_chain 18,26
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+    - tick: 16
+      opcodes:
+        - set: anim_bg 19,25
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 18
+      opcodes:
+        - set: anim_bg2 20,24
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 20
+      opcodes:
+        - set: anim_bg 21,23
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # Рамка замкнулась! Убираем заглушку в слоте 22 (показывается кнопка Назад)
+    - tick: 22
+      opcodes:
+        - remove: 22
+        - sound: BLOCK_NOTE_BLOCK_CHIME 1.0 1.0
+
+    # Очищаем пустоты вокруг кнопок
+    - tick: 26
+      opcodes:
+        - remove: 10,12,13,14,16
+        - sound: BLOCK_IRON_TRAPDOOR_OPEN 1.0 0.8
+
+    # Мощно появляется кнопка "Улучшить" (Слот 11)
+    - tick: 29
+      opcodes:
+        - remove: 11
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.2
+
+    # Мощно появляется кнопка "Эффекты" (Слот 15)
+    - tick: 35
+      opcodes:
+        - remove: 15
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.4

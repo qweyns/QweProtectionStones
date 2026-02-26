@@ -1,0 +1,234 @@
+# ==========================================
+# PSHologramm - Продвинутые приваты
+# ==========================================
+
+# --- НАСТРОЙКИ БАЗЫ ДАННЫХ ---
+database:
+  # Доступные типы: YAML, MYSQL, SQLITE, H2
+  type: "YAML"
+  table_prefix: "psholo_"
+  # Настройки ниже нужны только если type: "MYSQL"
+  host: "localhost"
+  port: 3306
+  database: "pshologramm"
+  username: "root"
+  password: ""
+
+# --- ОСНОВНЫЕ НАСТРОЙКИ ПЛАГИНА ---
+settings:
+  # Предмет, которым оплачивается прокачка "Прочности" в меню (upgrade.yml)
+  upgrade_item: "NETHERITE_INGOT"
+  # Множитель цены для каждого уровня (Пример: 3 уровень * 3 = 9 слитков)
+  upgrade_cost_multiplier: 3
+  # Базовый налог/комиссия на улучшение (Добавляется к множителю выше)
+  upgrade_tax: 2
+  # Максимальное расстояние (в блоках) от ядра привата, на котором можно открыть меню
+  menu_command_radius: 6
+  # Защита ядра от ваншота стаком ТНТ или Иссушителем (в игровых тиках). 
+  # 20 тиков = 1 секунда. Ядро не потеряет больше 1 прочности за это время.
+  damage_cooldown_ticks: 20
+  # Радиус вокруг Ядра привата (в блоках).
+  # Если взрыв прогремел в этом радиусе от ядра — на регион вешается ШТРАФ (увеличение цены починки).
+  explosion_penalty_radius: 6
+  # Длительность штрафа (в секундах). Пока висит штраф, цена починки умножается на explosion_penalty_multiplier
+  explosion_penalty_time: 300
+  # Во сколько раз умножится цена починки, если приват атакуют
+  explosion_penalty_multiplier: 2
+  # Множитель эффекта "Бустер Опыта" (2.0 = в два раза больше опыта с мобов/блоков внутри привата)
+  exp_boost_multiplier: 2.0
+  # Настройки слияния приватов
+  merge:
+    # Разрешить ли ставить свой приват вплотную/внутрь своего другого привата? (false = запретить)
+    enable: false
+
+# --- ЦЕЛИ ЭФФЕКТОВ ---
+# На кого действуют эффекты внутри привата?
+# MEMBERS - только на владельцев и участников привата (БАФФЫ).
+# ENEMIES - только на тех, кто НЕ вписан в приват (ЛОВУШКИ ДЛЯ ЧУЖАКОВ).
+effect_targets:
+  EXP_BOOST: MEMBERS
+  ALERTS: MEMBERS
+  FAST_DIGGING: MEMBERS
+  SPEED: MEMBERS
+  INCREASE_DAMAGE: MEMBERS
+  INVISIBILITY: MEMBERS
+  HEALTH_BOOST: MEMBERS
+  SLOW: ENEMIES
+  WITHER: ENEMIES
+
+# --- СООБЩЕНИЯ ПЛАГИНА В ЧАТЕ ---
+messages:
+  # Префикс плагина (используйте плейсхолдер %prefix% в текстах ниже, чтобы вставить его)
+  prefix: "&#FFaa00[Приваты] &f"
+  no_permission: "&cУ вас нет прав!"
+  reload_success: "&aПлагин успешно перезагружен!"
+  shift_place_prevented: "%prefix%&cНельзя ставить блок привата с зажатым Shift!"
+  merge_disabled: "&cВаш приват пересекается с чужим!"
+  not_in_region: "&cВы должны находиться внутри привата!"
+  not_a_member: "&cВы не участник этого привата!"
+  not_an_owner: "&cВы не владелец этого привата!"
+  no_region_nearby: "&cПоблизости нет приватов!"
+  menu_not_found: "&cМеню %menu% не найдено в папке menus!"
+  too_far_from_block: "&cВы должны находиться не дальше 6 блоков от центрального блока привата!"
+
+  # Команда /ps glow
+  glow_enabled: "&aОтображение границ включено!"
+  glow_disabled: "&cОтображение границ отключено."
+
+  # Система авто-добавления (/ps autoadd)
+  autoadd_enabled: "&aАвто-добавление включено."
+  autoadd_disabled: "&cАвто-добавление отключено."
+  autoadd_player_added: "&aИгрок %player% добавлен в авто-добавление."
+  autoadd_player_removed: "&cИгрок %player% удален."
+  autoadd_player_not_found: "&eИгрок не найден."
+  autoadd_list_header: "&8=== &dАвто-добавление &8==="
+  autoadd_list_empty: "&7Список пуст."
+  autoadd_list_players: "&7Игроки: &a%players%"
+
+  # Сообщения покупки в меню
+  effect_bought: "&aУлучшение %effect% успешно куплено!"
+  upgrade_not_enough_items: "&cВам не хватает: &e%amount% %item%"
+  upgrade_success: "&aПрочность успешно улучшена до %durability%!"
+  upgrade_penalty: "&cВнимание: Цена увеличена в %multiplier% раз (Штраф)!"
+
+  # Технические слова для плейсхолдеров
+  no_penalty: "нету"
+  unknown_owner: "Неизвестно"
+  damage_indicator: "&c&l-1 ❤"
+
+  # Оповещения об атаке и вторжении (Для эффекта ALERTS)
+  region_under_attack_chat: "&c&lВНИМАНИЕ! &eВаш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
+  region_under_attack_raw: "**ВНИМАНИЕ!** Ваш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
+  intruder_alert_chat: "%prefix%&c⚠ Внимание! &e%intruder% &cвторгся на вашу территорию (&f%type%&c)!"
+  intruder_alert_raw: "⚠ Внимание! Игрок %intruder% вторгся на вашу территорию (%type%)!"
+
+# --- ВИЗУАЛЬНЫЕ НАСТРОЙКИ ---
+visuals:
+  boundaries:
+    # Цвет сетки при открытом доступе к региону
+    color_open: "#00FF00"
+    # Цвет сетки при закрытом/запрещенном доступе
+    color_closed: "#FF0000"
+    # Сколько тиков (20 = 1 сек) будет гореть красная/зеленая сетка региона
+    show_time_ticks: 40
+
+# --- ИНТЕГРАЦИЯ С ВНЕШНИМИ МЕССЕНДЖЕРАМИ ---
+notifications:
+  discord_webhook: "" # Ссылка на вебхук дискорд канала
+  telegram_bot_token: "" # Токен вашего ТГ-Бота
+  telegram_chat_id: "" # ID ТГ-канала или чата с вами
+
+# ==========================================
+# НАСТРОЙКИ ТИПОВ ПРИВАТОВ
+# ==========================================
+
+# --- СТАНДАРТНЫЙ ПРИВАТ (Если блок не описан в секции regions) ---
+default_region:
+  name: "&#FFaa00Обычный Приват"
+  lines:
+    - "&fВладелец: &#FFaa00%player%"
+    - "&fПрочность: &#FF5555%durability% &8/ &c%max_durability%"
+  # Включить ли механику ХП (прочности)?
+  enable_durability_upgrade: true
+  start_durability: 2
+  max_durability: 10
+  # Можно ли кликать яйцами призыва по этому блоку?
+  spawn-egg-use: false
+  # Можно ли поставить этот блок как обычную декорацию, зажав SHIFT? (true - да, не станет приватом)
+  shift_to_place_normal_block: true
+  # Показывать ли голограмму над блоком? (false - выключает полностью для оптимизации)
+  hologram: true
+  # Какие взрывы наносят урон ядру?
+  explosions:
+    TNT: true
+    WITHER: true
+  # Какие эффекты можно купить в этом привате? (Оставьте пустым [], чтобы запретить все)
+  allowed_effects: []
+  
+  # Настройки Голограммы
+  hologram-type: "MODERN" # MODERN - FancyHolograms, LEGACY - DecentHolograms
+  hologram_offset: 2.5 # Высота текста над блоком
+  hologram_display_range: 15 # Дистанция отрисовки в блоках
+  fancyholograms_settings:
+    shadow: true # Тень от текста
+    scale: 1.0 # Размер текста
+    billboard: "CENTER" # Поворот текста за игроком
+
+  # Звуковые и визуальные эффекты
+  create: # При создании привата
+    sound: "ENTITY_PLAYER_LEVELUP"
+    volume: 1.0
+    pitch: 1.0
+    lightning: false
+  damage: # При получении урона от взрыва
+    sound: "ENTITY_GENERIC_EXPLODE"
+    volume: 1.0
+    pitch: 0.5
+    lightning: false
+  remove: # При разрушении киркой или взрывом
+    sound: "BLOCK_BEACON_DEACTIVATE"
+    volume: 1.0
+    pitch: 0.5
+    lightning: true
+
+# --- КАСТОМНЫЕ ПРИВАТЫ ---
+regions:
+  # Пример настройки для Алмазного Блока
+  DIAMOND_BLOCK:
+    # Имя в голограмме (верхняя строчка)
+    name: "&f"
+
+    # Линии голограммы. Поддерживают HEX (&#RRGGBB) и плейсхолдеры.
+    lines:
+      - "  &#00FBFF💎 &#00FBFF&lАЛМАЗНЫЙ РЕГИОН &#00FBFF💎  "
+      - ""
+      - "&f🛡 Владелец: &#00FBFF%player%"
+      - "&f🛡 Прочность: &#4DE2FF%durability% &#8B969A/ &#00FBFF%max_durability% &b✦"
+      - "&f"
+
+    # Настройки ХП (для премиум-блока делаем выше)
+    enable_durability_upgrade: true
+    start_durability: 5
+    max_durability: 25
+
+    spawn-egg-use: true
+    shift_to_place_normal_block: true
+    hologram: true
+
+    explosions:
+      TNT: true
+      WITHER: true
+
+    # Для Алмазного привата разрешаем покупку всех этих эффектов
+    allowed_effects:
+      - "FAST_DIGGING"
+      - "SPEED"
+      - "ALERTS"
+      - "EXP_BOOST"
+
+    hologram-type: "MODERN"
+    hologram_offset: 1.1
+    hologram_display_range: 20
+
+    fancyholograms_settings:
+      shadow: true
+      scale: 1.1
+      billboard: "CENTER"
+
+    create:
+      sound: "BLOCK_BEACON_ACTIVATE"
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+    damage:
+      sound: "BLOCK_GLASS_BREAK"
+      volume: 1.0
+      pitch: 0.8
+      lightning: false
+
+    remove:
+      sound: "BLOCK_BEACON_DEACTIVATE"
+      volume: 1.0
+      pitch: 1.0
+      lightning: true
