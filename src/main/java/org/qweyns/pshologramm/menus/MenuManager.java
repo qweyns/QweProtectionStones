@@ -207,7 +207,6 @@ public class MenuManager implements Listener {
                     Map<String, String> extra = getDynamicPlaceholders(menuName, region);
                     extra.put("%level%", String.valueOf(targetLevel));
                     extra.put("%cost%", String.valueOf(cost));
-                    // ИСПОЛЬЗУЕМ translationKey() ВМЕСТО getTranslationKey()
                     extra.put("%item%", "<translate:" + upgradeMat.translationKey() + ">");
 
                     ItemStack upg = buildItem(tpl, player, region, extra);
@@ -221,7 +220,12 @@ public class MenuManager implements Listener {
         }
 
         holder.baseLayer = contents;
-        if (holder.animator == null) inv.setContents(contents);
+
+        if (holder.animator == null) {
+            inv.setContents(contents);
+        } else {
+            holder.animator.refreshBaseLayer(contents);
+        }
     }
 
     private Map<String, String> getDynamicPlaceholders(String menuName, PSRegion region) {
@@ -435,7 +439,10 @@ public class MenuManager implements Listener {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Inventory topInv = player.getOpenInventory().getTopInventory();
                     if (topInv != null && topInv.getHolder() instanceof CustomHolder h) {
-                        if (targetMenu == null || h.menuName.equals(targetMenu)) { renderMenuContent(player, region, h.menuName, topInv, h); return; }
+                        if (targetMenu == null || h.menuName.equals(targetMenu)) {
+                            renderMenuContent(player, region, h.menuName, topInv, h);
+                            return;
+                        }
                     }
                     if (targetMenu != null) openMenu(player, targetMenu, region);
                 });
@@ -482,6 +489,19 @@ public class MenuManager implements Listener {
             this.player = player; this.menuCfg = menuCfg; this.region = region; this.inv = inv; this.holder = holder;
             this.animLayer = new ItemStack[inv.getSize()];
             compileAnimations();
+        }
+
+        public void refreshBaseLayer(ItemStack[] newBaseLayer) {
+            holder.baseLayer = newBaseLayer;
+            animItemCache.clear();
+            this.changedThisTick = true;
+
+            ItemStack[] display = new ItemStack[inv.getSize()];
+            for (int i = 0; i < display.length; i++) {
+                if (animLayer[i] != null) display[i] = animLayer[i];
+                else if (holder.baseLayer != null && i < holder.baseLayer.length) display[i] = holder.baseLayer[i];
+            }
+            inv.setContents(display);
         }
 
         private void compileAnimations() {

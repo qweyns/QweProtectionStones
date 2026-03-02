@@ -1,5 +1,5 @@
 name: PSHologramm
-version: 1.0.1
+version: 1.0.2
 main: org.qweyns.pshologramm.PSHologramm
 api-version: '1.21'
 author: qweyns

@@ -4,8 +4,8 @@
 
 # --- НАСТРОЙКИ БАЗЫ ДАННЫХ ---
 database:
-  # Доступные типы: YAML, MYSQL, SQLITE, H2
-  type: "YAML"
+  # Доступные типы: MYSQL, SQLITE, H2
+  type: "SQLITE"
   table_prefix: "psholo_"
   # Настройки ниже нужны только если type: "MYSQL"
   host: "localhost"
