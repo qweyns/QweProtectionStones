@@ -1,5 +1,5 @@
 name: PSHologramm
-version: 1.0.2
+version: 1.1.0
 main: org.qweyns.pshologramm.PSHologramm
 api-version: '1.21'
 author: qweyns
@@ -10,8 +10,15 @@ depend:
 softdepend:
   - DecentHolograms
   - FancyHolograms
+  - Vault
+  - PlayerPoints
+  - PlaceholderAPI
 
 commands:
   pshologramm:
-    description: Главная команда плагина
+    description: Основная команда плагина
+    permission: pshologramm.admin
     aliases: [psh]
+  psholo-api:
+    description: API команда для интеграции сторонних меню
+    permission: pshologramm.admin

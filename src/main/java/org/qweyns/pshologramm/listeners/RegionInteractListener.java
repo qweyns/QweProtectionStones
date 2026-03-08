@@ -1,7 +1,6 @@
 package org.qweyns.pshologramm.listeners;
 
 import dev.espi.protectionstones.PSRegion;
-import dev.espi.protectionstones.event.PSCreateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -25,19 +24,6 @@ public class RegionInteractListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPSCreateSneak(PSCreateEvent event) {
-        if (event.getPlayer() != null && event.getPlayer().isSneaking()) {
-            String type = event.getRegion().getType();
-            if (plugin.getConfigManager().isShiftPlaceNormalBlock(type)) {
-                Bukkit.getScheduler().runTask(plugin, () -> event.getRegion().deleteRegion(false));
-            } else {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(plugin.getConfigManager().getMessage("shift_place_prevented"));
-            }
-        }
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
     public void onRegionInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) return;
         Block block = event.getClickedBlock();
@@ -55,10 +41,26 @@ public class RegionInteractListener implements Listener {
         }
 
         event.setCancelled(true);
-        if (plugin.getConfigManager().getConfig().getBoolean("regions." + region.getType() + ".enable_durability_upgrade", true)) {
-            plugin.getMenuManager().openMenu(player, "main", region);
+
+        String action = plugin.getConfigManager().getConfig().getString("settings.on_block_click.action", "MENU");
+
+        if (action.equalsIgnoreCase("COMMAND")) {
+            List<String> commands = plugin.getConfigManager().getConfig().getStringList("settings.on_block_click.commands");
+            for (String cmd : commands) {
+                String parsedCmd = cmd.replace("%player%", player.getName()).replace("%region_id%", region.getId());
+
+                if (parsedCmd.startsWith("[console] ")) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd.substring(10));
+                } else {
+                    player.performCommand(parsedCmd);
+                }
+            }
         } else {
-            plugin.getMenuManager().openMenu(player, "effects", region);
+            if (plugin.getConfigManager().getConfig().getBoolean("regions." + region.getType() + ".enable_durability_upgrade", true)) {
+                plugin.getMenuManager().openMenu(player, "main", region);
+            } else {
+                plugin.getMenuManager().openMenu(player, "effects", region);
+            }
         }
     }
 

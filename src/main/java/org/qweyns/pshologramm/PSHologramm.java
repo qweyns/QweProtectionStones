@@ -11,6 +11,10 @@ import org.qweyns.pshologramm.features.notification.NotificationManager;
 import org.qweyns.pshologramm.features.penalty.PenaltyManager;
 import org.qweyns.pshologramm.features.visual.VisualManager;
 import org.qweyns.pshologramm.holograms.HologramManager;
+import org.qweyns.pshologramm.hooks.PAPIExpansion;
+import org.qweyns.pshologramm.hooks.PlayerPointsHook;
+import org.qweyns.pshologramm.hooks.VaultHook;
+import org.qweyns.pshologramm.listeners.ApiCommandExecutor;
 import org.qweyns.pshologramm.listeners.CommandInterceptor;
 import org.qweyns.pshologramm.listeners.RegionExplosionListener;
 import org.qweyns.pshologramm.listeners.RegionInteractListener;
@@ -30,11 +34,23 @@ public final class PSHologramm extends JavaPlugin {
     private NotificationManager notificationManager;
     private PenaltyManager penaltyManager;
 
+    private VaultHook vaultHook;
+    private PlayerPointsHook playerPointsHook;
+
     @Override
     public void onEnable() {
         this.configManager = new ConfigManager(this);
         this.storageManager = new StorageManager(this);
         this.storageManager.init();
+
+        this.vaultHook = new VaultHook();
+        this.vaultHook.setup();
+        this.playerPointsHook = new PlayerPointsHook();
+        this.playerPointsHook.setup();
+
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new PAPIExpansion(this).register();
+        }
 
         this.visualManager = new VisualManager(this);
         this.autoAddManager = new AutoAddManager(this);
@@ -53,7 +69,11 @@ public final class PSHologramm extends JavaPlugin {
         pm.registerEvents(new CommandInterceptor(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
-        getLogger().info("PSHologramm v1.21.4 (Refactored) успешно запущен!");
+        if (getCommand("psholo-api") != null) {
+            getCommand("psholo-api").setExecutor(new ApiCommandExecutor(this));
+        }
+
+        getLogger().info("PSHologramm v1.4.0 успешно запущен (API Edition)!");
     }
 
     @Override
@@ -88,4 +108,7 @@ public final class PSHologramm extends JavaPlugin {
     public EffectManager getEffectManager() { return effectManager; }
     public NotificationManager getNotificationManager() { return notificationManager; }
     public PenaltyManager getPenaltyManager() { return penaltyManager; }
+
+    public VaultHook getVaultHook() { return vaultHook; }
+    public PlayerPointsHook getPlayerPointsHook() { return playerPointsHook; }
 }

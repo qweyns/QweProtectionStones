@@ -5,9 +5,6 @@ import com.google.common.io.ByteStreams;
 import dev.espi.protectionstones.PSRegion;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
-import net.milkbowl.vault.economy.Economy;
-import org.black_ixx.playerpoints.PlayerPoints;
-import org.black_ixx.playerpoints.PlayerPointsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -42,23 +39,12 @@ import java.util.regex.Pattern;
 public class MenuManager implements Listener {
     private final PSHologramm plugin;
     private final Map<String, FileConfiguration> menus = new HashMap<>();
-    private Economy vaultEcon = null;
-    private PlayerPointsAPI ppAPI = null;
 
     public MenuManager(PSHologramm plugin) {
         this.plugin = plugin;
-        setupHooks();
         loadMenus();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
-    }
-
-    private void setupHooks() {
-        if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
-            org.bukkit.plugin.RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) vaultEcon = rsp.getProvider();
-        }
-        if (Bukkit.getPluginManager().getPlugin("PlayerPoints") != null) ppAPI = PlayerPoints.getInstance().getAPI();
     }
 
     public void loadMenus() {
@@ -325,8 +311,11 @@ public class MenuManager implements Listener {
     private boolean checkRequirements(ConfigurationSection reqs, Player player, PSRegion region) {
         for (String key : reqs.getKeys(false)) {
             String type = reqs.getString(key + ".type");
-            if (type.equals("has money") && vaultEcon != null && vaultEcon.getBalance(player) < reqs.getDouble(key + ".amount")) return false;
-            if (type.equals("has points") && ppAPI != null && ppAPI.look(player.getUniqueId()) < reqs.getInt(key + ".amount")) return false;
+
+            // Использование Хуков (безопасно)
+            if (type.equals("has money") && !plugin.getVaultHook().hasMoney(player, reqs.getDouble(key + ".amount"))) return false;
+            if (type.equals("has points") && !plugin.getPlayerPointsHook().hasPoints(player, reqs.getInt(key + ".amount"))) return false;
+
             if (type.equals("has exp") && player.getLevel() < reqs.getInt(key + ".amount")) return false;
             if (type.equals("has permission") && !player.hasPermission(reqs.getString(key + ".permission"))) return false;
             if (type.equals("region_durability_enabled") && region != null) {
@@ -452,9 +441,9 @@ public class MenuManager implements Listener {
             else if (cmd.startsWith("[console] ")) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.substring(10));
             else if (cmd.startsWith("[sound] ")) { try { player.playSound(player.getLocation(), Sound.valueOf(cmd.substring(8)), 1f, 1f); } catch (Exception ignored) {} }
             else if (cmd.startsWith("[connect] ")) { ByteArrayDataOutput out = ByteStreams.newDataOutput(); out.writeUTF("Connect"); out.writeUTF(cmd.substring(10)); player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray()); }
-            else if (cmd.startsWith("[takemoney] ") && vaultEcon != null) vaultEcon.withdrawPlayer(player, Double.parseDouble(cmd.substring(12)));
+            else if (cmd.startsWith("[takemoney] ")) plugin.getVaultHook().takeMoney(player, Double.parseDouble(cmd.substring(12)));
             else if (cmd.startsWith("[takeexp] ")) player.setLevel(Math.max(0, player.getLevel() - Integer.parseInt(cmd.substring(10))));
-            else if (cmd.startsWith("[takepoints] ") && ppAPI != null) ppAPI.take(player.getUniqueId(), Integer.parseInt(cmd.substring(13)));
+            else if (cmd.startsWith("[takepoints] ")) plugin.getPlayerPointsHook().takePoints(player, Integer.parseInt(cmd.substring(13)));
             else if (cmd.startsWith("[ps_add_effect] ")) {
                 if (region != null) {
                     String[] split = cmd.substring(16).split(":");
@@ -507,12 +496,10 @@ public class MenuManager implements Listener {
         private void compileAnimations() {
             List<?> animList = menuCfg.getList("animations.default");
             if (animList == null) return;
-
             int lastTick = -1;
             for (Object obj : animList) {
                 if (!(obj instanceof Map)) continue;
                 Map<?, ?> map = (Map<?, ?>) obj;
-
                 int tick = map.containsKey("tick") ? Integer.parseInt(map.get("tick").toString()) : lastTick + 1;
                 lastTick = tick;
 
@@ -538,7 +525,6 @@ public class MenuManager implements Listener {
         @Override
         public void run() {
             changedThisTick = false;
-
             List<Runnable> actions = compiledFrames.get(currentTick);
             if (actions != null) {
                 for (Runnable action : actions) action.run();
@@ -559,7 +545,6 @@ public class MenuManager implements Listener {
             String[] args = op.split(" ");
             if (args.length == 0) return;
             String cmd = args[0].toLowerCase();
-
             try {
                 switch (cmd) {
                     case "set": case "st":
