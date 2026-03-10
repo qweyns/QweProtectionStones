@@ -1,4 +1,7 @@
-menu_title: "&8Магазин эффектов"
+# ================
+# МАГАЗИН ЭФФЕКТОВ
+# ================
+menu_title: "<bold><gradient:#00B4DB:#0083B0>Магазин эффектов</gradient></bold>"
 size: 45
 update_interval: 10
 
@@ -10,13 +13,14 @@ items:
     slot: 11
     priority: 1
     material: EXPERIENCE_BOTTLE
-    display_name: "&a✨ Бустер опыта (Куплен)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>✨ Бустер опыта (Куплен)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     lore:
-      - "&7Дает x2 опыта с мобов и блоков"
-      - "&a✔ Эффект активен!"
+      - "<#BDC3C7>▪ Дает x2 опыта с мобов и блоков."
+      - ""
+      - "<#2ECC71>✔ Эффект активен!"
     view_requirement:
       requirements:
         a:
@@ -32,11 +36,13 @@ items:
     slot: 11
     priority: 2
     material: EXPERIENCE_BOTTLE
-    display_name: "&b✨ Бустер опыта"
+    display_name: "<bold><gradient:#F1C40F:#F39C12>✨ Бустер опыта</gradient></bold>"
     lore:
-      - "&7Дает x2 опыта."
-      - "&fЦена: &a5000$"
-      - "&eНажмите, чтобы купить!"
+      - "<#BDC3C7>▪ Дает x2 опыта."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>5000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -51,7 +57,7 @@ items:
           type: "has money"
           amount: 5000.0
       deny_commands:
-        - "[message] &cМало денег!"
+        - "[message] <#E74C3C>Мало денег!"
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 5000"
@@ -63,10 +69,10 @@ items:
     slot: 11
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Бустер опыта (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Бустер опыта (Блок)</bold>"
     lore:
-      - "&7Тип привата (&f%region_material%&7)"
-      - "&7не поддерживает это."
+      - "<#BDC3C7>▪ Тип привата (<white>%region_material%<#BDC3C7>)"
+      - "<#BDC3C7>  не поддерживает этот бафф."
     view_requirement:
       requirements:
         a:
@@ -77,13 +83,14 @@ items:
     slot: 13
     priority: 1
     material: BELL
-    display_name: "&a🚨 Оповещения (Куплено)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>🚨 Оповещения (Куплено)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     lore:
-      - "&7Оповещения об атаке и вторжении."
-      - "&a✔ Включены!"
+      - "<#BDC3C7>▪ Оповещения об атаке и вторжении."
+      - ""
+      - "<#2ECC71>✔ Включены!"
     view_requirement:
       requirements:
         a:
@@ -97,11 +104,13 @@ items:
     slot: 13
     priority: 2
     material: BELL
-    display_name: "&c🚨 Радары вторжения"
+    display_name: "<bold><gradient:#E74C3C:#C0392B>🚨 Радары вторжения</gradient></bold>"
     lore:
-      - "&7Сообщит, если зайдет чужак."
-      - "&fЦена: &b100 Очков"
-      - "&eНажмите, чтобы купить!"
+      - "<#BDC3C7>▪ Сообщит, если зайдет чужак."
+      - ""
+      - "<#95A5A6>Цена: <#3498DB>100 Очков"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -116,7 +125,7 @@ items:
           type: "has points"
           amount: 100
       deny_commands:
-        - "[message] &cМало поинтов!"
+        - "[message] <#E74C3C>Мало поинтов!"
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takepoints] 100"
@@ -128,7 +137,7 @@ items:
     slot: 13
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Радары (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Радары (Блок)</bold>"
     view_requirement:
       requirements:
         a:
@@ -139,13 +148,13 @@ items:
     slot: 15
     priority: 1
     material: GOLDEN_PICKAXE
-    display_name: "&a⛏ Спешка II (Куплено)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>⛏ Спешка II (Куплено)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     hide_attributes: true
     lore:
-      - "&a✔ Эффект активен!"
+      - "<#2ECC71>✔ Эффект активен!"
     view_requirement:
       requirements:
         a:
@@ -159,12 +168,14 @@ items:
     slot: 15
     priority: 2
     material: GOLDEN_PICKAXE
-    display_name: "&e⛏ Спешка II"
+    display_name: "<bold><gradient:#F1C40F:#F39C12>⛏ Спешка II</gradient></bold>"
     hide_attributes: true
     lore:
-      - "&7Быстро копать."
-      - "&fЦена: &d30 Уровней"
-      - "&eНажми!"
+      - "<#BDC3C7>▪ Позволяет мгновенно копать."
+      - ""
+      - "<#95A5A6>Цена: <#9B59B6>30 Уровней"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -179,7 +190,7 @@ items:
           type: "has exp"
           amount: 30
       deny_commands:
-        - "[message] &cМало опыта!"
+        - "[message] <#E74C3C>Мало опыта!"
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takeexp] 30"
@@ -191,12 +202,13 @@ items:
     slot: 15
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Спешка II (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Спешка II (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "FAST_DIGGING"
+
 
   # ==========================================
   # [РЯД 2] БОЕВЫЕ БАФФЫ (Слоты 19, 21, 23, 25)
@@ -205,10 +217,10 @@ items:
     slot: 19
     priority: 1
     material: POTION
-    display_name: "&a⚡ Скорость II (Куплено)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>⚡ Скорость II (Куплено)</gradient></bold>"
     hide_potion_effects: true
     lore:
-      - "&a✔ Активно!"
+      - "<#2ECC71>✔ Активно для жителей!"
     view_requirement:
       requirements:
         a:
@@ -222,10 +234,14 @@ items:
     slot: 19
     priority: 2
     material: POTION
-    display_name: "&f⚡ Скорость II"
+    display_name: "<bold><gradient:#3498DB:#2980B9>⚡ Скорость II</gradient></bold>"
     hide_potion_effects: true
     lore:
-      - "&fЦена: &a15000$"
+      - "<#BDC3C7>▪ Скорость передвижения по базе."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>15000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -239,32 +255,37 @@ items:
         c:
           type: "has money"
           amount: 15000.0
+      deny_commands:
+        - "[message] <#E74C3C>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 15000"
       - "[ps_add_effect] SPEED:1"
+      - "[sound] ITEM_BOTTLE_FILL"
       - "[refresh]"
 
   speed_locked:
     slot: 19
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Скорость II (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Скорость II (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "SPEED"
 
+
   dmg_bought:
     slot: 21
     priority: 1
     material: BLAZE_POWDER
-    display_name: "&a⚔ Сила II (Куплено)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>⚔ Сила II (Куплено)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     lore:
-      - "&a✔ Активно для жителей!"
+      - "<#2ECC71>✔ Активно для жителей!"
     view_requirement:
       requirements:
         a:
@@ -278,10 +299,13 @@ items:
     slot: 21
     priority: 2
     material: BLAZE_POWDER
-    display_name: "&c⚔ Сила II"
+    display_name: "<bold><gradient:#E74C3C:#C0392B>⚔ Сила II</gradient></bold>"
     lore:
-      - "&7Огромный урон по чужакам."
-      - "&fЦена: &a25000$"
+      - "<#BDC3C7>▪ Огромный урон по чужакам."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>25000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -295,30 +319,37 @@ items:
         c:
           type: "has money"
           amount: 25000.0
+      deny_commands:
+        - "[message] <#E74C3C>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 25000"
       - "[ps_add_effect] INCREASE_DAMAGE:1"
+      - "[sound] ITEM_FIRECHARGE_USE"
       - "[refresh]"
 
   dmg_locked:
     slot: 21
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Сила II (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Сила II (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "INCREASE_DAMAGE"
 
+
   invis_bought:
     slot: 23
     priority: 1
     material: GLASS
-    display_name: "&a👻 Невидимость (Куплено)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>👻 Невидимость (Куплено)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
+    lore:
+      - "<#2ECC71>✔ Активно для жителей!"
     view_requirement:
       requirements:
         a:
@@ -332,10 +363,13 @@ items:
     slot: 23
     priority: 2
     material: GLASS
-    display_name: "&f👻 Невидимость"
+    display_name: "<bold><gradient:#BDC3C7:#95A5A6>👻 Невидимость</gradient></bold>"
     lore:
-      - "&7Скрывает жителей привата."
-      - "&fЦена: &b150 Очков"
+      - "<#BDC3C7>▪ Скрывает жителей привата."
+      - ""
+      - "<#95A5A6>Цена: <#3498DB>150 Очков"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -349,30 +383,37 @@ items:
         c:
           type: "has points"
           amount: 150
+      deny_commands:
+        - "[message] <#E74C3C>Мало поинтов!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takepoints] 150"
       - "[ps_add_effect] INVISIBILITY:0"
+      - "[sound] ENTITY_ILLUSIONER_MIRROR_MOVE"
       - "[refresh]"
 
   invis_locked:
     slot: 23
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Невидимость (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Невидимость (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "INVISIBILITY"
 
+
   hp_bought:
     slot: 25
     priority: 1
     material: GOLDEN_APPLE
-    display_name: "&a❤ Прилив здоровья (Куплен)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>❤ Прилив здоровья (Куплен)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
+    lore:
+      - "<#2ECC71>✔ Активно для жителей!"
     view_requirement:
       requirements:
         a:
@@ -386,10 +427,13 @@ items:
     slot: 25
     priority: 2
     material: GOLDEN_APPLE
-    display_name: "&c❤ Прилив здоровья II"
+    display_name: "<bold><gradient:#E67E22:#D35400>❤ Прилив здоровья II</gradient></bold>"
     lore:
-      - "&7+4 дополнительных сердца."
-      - "&fЦена: &a30000$"
+      - "<#BDC3C7>▪ +4 дополнительных сердца."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>30000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -403,21 +447,26 @@ items:
         c:
           type: "has money"
           amount: 30000.0
+      deny_commands:
+        - "[message] <#E74C3C>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 30000"
       - "[ps_add_effect] HEALTH_BOOST:1"
+      - "[sound] ENTITY_PLAYER_BURP"
       - "[refresh]"
 
   hp_locked:
     slot: 25
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Прилив здоровья (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Прилив здоровья (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "HEALTH_BOOST"
+
 
   # ==========================================
   # [РЯД 3] ЛОВУШКИ ДЛЯ ВРАГОВ (Слоты 29, 33)
@@ -426,13 +475,14 @@ items:
     slot: 29
     priority: 1
     material: COBWEB
-    display_name: "&c🕸 Ловушка: Замедление (Активна)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>🕸 Ловушка: Замедление (Активна)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     lore:
-      - "&7Чужаки не смогут убежать."
-      - "&a✔ Активно на врагах!"
+      - "<#BDC3C7>▪ Чужаки не смогут убежать."
+      - ""
+      - "<#E74C3C>✔ Активно на врагах!"
     view_requirement:
       requirements:
         a:
@@ -446,10 +496,13 @@ items:
     slot: 29
     priority: 2
     material: COBWEB
-    display_name: "&f🕸 Замедление II (На чужаков)"
+    display_name: "<bold><gradient:#95A5A6:#7F8C8D>🕸 Замедление II (На чужаков)</gradient></bold>"
     lore:
-      - "&7Замедляет всех незваных гостей."
-      - "&fЦена: &a10000$"
+      - "<#BDC3C7>▪ Замедляет всех незваных гостей."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>10000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -463,33 +516,39 @@ items:
         c:
           type: "has money"
           amount: 10000.0
+      deny_commands:
+        - "[message] <#E74C3C>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 10000"
       - "[ps_add_effect] SLOW:1"
+      - "[sound] ENTITY_SPIDER_DEATH"
       - "[refresh]"
 
   slow_locked:
     slot: 29
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Замедление (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Замедление (Блок)</bold>"
     view_requirement:
       requirements:
         a:
           type: "not_allowed_effect"
           effect_name: "SLOW"
 
+
   wither_bought:
     slot: 33
     priority: 1
     material: WITHER_ROSE
-    display_name: "&c☠ Ловушка: Иссушение (Активна)"
+    display_name: "<bold><gradient:#2ECC71:#27AE60>☠ Ловушка: Иссушение (Активна)</gradient></bold>"
     enchantments:
       - "unbreaking:1"
     hide_enchantments: true
     lore:
-      - "&7Медленно убивает нарушителей."
-      - "&a✔ Активно на врагах!"
+      - "<#BDC3C7>▪ Медленно убивает нарушителей."
+      - ""
+      - "<#E74C3C>✔ Активно на врагах!"
     view_requirement:
       requirements:
         a:
@@ -503,10 +562,13 @@ items:
     slot: 33
     priority: 2
     material: WITHER_ROSE
-    display_name: "&4☠ Иссушение (Смертельная ловушка)"
+    display_name: "<bold><gradient:#8E44AD:#2C3E50>☠ Иссушение (Смертельная ловушка)</gradient></bold>"
     lore:
-      - "&7Иссушает тех, кого нет в привате."
-      - "&fЦена: &a50000$"
+      - "<#BDC3C7>▪ Иссушает тех, кого нет в привате."
+      - ""
+      - "<#95A5A6>Цена: <#2ECC71>50000$"
+      - ""
+      - "<#E67E22>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
         a:
@@ -520,16 +582,20 @@ items:
         c:
           type: "has money"
           amount: 50000.0
+      deny_commands:
+        - "[message] <#E74C3C>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 50000"
       - "[ps_add_effect] WITHER:0"
+      - "[sound] ENTITY_WITHER_AMBIENT"
       - "[refresh]"
 
   wither_locked:
     slot: 33
     priority: 3
     material: BARRIER
-    display_name: "&c🔒 Иссушение (Блок)"
+    display_name: "<bold><#E74C3C>🔒 Иссушение (Блок)</bold>"
     view_requirement:
       requirements:
         a:
@@ -543,7 +609,7 @@ items:
     slot: 40
     priority: 1
     material: ARROW
-    display_name: "&cНазад"
+    display_name: "<bold><#E74C3C>Назад</bold>"
     view_requirement:
       requirements:
         d:
@@ -556,7 +622,7 @@ items:
     slot: 40
     priority: 2
     material: BARRIER
-    display_name: "&cЗакрыть"
+    display_name: "<bold><#E74C3C>Закрыть</bold>"
     click_commands:
       - "[close]"
       - "[sound] UI_BUTTON_CLICK"

@@ -19,6 +19,12 @@ public class MysqlDao extends AbstractSqlDao {
     }
 
     @Override
+    protected String getAutoAddUpsertQuery() {
+        return "INSERT INTO " + tablePrefix + "autoadd (uuid, friends, toggled_off) VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE friends=VALUES(friends), toggled_off=VALUES(toggled_off)";
+    }
+
+    @Override
     protected String getUpsertQuery() {
         return "INSERT INTO " + tablePrefix + "regions (id, type, owner, material, durability, maxDurability, world, x, y, z, effects) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +

@@ -1,0 +1,48 @@
+prefix: "<bold><gradient:#00B4DB:#0083B0>PSHologramm</gradient></bold> <#7F8C8D>»</#7F8C8D> "
+
+# 核心消息
+no_permission: "%prefix%<#E74C3C>你没有权限执行此操作！"
+reload_success: "%prefix%<#2ECC71>插件和配置文件已成功重载！"
+shift_place_prevented: "%prefix%<#E74C3C>你不能在潜行时放置领地核心！"
+merge_disabled: "%prefix%<#E74C3C>你的领地与另一个领地重叠了！"
+not_in_region: "%prefix%<#E74C3C>你必须在领地内才能使用此命令！"
+not_a_member: "%prefix%<#E74C3C>你不是该领地的成员！"
+not_an_owner: "%prefix%<#E74C3C>你不是该领地的所有者！"
+no_region_nearby: "%prefix%<#E74C3C>附近没有领地！"
+menu_not_found: "%prefix%<#E74C3C>在 menus 文件夹中未找到菜单 <#F1C40F>%menu% <#E74C3C>！"
+too_far_from_block: "%prefix%<#E74C3C>你距离领地核心不能超过 6 个方块！"
+
+# /ps glow
+glow_enabled: "%prefix%<#2ECC71>领地边界显示已开启！"
+glow_disabled: "%prefix%<#E74C3C>领地边界显示已关闭。"
+
+# 自动添加系统 (/ps autoadd)
+autoadd_enabled: "%prefix%<#2ECC71>自动添加已开启。"
+autoadd_disabled: "%prefix%<#E74C3C>自动添加已关闭。"
+autoadd_player_added: "%prefix%<#2ECC71>玩家 <#F1C40F>%player% <#2ECC71>已加入自动添加列表。"
+autoadd_player_removed: "%prefix%<#E74C3C>玩家 <#F1C40F>%player% <#E74C3C>已移除。"
+autoadd_player_not_found: "%prefix%<#F1C40F>未找到该玩家。"
+autoadd_list_header: "<#7F8C8D>=== <#3498DB>自动添加列表 <#7F8C8D>==="
+autoadd_list_empty: "<#95A5A6>列表为空。"
+autoadd_list_players: "<#7F8C8D>玩家：<#2ECC71>%players%"
+
+# 升级与购买
+effect_bought: "%prefix%<#2ECC71>成功购买升级：<#3498DB>%effect%<#2ECC71>！"
+upgrade_not_enough_items: "%prefix%<#E74C3C>资源不足！你需要：<#F1C40F>%amount% 个 %item%"
+upgrade_success: "%prefix%<#2ECC71>耐久度已成功升级至 <#F1C40F>%durability%<#2ECC71>！"
+upgrade_penalty: "%prefix%<#E74C3C>警告：价格已增加 %multiplier% 倍（破坏惩罚）！"
+
+# 指示器与技术词汇
+damage_indicator: "<#E74C3C><bold>-1 ❤"
+no_penalty: "无"
+unknown_owner: "未知"
+papi_no_region: "无领地"
+papi_loading: "加载中..."
+effect_alerts: "袭击警报"
+effect_exp_boost: "经验加成"
+
+# 攻击通知
+region_under_attack_chat: "<#E74C3C><bold>警告！</bold> <#F1C40F>你的领地 (%type%) 正在受到攻击！X:%x% Y:%y% Z:%z%"
+region_under_attack_raw: "**警告！** 你的领地 (%type%) 正在受到攻击！X:%x% Y:%y% Z:%z%"
+intruder_alert_chat: "%prefix%<#E74C3C>⚠ 警告！<#F1C40F>%intruder% <#E74C3C>闯入了你的领地 (<#FFFFFF>%type%<#E74C3C>)！"
+intruder_alert_raw: "⚠ 警告！玩家 %intruder% 闯入了你的领地 (%type%)！"

@@ -1,0 +1,48 @@
+prefix: "<bold><gradient:#00B4DB:#0083B0>PSHologramm</gradient></bold> <#7F8C8D>»</#7F8C8D> "
+
+# Mensajes Principales
+no_permission: "%prefix%<#E74C3C>¡No tienes permisos para hacer esto!"
+reload_success: "%prefix%<#2ECC71>¡Plugin y configuraciones recargados exitosamente!"
+shift_place_prevented: "%prefix%<#E74C3C>¡No puedes colocar una región mientras te agachas!"
+merge_disabled: "%prefix%<#E74C3C>¡Tu región se superpone con otra!"
+not_in_region: "%prefix%<#E74C3C>¡Debes estar dentro de una región!"
+not_a_member: "%prefix%<#E74C3C>¡No eres miembro de esta región!"
+not_an_owner: "%prefix%<#E74C3C>¡No eres el propietario de esta región!"
+no_region_nearby: "%prefix%<#E74C3C>¡No hay regiones cerca!"
+menu_not_found: "%prefix%<#E74C3C>¡Menú <#F1C40F>%menu% <#E74C3C>no encontrado en la carpeta menus!"
+too_far_from_block: "%prefix%<#E74C3C>¡Debes estar a menos de 6 bloques del núcleo!"
+
+# /ps glow
+glow_enabled: "%prefix%<#2ECC71>¡Visualización de límites activada!"
+glow_disabled: "%prefix%<#E74C3C>Visualización de límites desactivada."
+
+# Auto-add (/ps autoadd)
+autoadd_enabled: "%prefix%<#2ECC71>Auto-añadir activado."
+autoadd_disabled: "%prefix%<#E74C3C>Auto-añadir desactivado."
+autoadd_player_added: "%prefix%<#2ECC71>Jugador <#F1C40F>%player% <#2ECC71>añadido."
+autoadd_player_removed: "%prefix%<#E74C3C>Jugador <#F1C40F>%player% <#E74C3C>eliminado."
+autoadd_player_not_found: "%prefix%<#F1C40F>Jugador no encontrado."
+autoadd_list_header: "<#7F8C8D>=== <#3498DB>Auto-Añadir <#7F8C8D>==="
+autoadd_list_empty: "<#95A5A6>La lista está vacía."
+autoadd_list_players: "<#7F8C8D>Jugadores: <#2ECC71>%players%"
+
+# Mejoras y Compras
+effect_bought: "%prefix%<#2ECC71>¡Mejora <#3498DB>%effect% <#2ECC71>comprada con éxito!"
+upgrade_not_enough_items: "%prefix%<#E74C3C>No tienes suficiente: <#F1C40F>%amount% %item%"
+upgrade_success: "%prefix%<#2ECC71>¡Durabilidad mejorada con éxito a <#F1C40F>%durability%<#2ECC71>!"
+upgrade_penalty: "%prefix%<#E74C3C>Advertencia: ¡El precio se multiplicó por %multiplier%x (Penalización)!"
+
+# Indicadores y Palabras Técnicas
+damage_indicator: "<#E74C3C><bold>-1 ❤"
+no_penalty: "Ninguno"
+unknown_owner: "Desconocido"
+papi_no_region: "Sin región"
+papi_loading: "Cargando..."
+effect_alerts: "Alertas de Incursión"
+effect_exp_boost: "Potenciador EXP"
+
+# Notificaciones de Ataque
+region_under_attack_chat: "<#E74C3C><bold>¡ADVERTENCIA!</bold> <#F1C40F>¡Tu región (%type%) está bajo ataque! X:%x% Y:%y% Z:%z%"
+region_under_attack_raw: "**¡ADVERTENCIA!** ¡Tu región (%type%) está bajo ataque! X:%x% Y:%y% Z:%z%"
+intruder_alert_chat: "%prefix%<#E74C3C>⚠ ¡Atención! <#F1C40F>%intruder% <#E74C3C>entró en tu territorio (<#FFFFFF>%type%<#E74C3C>)!"
+intruder_alert_raw: "⚠ ¡Atención! ¡El jugador %intruder% entró en tu territorio (%type%)!"

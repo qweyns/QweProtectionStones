@@ -1,0 +1,48 @@
+prefix: "<bold><gradient:#00B4DB:#0083B0>PSHologramm</gradient></bold> <#7F8C8D>»</#7F8C8D> "
+
+# Основные сообщения
+no_permission: "%prefix%<#E74C3C>У вас нет прав!"
+reload_success: "%prefix%<#2ECC71>Плагин успешно перезагружен!"
+shift_place_prevented: "%prefix%<#E74C3C>Нельзя ставить блок привата с зажатым Shift!"
+merge_disabled: "%prefix%<#E74C3C>Ваш приват пересекается с чужим!"
+not_in_region: "%prefix%<#E74C3C>Вы должны находиться внутри привата!"
+not_a_member: "%prefix%<#E74C3C>Вы не участник этого привата!"
+not_an_owner: "%prefix%<#E74C3C>Вы не владелец этого привата!"
+no_region_nearby: "%prefix%<#E74C3C>Поблизости нет приватов!"
+menu_not_found: "%prefix%<#E74C3C>Меню <#F1C40F>%menu% <#E74C3C>не найдено в папке menus!"
+too_far_from_block: "%prefix%<#E74C3C>Вы должны находиться не дальше 6 блоков от ядра!"
+
+# /ps glow
+glow_enabled: "%prefix%<#2ECC71>Отображение границ включено!"
+glow_disabled: "%prefix%<#E74C3C>Отображение границ отключено."
+
+# Авто-добавление (/ps autoadd)
+autoadd_enabled: "%prefix%<#2ECC71>Авто-добавление включено."
+autoadd_disabled: "%prefix%<#E74C3C>Авто-добавление отключено."
+autoadd_player_added: "%prefix%<#2ECC71>Игрок <#F1C40F>%player% <#2ECC71>добавлен в авто-добавление."
+autoadd_player_removed: "%prefix%<#E74C3C>Игрок <#F1C40F>%player% <#E74C3C>удален."
+autoadd_player_not_found: "%prefix%<#F1C40F>Игрок не найден."
+autoadd_list_header: "<#7F8C8D>=== <#3498DB>Авто-добавление <#7F8C8D>==="
+autoadd_list_empty: "<#95A5A6>Список пуст."
+autoadd_list_players: "<#7F8C8D>Игроки: <#2ECC71>%players%"
+
+# Улучшения и покупки
+effect_bought: "%prefix%<#2ECC71>Улучшение <#3498DB>%effect% <#2ECC71>успешно куплено!"
+upgrade_not_enough_items: "%prefix%<#E74C3C>Вам не хватает: <#F1C40F>%amount% %item%"
+upgrade_success: "%prefix%<#2ECC71>Прочность успешно улучшена до <#F1C40F>%durability%<#2ECC71>!"
+upgrade_penalty: "%prefix%<#E74C3C>Внимание: Цена увеличена в %multiplier% раз (Штраф)!"
+
+# Индикаторы и технические слова
+damage_indicator: "<#E74C3C><bold>-1 ❤"
+no_penalty: "нету"
+unknown_owner: "Неизвестно"
+papi_no_region: "Нет привата"
+papi_loading: "Загрузка..."
+effect_alerts: "Оповещения о рейдах"
+effect_exp_boost: "Буст опыта"
+
+# Уведомления об атаках
+region_under_attack_chat: "<#E74C3C><bold>ВНИМАНИЕ!</bold> <#F1C40F>Ваш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
+region_under_attack_raw: "**ВНИМАНИЕ!** Ваш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
+intruder_alert_chat: "%prefix%<#E74C3C>⚠ Внимание! <#F1C40F>%intruder% <#E74C3C>вторгся на вашу территорию (<#FFFFFF>%type%<#E74C3C>)!"
+intruder_alert_raw: "⚠ Внимание! Игрок %intruder% вторгся на вашу территорию (%type%)!"

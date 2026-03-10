@@ -9,57 +9,91 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.qweyns.pshologramm.PSHologramm;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AutoAddManager implements Listener {
     private final PSHologramm plugin;
-    private final Map<UUID, Set<String>> autoAddLists = new HashMap<>();
-    private final Set<UUID> toggledOff = new HashSet<>();
+
+    private final Map<UUID, Set<String>> autoAddLists = new ConcurrentHashMap<>();
+    private final Set<UUID> toggledOff = ConcurrentHashMap.newKeySet();
 
     public AutoAddManager(PSHologramm plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            loadPlayer(p.getUniqueId());
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        loadPlayer(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        autoAddLists.remove(event.getPlayer().getUniqueId());
-        toggledOff.remove(event.getPlayer().getUniqueId());
+        UUID uuid = event.getPlayer().getUniqueId();
+        saveAsync(uuid);
+        autoAddLists.remove(uuid);
+        toggledOff.remove(uuid);
+    }
+
+    private void loadPlayer(UUID uuid) {
+        plugin.getStorageManager().loadAutoAddAsync(uuid, (friends, isToggledOff) -> {
+            if (!friends.isEmpty()) autoAddLists.put(uuid, ConcurrentHashMap.newKeySet());
+            if (!friends.isEmpty()) autoAddLists.get(uuid).addAll(friends);
+            if (isToggledOff) toggledOff.add(uuid);
+        });
+    }
+
+    private void saveAsync(UUID uuid) {
+        Set<String> friends = autoAddLists.getOrDefault(uuid, new HashSet<>());
+        boolean isToggledOff = toggledOff.contains(uuid);
+        plugin.getStorageManager().saveAutoAddAsync(uuid, friends, isToggledOff);
     }
 
     public void toggle(Player player) {
-        if (toggledOff.remove(player.getUniqueId())) {
-            player.sendMessage(plugin.getConfigManager().getMessage("autoadd_enabled"));
+        UUID uuid = player.getUniqueId();
+        if (toggledOff.remove(uuid)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("autoadd_enabled"));
         } else {
-            toggledOff.add(player.getUniqueId());
-            player.sendMessage(plugin.getConfigManager().getMessage("autoadd_disabled"));
+            toggledOff.add(uuid);
+            player.sendMessage(plugin.getLanguageManager().getMessage("autoadd_disabled"));
         }
+        saveAsync(uuid);
     }
 
     public void addPlayer(Player owner, String target) {
-        autoAddLists.computeIfAbsent(owner.getUniqueId(), k -> new HashSet<>()).add(target.toLowerCase());
-        owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_player_added", "%player%", target));
+        UUID uuid = owner.getUniqueId();
+        autoAddLists.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(target.toLowerCase());
+        owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_player_added", "%player%", target));
+        saveAsync(uuid);
     }
 
     public void removePlayer(Player owner, String target) {
-        Set<String> list = autoAddLists.get(owner.getUniqueId());
+        UUID uuid = owner.getUniqueId();
+        Set<String> list = autoAddLists.get(uuid);
         if (list != null && list.remove(target.toLowerCase())) {
-            owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_player_removed", "%player%", target));
+            owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_player_removed", "%player%", target));
+            saveAsync(uuid);
         } else {
-            owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_player_not_found"));
+            owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_player_not_found"));
         }
     }
 
     public void showList(Player owner) {
         Set<String> list = autoAddLists.getOrDefault(owner.getUniqueId(), new HashSet<>());
-        owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_list_header"));
+        owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_list_header"));
         if (list.isEmpty()) {
-            owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_list_empty"));
+            owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_list_empty"));
         } else {
-            owner.sendMessage(plugin.getConfigManager().getMessage("autoadd_list_players", "%players%", String.join(", ", list)));
+            owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_list_players", "%players%", String.join(", ", list)));
         }
     }
 
@@ -72,9 +106,21 @@ public class AutoAddManager implements Listener {
         if (rm != null) {
             ProtectedRegion pr = rm.getRegion(region.getId());
             if (pr != null) {
-                for (String target : list) {
-                    pr.getMembers().addPlayer(target);
-                }
+                for (String target : list) pr.getMembers().addPlayer(target);
+                try { rm.saveChanges(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public void saveAllOnline() {
+        for (UUID uuid : autoAddLists.keySet()) {
+            Set<String> friends = autoAddLists.get(uuid);
+            boolean isToggledOff = toggledOff.contains(uuid);
+            plugin.getStorageManager().saveAutoAddSync(uuid, friends, isToggledOff);
+        }
+        for (UUID uuid : toggledOff) {
+            if (!autoAddLists.containsKey(uuid)) {
+                plugin.getStorageManager().saveAutoAddSync(uuid, new HashSet<>(), true);
             }
         }
     }

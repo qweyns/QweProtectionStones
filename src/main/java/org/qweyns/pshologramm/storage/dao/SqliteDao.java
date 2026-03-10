@@ -15,6 +15,11 @@ public class SqliteDao extends AbstractSqlDao {
     }
 
     @Override
+    protected String getAutoAddUpsertQuery() {
+        return "INSERT OR REPLACE INTO " + tablePrefix + "autoadd (uuid, friends, toggled_off) VALUES (?, ?, ?)";
+    }
+
+    @Override
     protected String getUpsertQuery() {
         return "INSERT OR REPLACE INTO " + tablePrefix + "regions (id, type, owner, material, durability, maxDurability, world, x, y, z, effects) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

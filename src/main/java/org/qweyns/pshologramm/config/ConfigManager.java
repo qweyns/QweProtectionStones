@@ -33,27 +33,15 @@ public class ConfigManager {
 
     public boolean isDamageIndicatorEnabled() { return config.getBoolean("settings.enable_damage_indicator", true); }
     public Component getDamageIndicator() {
-        return ColorUtil.formatComponent(config.getString("messages.damage_indicator", "&c-1 ❤"));
+        return plugin.getLanguageManager().getMessage("damage_indicator");
     }
 
     public Component getMessage(String path, String... replacements) {
-        String prefix = config.getString("messages.prefix", "");
-        String msg = config.getString("messages." + path, "");
-        if (msg == null || msg.isEmpty()) return Component.empty();
-
-        String full = msg.replace("%prefix%", prefix);
-        for (int i = 0; i < replacements.length; i += 2) full = full.replace(replacements[i], replacements[i + 1]);
-        return ColorUtil.formatComponent(full);
+        return plugin.getLanguageManager().getMessage(path, replacements);
     }
 
     public String getRawMessage(String path, String... replacements) {
-        String prefix = config.getString("messages.prefix", "");
-        String msg = config.getString("messages." + path, "");
-        if (msg == null) return "";
-
-        String full = msg.replace("%prefix%", prefix);
-        for (int i = 0; i < replacements.length; i += 2) full = full.replace(replacements[i], replacements[i + 1]);
-        return ColorUtil.formatLegacyString(full);
+        return plugin.getLanguageManager().getRawMessage(path, replacements);
     }
 
     public String getEffectTarget(String effect) {

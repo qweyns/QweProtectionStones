@@ -1,0 +1,48 @@
+prefix: "<bold><gradient:#00B4DB:#0083B0>PSHologramm</gradient></bold> <#7F8C8D>»</#7F8C8D> "
+
+# Core Messages
+no_permission: "%prefix%<#E74C3C>You don't have permission to do this!"
+reload_success: "%prefix%<#2ECC71>Plugin and configurations successfully reloaded!"
+shift_place_prevented: "%prefix%<#E74C3C>You cannot place a region block while sneaking!"
+merge_disabled: "%prefix%<#E74C3C>Your region overlaps with another one!"
+not_in_region: "%prefix%<#E74C3C>You must be standing inside a region!"
+not_a_member: "%prefix%<#E74C3C>You are not a member of this region!"
+not_an_owner: "%prefix%<#E74C3C>You are not the owner of this region!"
+no_region_nearby: "%prefix%<#E74C3C>No regions nearby!"
+menu_not_found: "%prefix%<#E74C3C>Menu <#F1C40F>%menu% <#E74C3C>not found in the menus folder!"
+too_far_from_block: "%prefix%<#E74C3C>You must be within 6 blocks of the region core!"
+
+# /ps glow
+glow_enabled: "%prefix%<#2ECC71>Region boundaries display enabled!"
+glow_disabled: "%prefix%<#E74C3C>Region boundaries display disabled."
+
+# Auto-add system (/ps autoadd)
+autoadd_enabled: "%prefix%<#2ECC71>Auto-add enabled."
+autoadd_disabled: "%prefix%<#E74C3C>Auto-add disabled."
+autoadd_player_added: "%prefix%<#2ECC71>Player <#F1C40F>%player% <#2ECC71>added to auto-add."
+autoadd_player_removed: "%prefix%<#E74C3C>Player <#F1C40F>%player% <#E74C3C>removed."
+autoadd_player_not_found: "%prefix%<#F1C40F>Player not found."
+autoadd_list_header: "<#7F8C8D>=== <#3498DB>Auto-Add <#7F8C8D>==="
+autoadd_list_empty: "<#95A5A6>List is empty."
+autoadd_list_players: "<#7F8C8D>Players: <#2ECC71>%players%"
+
+# Upgrades and Purchases
+effect_bought: "%prefix%<#2ECC71>Upgrade <#3498DB>%effect% <#2ECC71>successfully purchased!"
+upgrade_not_enough_items: "%prefix%<#E74C3C>You don't have enough: <#F1C40F>%amount% %item%"
+upgrade_success: "%prefix%<#2ECC71>Durability successfully upgraded to <#F1C40F>%durability%<#2ECC71>!"
+upgrade_penalty: "%prefix%<#E74C3C>Warning: Price multiplied by %multiplier%x (Penalty)!"
+
+# Indicators and Technical Words
+damage_indicator: "<#E74C3C><bold>-1 ❤"
+no_penalty: "None"
+unknown_owner: "Unknown"
+papi_no_region: "No region"
+papi_loading: "Loading..."
+effect_alerts: "Raid Alerts"
+effect_exp_boost: "EXP Boost"
+
+# Attack Notifications
+region_under_attack_chat: "<#E74C3C><bold>WARNING!</bold> <#F1C40F>Your region (%type%) is under attack! X:%x% Y:%y% Z:%z%"
+region_under_attack_raw: "**WARNING!** Your region (%type%) is under attack! X:%x% Y:%y% Z:%z%"
+intruder_alert_chat: "%prefix%<#E74C3C>⚠ Warning! <#F1C40F>%intruder% <#E74C3C>intruded into your territory (<#FFFFFF>%type%<#E74C3C>)!"
+intruder_alert_raw: "⚠ Warning! Player %intruder% intruded into your territory (%type%)!"

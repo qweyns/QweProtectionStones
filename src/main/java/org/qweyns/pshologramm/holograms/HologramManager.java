@@ -116,16 +116,18 @@ public class HologramManager implements Listener {
         List<String> regionsInChunk = chunkCache.get(chunkKey);
 
         if (regionsInChunk != null && !regionsInChunk.isEmpty()) {
-            for (String id : regionsInChunk) {
-                RegionData rd = plugin.getStorageManager().getRegion(id);
-                if (rd != null) {
-                    World world = plugin.getServer().getWorld(rd.getWorld());
-                    if (world != null) {
-                        Location loc = new Location(world, rd.getX(), rd.getY(), rd.getZ());
-                        createOrUpdateHologram(id, loc, rd.getType(), rd.getOwner(), rd.getDurability(), rd.getMaxDurability());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (String id : regionsInChunk) {
+                    RegionData rd = plugin.getStorageManager().getRegion(id);
+                    if (rd != null) {
+                        World world = plugin.getServer().getWorld(rd.getWorld());
+                        if (world != null) {
+                            Location loc = new Location(world, rd.getX(), rd.getY(), rd.getZ());
+                            createOrUpdateHologram(id, loc, rd.getType(), rd.getOwner(), rd.getDurability(), rd.getMaxDurability());
+                        }
                     }
                 }
-            }
+            });
         }
     }
 

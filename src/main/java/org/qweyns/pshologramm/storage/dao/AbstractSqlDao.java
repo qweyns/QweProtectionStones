@@ -8,10 +8,9 @@ import org.qweyns.pshologramm.models.RegionData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 public abstract class AbstractSqlDao implements RegionDao {
     protected final PSHologramm plugin;
@@ -25,6 +24,7 @@ public abstract class AbstractSqlDao implements RegionDao {
 
     protected abstract void configureHikari(HikariConfig config);
     protected abstract String getUpsertQuery();
+    protected abstract String getAutoAddUpsertQuery();
 
     @Override
     public void init() {
@@ -36,13 +36,18 @@ public abstract class AbstractSqlDao implements RegionDao {
         dataSource = new HikariDataSource(config);
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+             PreparedStatement ps1 = conn.prepareStatement(
                      "CREATE TABLE IF NOT EXISTS " + tablePrefix + "regions (" +
                              "id VARCHAR(64) PRIMARY KEY, type VARCHAR(64), owner VARCHAR(32), " +
                              "material VARCHAR(64), durability INT, maxDurability INT, " +
                              "world VARCHAR(64), x DOUBLE, y DOUBLE, z DOUBLE, effects TEXT)"
+             );
+             PreparedStatement ps2 = conn.prepareStatement(
+                     "CREATE TABLE IF NOT EXISTS " + tablePrefix + "autoadd (" +
+                             "uuid VARCHAR(36) PRIMARY KEY, friends TEXT, toggled_off BOOLEAN)"
              )) {
-            ps.executeUpdate();
+            ps1.executeUpdate();
+            ps2.executeUpdate();
         } catch (Exception e) {
             plugin.getLogger().severe("Ошибка создания таблиц БД: " + e.getMessage());
         }
@@ -73,7 +78,6 @@ public abstract class AbstractSqlDao implements RegionDao {
         if (regions.isEmpty()) return;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(getUpsertQuery())) {
-
             conn.setAutoCommit(false);
             for (RegionData data : regions) {
                 ps.setString(1, data.getId()); ps.setString(2, data.getType()); ps.setString(3, data.getOwner());
@@ -93,12 +97,38 @@ public abstract class AbstractSqlDao implements RegionDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM " + tablePrefix + "regions WHERE id = ?")) {
             conn.setAutoCommit(false);
-            for (String id : ids) {
-                ps.setString(1, id);
-                ps.addBatch();
-            }
+            for (String id : ids) { ps.setString(1, id); ps.addBatch(); }
             ps.executeBatch();
             conn.commit();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    @Override
+    public void loadAutoAdd(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
+        Set<String> friends = new HashSet<>();
+        boolean toggledOff = false;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM " + tablePrefix + "autoadd WHERE uuid = ?")) {
+            ps.setString(1, uuid.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String fStr = rs.getString("friends");
+                    if (fStr != null && !fStr.isEmpty()) friends.addAll(Arrays.asList(fStr.split(",")));
+                    toggledOff = rs.getBoolean("toggled_off");
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        callback.accept(friends, toggledOff);
+    }
+
+    @Override
+    public void saveAutoAdd(UUID uuid, Set<String> friends, boolean toggledOff) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(getAutoAddUpsertQuery())) {
+            ps.setString(1, uuid.toString());
+            ps.setString(2, String.join(",", friends));
+            ps.setBoolean(3, toggledOff);
+            ps.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
 

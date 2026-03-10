@@ -1,5 +1,7 @@
 package org.qweyns.pshologramm.features.effect;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import dev.espi.protectionstones.PSRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -15,14 +17,16 @@ import org.qweyns.pshologramm.PSHologramm;
 import org.qweyns.pshologramm.models.RegionData;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class EffectManager implements Listener {
     private final PSHologramm plugin;
     private final Map<UUID, String> currentRegions = new HashMap<>();
-    private final Map<UUID, List<PotionEffectType>> appliedEffects = new HashMap<>();
-    private final Map<String, Long> alertCooldowns = new HashMap<>();
-
     private final Map<UUID, Long> lastMoveCheck = new HashMap<>();
+
+    private final Cache<String, Long> alertCooldowns = CacheBuilder.newBuilder()
+            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .build();
 
     public EffectManager(PSHologramm plugin) {
         this.plugin = plugin;
@@ -35,32 +39,22 @@ public class EffectManager implements Listener {
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        if (event.getFrom().getBlockX() == event.getTo().getBlockX() &&
-                event.getFrom().getBlockY() == event.getTo().getBlockY() &&
-                event.getFrom().getBlockZ() == event.getTo().getBlockZ()) return;
-
+        if (event.getFrom().getBlockX() == event.getTo().getBlockX() && event.getFrom().getBlockY() == event.getTo().getBlockY() && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) return;
         long now = System.currentTimeMillis();
-        if (now - lastMoveCheck.getOrDefault(event.getPlayer().getUniqueId(), 0L) < 300L) return; // Экономим CPU
-
+        if (now - lastMoveCheck.getOrDefault(event.getPlayer().getUniqueId(), 0L) < 300L) return;
         lastMoveCheck.put(event.getPlayer().getUniqueId(), now);
         checkPlayerRegion(event.getPlayer(), false);
     }
 
     @EventHandler
-    public void onTeleport(PlayerTeleportEvent event) {
-        Bukkit.getScheduler().runTaskLater(plugin, () -> checkPlayerRegion(event.getPlayer(), false), 1L);
-    }
-
+    public void onTeleport(PlayerTeleportEvent event) { Bukkit.getScheduler().runTaskLater(plugin, () -> checkPlayerRegion(event.getPlayer(), false), 1L); }
     @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        checkPlayerRegion(event.getPlayer(), false);
-    }
+    public void onJoin(PlayerJoinEvent event) { checkPlayerRegion(event.getPlayer(), false); }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         currentRegions.remove(uuid);
-        appliedEffects.remove(uuid);
         lastMoveCheck.remove(uuid);
     }
 
@@ -74,9 +68,6 @@ public class EffectManager implements Listener {
         if (!forceUpdate && !changed) return;
 
         if (changed) {
-            List<PotionEffectType> oldEffects = appliedEffects.getOrDefault(uuid, new ArrayList<>());
-            for (PotionEffectType type : oldEffects) player.removePotionEffect(type);
-            appliedEffects.remove(uuid);
             currentRegions.put(uuid, newRegion);
         }
 
@@ -86,17 +77,15 @@ public class EffectManager implements Listener {
             List<String> effectsStr = rd != null ? rd.getEffects() : null;
 
             if (effectsStr != null && !effectsStr.isEmpty()) {
-
                 if (changed && !isMember && effectsStr.stream().anyMatch(e -> e.startsWith("ALERTS"))) {
                     String cdKey = region.getId() + ":" + player.getName();
-                    if (System.currentTimeMillis() - alertCooldowns.getOrDefault(cdKey, 0L) > 60000) {
+                    if (alertCooldowns.getIfPresent(cdKey) == null) {
                         alertCooldowns.put(cdKey, System.currentTimeMillis());
                         String owner = rd.getOwner() != null ? rd.getOwner() : "";
                         plugin.getNotificationManager().sendIntruderAlert(region.getId(), owner, region.getType(), player.getName());
                     }
                 }
 
-                List<PotionEffectType> currentApplied = new ArrayList<>();
                 for (String effStr : effectsStr) {
                     String[] split = effStr.split(":");
                     String effName = split[0].toUpperCase();
@@ -109,12 +98,17 @@ public class EffectManager implements Listener {
 
                         if ((target.equals("MEMBERS") && isMember) || (target.equals("ENEMIES") && !isMember)) {
                             int amplifier = split.length > 1 ? Integer.parseInt(split[1]) : 0;
-                            player.addPotionEffect(new PotionEffect(type, -1, amplifier, true, false, true));
-                            currentApplied.add(type);
+
+                            PotionEffect active = player.getPotionEffect(type);
+                            if (active != null) {
+                                if (active.getAmplifier() > amplifier) continue;
+                                if (active.getAmplifier() == amplifier && active.getDuration() > 100) continue;
+                            }
+
+                            player.addPotionEffect(new PotionEffect(type, 60, amplifier, true, false, true));
                         }
                     }
                 }
-                appliedEffects.put(uuid, currentApplied);
             }
         }
     }
@@ -124,8 +118,7 @@ public class EffectManager implements Listener {
         if (rd != null) {
             rd.getEffects().removeIf(e -> e.startsWith(effectName + ":"));
             rd.getEffects().add(effectName + ":" + amplifier);
-            plugin.getStorageManager().saveRegion(rd);
-
+            plugin.getStorageManager().forceSave(rd);
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (Player p : Bukkit.getOnlinePlayers()) checkPlayerRegion(p, true);
             });

@@ -28,10 +28,10 @@ public class PAPIExpansion extends PlaceholderExpansion {
         if (player == null) return "";
 
         PSRegion region = PSRegion.fromLocation(player.getLocation());
-        if (region == null) return "Нет привата";
+        if (region == null) return plugin.getLanguageManager().getRawMessage("papi_no_region");
 
         RegionData rd = plugin.getStorageManager().getRegion(region.getId());
-        if (rd == null) return "Загрузка...";
+        if (rd == null) return plugin.getLanguageManager().getRawMessage("papi_loading");
 
         if (params.equalsIgnoreCase("standing_durability")) {
             return String.valueOf(rd.getDurability());

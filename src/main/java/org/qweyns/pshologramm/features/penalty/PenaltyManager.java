@@ -1,41 +1,41 @@
 package org.qweyns.pshologramm.features.penalty;
 
-import org.bukkit.configuration.file.FileConfiguration;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.qweyns.pshologramm.PSHologramm;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PenaltyManager {
     private final PSHologramm plugin;
-    private final Map<String, Long> lastAttacked = new HashMap<>();
+
+    private final Cache<String, Long> activePenalties;
 
     public PenaltyManager(PSHologramm plugin) {
         this.plugin = plugin;
+
+        long durationTicks = plugin.getConfigManager().getDamageCooldownTicks();
+        long durationMinutes = (durationTicks / 20) / 60;
+        if (durationMinutes <= 0) durationMinutes = 60;
+
+        activePenalties = CacheBuilder.newBuilder()
+                .expireAfterWrite(durationMinutes, TimeUnit.MINUTES)
+                .build();
     }
 
     public void markAttacked(String regionId) {
-        lastAttacked.put(regionId, System.currentTimeMillis());
+        activePenalties.put(regionId, System.currentTimeMillis());
     }
 
     public boolean hasPenalty(String regionId) {
-        if (!lastAttacked.containsKey(regionId)) return false;
-        FileConfiguration config = plugin.getConfigManager().getConfig();
-        long penaltySeconds = config.getLong("settings.explosion_penalty_time", 300); // По умолчанию 5 минут
+        return activePenalties.getIfPresent(regionId) != null;
+    }
 
-        long timePassed = (System.currentTimeMillis() - lastAttacked.get(regionId)) / 1000;
-        if (timePassed > penaltySeconds) {
-            lastAttacked.remove(regionId);
-            return false;
-        }
-        return true;
+    public void removeRegion(String regionId) {
+        activePenalties.invalidate(regionId);
     }
 
     public int getPenaltyMultiplier() {
         return plugin.getConfigManager().getConfig().getInt("settings.explosion_penalty_multiplier", 2);
-    }
-
-    public void removeRegion(String regionId) {
-        lastAttacked.remove(regionId);
     }
 }

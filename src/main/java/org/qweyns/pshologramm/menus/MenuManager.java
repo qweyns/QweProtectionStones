@@ -19,6 +19,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
@@ -39,6 +40,24 @@ import java.util.regex.Pattern;
 public class MenuManager implements Listener {
     private final PSHologramm plugin;
     private final Map<String, FileConfiguration> menus = new HashMap<>();
+
+    private final Map<UUID, Long> clickCooldowns = new HashMap<>();
+
+    public static String getRomanNumeral(int amplifier) {
+        if (amplifier <= 0) return "";
+        return switch (amplifier) {
+            case 1 -> " II";
+            case 2 -> " III";
+            case 3 -> " IV";
+            case 4 -> " V";
+            case 5 -> " VI";
+            case 6 -> " VII";
+            case 7 -> " VIII";
+            case 8 -> " IX";
+            case 9 -> " X";
+            default -> " " + (amplifier + 1);
+        };
+    }
 
     public MenuManager(PSHologramm plugin) {
         this.plugin = plugin;
@@ -75,7 +94,7 @@ public class MenuManager implements Listener {
             text = text.replace("%region_id%", region.getId());
             if (text.contains("%penalty%")) {
                 int pen = plugin.getPenaltyManager().hasPenalty(region.getId()) ? plugin.getPenaltyManager().getPenaltyMultiplier() : 0;
-                text = text.replace("%penalty%", pen > 0 ? String.valueOf(pen) : plugin.getConfigManager().getRawMessage("no_penalty"));
+                text = text.replace("%penalty%", pen > 0 ? String.valueOf(pen) : plugin.getLanguageManager().getRawMessage("no_penalty"));
             }
             Matcher m = Pattern.compile("(?i)%effect_level_([a-zA-Z_]+)%").matcher(text);
             while (m.find()) {
@@ -105,7 +124,7 @@ public class MenuManager implements Listener {
     public void openMenu(Player player, String menuName, PSRegion region) {
         FileConfiguration menuCfg = menus.get(menuName);
         if (menuCfg == null) {
-            player.sendMessage(plugin.getConfigManager().getMessage("menu_not_found", "%menu%", menuName));
+            player.sendMessage(plugin.getLanguageManager().getMessage("menu_not_found", "%menu%", menuName));
             return;
         }
 
@@ -189,7 +208,7 @@ public class MenuManager implements Listener {
                         continue;
                     }
 
-                    int cost = calculateUpgradeCost(curDur, targetLevel, region.getId());
+                    long cost = calculateUpgradeCost(curDur, targetLevel, region.getId());
                     Map<String, String> extra = getDynamicPlaceholders(menuName, region);
                     extra.put("%level%", String.valueOf(targetLevel));
                     extra.put("%cost%", String.valueOf(cost));
@@ -299,10 +318,10 @@ public class MenuManager implements Listener {
         return head;
     }
 
-    private int calculateUpgradeCost(int current, int target, String regionId) {
-        int total = 0;
-        int multiplier = plugin.getConfigManager().getUpgradeMultiplier();
-        int tax = plugin.getConfigManager().getConfig().getInt("settings.upgrade_tax", 0);
+    private long calculateUpgradeCost(int current, int target, String regionId) {
+        long total = 0;
+        long multiplier = plugin.getConfigManager().getUpgradeMultiplier();
+        long tax = plugin.getConfigManager().getConfig().getInt("settings.upgrade_tax", 0);
         for (int i = current + 1; i <= target; i++) total += (i * multiplier) + tax;
         if (plugin.getPenaltyManager().hasPenalty(regionId)) total *= plugin.getPenaltyManager().getPenaltyMultiplier();
         return total;
@@ -312,7 +331,6 @@ public class MenuManager implements Listener {
         for (String key : reqs.getKeys(false)) {
             String type = reqs.getString(key + ".type");
 
-            // Использование Хуков (безопасно)
             if (type.equals("has money") && !plugin.getVaultHook().hasMoney(player, reqs.getDouble(key + ".amount"))) return false;
             if (type.equals("has points") && !plugin.getPlayerPointsHook().hasPoints(player, reqs.getInt(key + ".amount"))) return false;
 
@@ -335,16 +353,30 @@ public class MenuManager implements Listener {
             if (holder.updateTask != null) holder.updateTask.cancel();
             if (holder.animator != null) holder.animator.cancel();
         }
+        clickCooldowns.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof CustomHolder) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!(event.getInventory().getHolder() instanceof CustomHolder holder)) return;
+
         event.setCancelled(true);
+
+        Player player = (Player) event.getWhoClicked();
+
+        long now = System.currentTimeMillis();
+        if (now - clickCooldowns.getOrDefault(player.getUniqueId(), 0L) < 300L) return;
+        clickCooldowns.put(player.getUniqueId(), now);
 
         if (event.getClickedInventory() == null || !event.getClickedInventory().equals(event.getView().getTopInventory())) return;
 
-        Player player = (Player) event.getWhoClicked();
         FileConfiguration menuCfg = menus.get(holder.menuName);
         if (menuCfg == null || holder.baseLayer == null || event.getSlot() >= holder.baseLayer.length || holder.baseLayer[event.getSlot()] == null) return;
 
@@ -356,37 +388,54 @@ public class MenuManager implements Listener {
                 int curDur = rd != null ? rd.getDurability() : 1;
                 int targetLevel = curDur + slotIndex + 1;
                 int maxDur = plugin.getConfigManager().getMaxDurability(holder.region.getType());
-                if (targetLevel > maxDur) { player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f); return; }
 
-                int totalCost = calculateUpgradeCost(curDur, targetLevel, holder.region.getId());
-                Material upgradeMat = plugin.getConfigManager().getUpgradeItem();
-                ItemStack[] storage = player.getInventory().getStorageContents();
-                int count = 0;
-                for (ItemStack is : storage) if (is != null && is.getType() == upgradeMat) count += is.getAmount();
-
-                if (count < totalCost) {
-                    player.sendMessage(plugin.getConfigManager().getMessage("upgrade_not_enough_items", "%amount%", String.valueOf(totalCost), "%item%", "<translate:" + upgradeMat.translationKey() + ">"));
+                if (targetLevel > maxDur) {
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                     return;
                 }
 
-                int needed = totalCost;
+                long totalCost = calculateUpgradeCost(curDur, targetLevel, holder.region.getId());
+                Material upgradeMat = plugin.getConfigManager().getUpgradeItem();
+                ItemStack[] storage = player.getInventory().getStorageContents();
+                long count = 0;
+
+                for (ItemStack is : storage) {
+                    if (is != null && is.getType() == upgradeMat) count += is.getAmount();
+                }
+
+                if (count < totalCost) {
+                    player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_not_enough_items", "%amount%", String.valueOf(totalCost), "%item%", "<translate:" + upgradeMat.translationKey() + ">"));
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                    return;
+                }
+
+                long needed = totalCost;
                 for (int i = 0; i < storage.length; i++) {
                     ItemStack item = storage[i];
                     if (item != null && item.getType() == upgradeMat) {
-                        if (item.getAmount() <= needed) { needed -= item.getAmount(); player.getInventory().setItem(i, null); }
-                        else { item.setAmount(item.getAmount() - needed); player.getInventory().setItem(i, item); needed = 0; }
+                        if (item.getAmount() <= needed) {
+                            needed -= item.getAmount();
+                            player.getInventory().setItem(i, null);
+                        } else {
+                            item.setAmount((int) (item.getAmount() - needed));
+                            player.getInventory().setItem(i, item);
+                            needed = 0;
+                        }
                         if (needed <= 0) break;
                     }
                 }
                 player.updateInventory();
 
-                if (rd != null) { rd.setDurability(targetLevel); plugin.getStorageManager().saveRegion(rd); }
+                if (rd != null) {
+                    rd.setDurability(targetLevel);
+                    plugin.getStorageManager().forceSave(rd);
+                }
+
                 String ownerName = rd != null ? rd.getOwner() : "";
                 plugin.getHologramManager().createOrUpdateHologram(holder.region.getId(), holder.region.getProtectBlock().getLocation(), holder.region.getType(), ownerName, targetLevel, maxDur);
 
                 player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 1f);
-                player.sendMessage(plugin.getConfigManager().getMessage("upgrade_success", "%durability%", String.valueOf(targetLevel)));
+                player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_success", "%durability%", String.valueOf(targetLevel)));
                 renderMenuContent(player, holder.region, holder.menuName, event.getInventory(), holder);
                 return;
             }
@@ -399,6 +448,7 @@ public class MenuManager implements Listener {
 
         for (String key : keys) {
             ConfigurationSection itemCfg = items.getConfigurationSection(key);
+
             if (itemCfg.contains("view_requirement.requirements") && !checkRequirements(itemCfg.getConfigurationSection("view_requirement.requirements"), player, holder.region)) continue;
 
             List<Integer> slots = new ArrayList<>();
@@ -412,6 +462,7 @@ public class MenuManager implements Listener {
                     executeCommands(player, itemCfg.getStringList("click_requirement.deny_commands"), holder.region);
                     return;
                 }
+
                 executeCommands(player, itemCfg.contains("left_click_commands") ? itemCfg.getStringList("left_click_commands") : itemCfg.getStringList("click_commands"), holder.region);
                 break;
             }
@@ -441,21 +492,33 @@ public class MenuManager implements Listener {
             else if (cmd.startsWith("[console] ")) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.substring(10));
             else if (cmd.startsWith("[sound] ")) { try { player.playSound(player.getLocation(), Sound.valueOf(cmd.substring(8)), 1f, 1f); } catch (Exception ignored) {} }
             else if (cmd.startsWith("[connect] ")) { ByteArrayDataOutput out = ByteStreams.newDataOutput(); out.writeUTF("Connect"); out.writeUTF(cmd.substring(10)); player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray()); }
+
             else if (cmd.startsWith("[takemoney] ")) plugin.getVaultHook().takeMoney(player, Double.parseDouble(cmd.substring(12)));
             else if (cmd.startsWith("[takeexp] ")) player.setLevel(Math.max(0, player.getLevel() - Integer.parseInt(cmd.substring(10))));
             else if (cmd.startsWith("[takepoints] ")) plugin.getPlayerPointsHook().takePoints(player, Integer.parseInt(cmd.substring(13)));
+
             else if (cmd.startsWith("[ps_add_effect] ")) {
                 if (region != null) {
                     String[] split = cmd.substring(16).split(":");
-                    plugin.getEffectManager().addCustomEffect(region.getId(), split[0], split.length > 1 ? Integer.parseInt(split[1]) : 0);
+                    int amp = split.length > 1 ? Integer.parseInt(split[1]) : 0;
+
+                    plugin.getEffectManager().addCustomEffect(region.getId(), split[0], amp);
+
                     String translation;
-                    if (split[0].equalsIgnoreCase("ALERTS")) translation = "Оповещения о рейдах";
-                    else if (split[0].equalsIgnoreCase("EXP_BOOST")) translation = "Буст опыта";
-                    else {
+                    if (split[0].equalsIgnoreCase("ALERTS")) {
+                        translation = plugin.getLanguageManager().getRawMessage("effect_alerts");
+                    } else if (split[0].equalsIgnoreCase("EXP_BOOST")) {
+                        translation = plugin.getLanguageManager().getRawMessage("effect_exp_boost");
+                    } else {
                         org.bukkit.potion.PotionEffectType pType = org.bukkit.potion.PotionEffectType.getByName(split[0]);
                         translation = pType != null ? "<translate:" + pType.translationKey() + ">" : split[0];
                     }
-                    player.sendMessage(plugin.getConfigManager().getMessage("effect_bought", "%effect%", translation));
+
+                    if (amp > 0) {
+                        translation += getRomanNumeral(amp);
+                    }
+
+                    player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought", "%effect%", translation));
                 }
             }
         }

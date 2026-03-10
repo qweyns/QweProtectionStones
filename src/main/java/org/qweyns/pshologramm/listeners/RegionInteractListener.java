@@ -42,13 +42,12 @@ public class RegionInteractListener implements Listener {
 
         event.setCancelled(true);
 
-        String action = plugin.getConfigManager().getConfig().getString("settings.on_block_click.action", "MENU");
+        String action = plugin.getConfigManager().getConfig().getString("settings.custom_menus.main.action", "MENU");
 
         if (action.equalsIgnoreCase("COMMAND")) {
-            List<String> commands = plugin.getConfigManager().getConfig().getStringList("settings.on_block_click.commands");
+            List<String> commands = plugin.getConfigManager().getConfig().getStringList("settings.custom_menus.main.commands");
             for (String cmd : commands) {
                 String parsedCmd = cmd.replace("%player%", player.getName()).replace("%region_id%", region.getId());
-
                 if (parsedCmd.startsWith("[console] ")) {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd.substring(10));
                 } else {

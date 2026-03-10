@@ -1,5 +1,7 @@
 package org.qweyns.pshologramm.features.notification;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.qweyns.pshologramm.PSHologramm;
@@ -10,9 +12,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class NotificationManager {
     private final PSHologramm plugin;
+
+    private final Cache<String, Long> webhookRateLimiter = CacheBuilder.newBuilder()
+            .expireAfterWrite(15, TimeUnit.SECONDS)
+            .build();
 
     public NotificationManager(PSHologramm plugin) { this.plugin = plugin; }
 
@@ -28,16 +35,15 @@ public class NotificationManager {
         org.bukkit.entity.Player owner = Bukkit.getPlayer(ownerName);
 
         if (owner != null && owner.isOnline()) {
-            owner.sendMessage(plugin.getConfigManager().getMessage("region_under_attack_chat",
-                    "%type%", regionType, "%x%", String.valueOf(loc.getBlockX()),
-                    "%y%", String.valueOf(loc.getBlockY()), "%z%", String.valueOf(loc.getBlockZ())));
+            owner.sendMessage(plugin.getConfigManager().getMessage("region_under_attack_chat", "%type%", regionType, "%x%", String.valueOf(loc.getBlockX()), "%y%", String.valueOf(loc.getBlockY()), "%z%", String.valueOf(loc.getBlockZ())));
             owner.playSound(owner.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
         }
 
+        if (webhookRateLimiter.getIfPresent(regionId + "_attack") != null) return;
+        webhookRateLimiter.put(regionId + "_attack", System.currentTimeMillis());
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String rawMessage = plugin.getConfigManager().getRawMessage("region_under_attack_raw",
-                    "%type%", regionType, "%x%", String.valueOf(loc.getBlockX()),
-                    "%y%", String.valueOf(loc.getBlockY()), "%z%", String.valueOf(loc.getBlockZ())).replace("\n", " ");
+            String rawMessage = plugin.getConfigManager().getRawMessage("region_under_attack_raw", "%type%", regionType, "%x%", String.valueOf(loc.getBlockX()), "%y%", String.valueOf(loc.getBlockY()), "%z%", String.valueOf(loc.getBlockZ())).replace("\n", " ");
             sendWebhooks(cfg, rawMessage);
         });
     }
@@ -47,14 +53,15 @@ public class NotificationManager {
         org.bukkit.entity.Player owner = Bukkit.getPlayer(ownerName);
 
         if (owner != null && owner.isOnline()) {
-            owner.sendMessage(plugin.getConfigManager().getMessage("intruder_alert_chat",
-                    "%type%", regionType, "%intruder%", intruderName));
+            owner.sendMessage(plugin.getConfigManager().getMessage("intruder_alert_chat", "%type%", regionType, "%intruder%", intruderName));
             owner.playSound(owner.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 1f, 1f);
         }
 
+        if (webhookRateLimiter.getIfPresent(regionId + "_intrude") != null) return;
+        webhookRateLimiter.put(regionId + "_intrude", System.currentTimeMillis());
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String rawMessage = plugin.getConfigManager().getRawMessage("intruder_alert_raw",
-                    "%type%", regionType, "%intruder%", intruderName).replace("\n", " ");
+            String rawMessage = plugin.getConfigManager().getRawMessage("intruder_alert_raw", "%type%", regionType, "%intruder%", intruderName).replace("\n", " ");
             sendWebhooks(cfg, rawMessage);
         });
     }

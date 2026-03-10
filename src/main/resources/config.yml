@@ -16,6 +16,15 @@ database:
 
 # --- ОСНОВНЫЕ НАСТРОЙКИ ПЛАГИНА ---
 settings:
+  # Выбор языка из папки /lang/
+  # Доступно по умолчанию: ru_RU, en_US, es_ES, zh_CN
+  # Вы можете создать свой файл, например my_lang.yml, и написать тут "my_lang"
+  language: "ru_RU"
+  # Если вы изменили главную команду плагина ProtectionStones, впишите её сюда.
+  # Это нужно, чтобы наш аддон понимал, какие команды перехватывать.
+  ps_aliases:
+    - "ps"
+    - "pstone"
   # Предмет, которым оплачивается прокачка "Прочности" в меню (upgrade.yml)
   upgrade_item: "NETHERITE_INGOT"
   # Множитель цены для каждого уровня (Пример: 3 уровень * 3 = 9 слитков)
@@ -41,12 +50,31 @@ settings:
     # Разрешить ли ставить свой приват вплотную/внутрь своего другого привата? (false = запретить)
     enable: false
 
-  on_block_click:
-    # "MENU" - открывать встроенное меню плагина PSHologramm
-    # "COMMAND" - выполнять команды из списка ниже (для интеграции с DeluxeMenus)
-    action: "MENU"
-    commands:
-      - "[console] dm open custom_ps_menu %player%"
+    # Настройка интеграции со сторонними меню (Headless Mode)
+    # Если action = "MENU", будут открываться встроенные меню PSHologramm.
+    # Если action = "COMMAND", плагин выполнит команды из списка commands.
+
+    # Доступные плейсхолдеры для команд:
+    # %player% - ник игрока
+    # %region_id% - название привата, в котором стоит игрок
+    custom_menus:
+      main: # /ps menu
+        action: "MENU" # MENU или COMMAND
+        commands:
+          - "[console] dm open custom_ps_main %player%"
+      upgrade: # /ps upgrade
+        action: "MENU"
+        commands:
+          - "[console] dm open custom_ps_upgrade %player%"
+      effects: # /ps effects
+        action: "MENU"
+        commands:
+          - "[console] dm open custom_ps_effects %player%"
+
+      # --- ВАШИ СОБСТВЕННЫЕ КОМАНДЫ ---
+    #  stats: # /ps stats
+    #    commands: # Для своих команд параметр action указывать не нужно, они всегда работают как COMMAND
+    #      - "[message] &aСтатистика региона %region_id%"
 
 # --- ЦЕЛИ ЭФФЕКТОВ ---
 # На кого действуют эффекты внутри привата?
@@ -62,52 +90,6 @@ effect_targets:
   HEALTH_BOOST: MEMBERS
   SLOW: ENEMIES
   WITHER: ENEMIES
-
-# --- СООБЩЕНИЯ ПЛАГИНА В ЧАТЕ ---
-messages:
-  # Префикс плагина (используйте плейсхолдер %prefix% в текстах ниже, чтобы вставить его)
-  prefix: "&#FFaa00[Приваты] &f"
-  no_permission: "&cУ вас нет прав!"
-  reload_success: "&aПлагин успешно перезагружен!"
-  shift_place_prevented: "%prefix%&cНельзя ставить блок привата с зажатым Shift!"
-  merge_disabled: "&cВаш приват пересекается с чужим!"
-  not_in_region: "&cВы должны находиться внутри привата!"
-  not_a_member: "&cВы не участник этого привата!"
-  not_an_owner: "&cВы не владелец этого привата!"
-  no_region_nearby: "&cПоблизости нет приватов!"
-  menu_not_found: "&cМеню %menu% не найдено в папке menus!"
-  too_far_from_block: "&cВы должны находиться не дальше 6 блоков от центрального блока привата!"
-
-  # Команда /ps glow
-  glow_enabled: "&aОтображение границ включено!"
-  glow_disabled: "&cОтображение границ отключено."
-
-  # Система авто-добавления (/ps autoadd)
-  autoadd_enabled: "&aАвто-добавление включено."
-  autoadd_disabled: "&cАвто-добавление отключено."
-  autoadd_player_added: "&aИгрок %player% добавлен в авто-добавление."
-  autoadd_player_removed: "&cИгрок %player% удален."
-  autoadd_player_not_found: "&eИгрок не найден."
-  autoadd_list_header: "&8=== &dАвто-добавление &8==="
-  autoadd_list_empty: "&7Список пуст."
-  autoadd_list_players: "&7Игроки: &a%players%"
-
-  # Сообщения покупки в меню
-  effect_bought: "&aУлучшение %effect% успешно куплено!"
-  upgrade_not_enough_items: "&cВам не хватает: &e%amount% %item%"
-  upgrade_success: "&aПрочность успешно улучшена до %durability%!"
-  upgrade_penalty: "&cВнимание: Цена увеличена в %multiplier% раз (Штраф)!"
-
-  # Технические слова для плейсхолдеров
-  no_penalty: "нету"
-  unknown_owner: "Неизвестно"
-  damage_indicator: "&c&l-1 ❤"
-
-  # Оповещения об атаке и вторжении (Для эффекта ALERTS)
-  region_under_attack_chat: "&c&lВНИМАНИЕ! &eВаш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
-  region_under_attack_raw: "**ВНИМАНИЕ!** Ваш приват (%type%) атакуют! X:%x% Y:%y% Z:%z%"
-  intruder_alert_chat: "%prefix%&c⚠ Внимание! &e%intruder% &cвторгся на вашу территорию (&f%type%&c)!"
-  intruder_alert_raw: "⚠ Внимание! Игрок %intruder% вторгся на вашу территорию (%type%)!"
 
 # --- ВИЗУАЛЬНЫЕ НАСТРОЙКИ ---
 visuals:
@@ -131,10 +113,10 @@ notifications:
 
 # --- СТАНДАРТНЫЙ ПРИВАТ (Если блок не описан в секции regions) ---
 default_region:
-  name: "&#FFaa00Обычный Приват"
+  name: "<#FFaa00>Обычный Приват"
   lines:
-    - "&fВладелец: &#FFaa00%player%"
-    - "&fПрочность: &#FF5555%durability% &8/ &c%max_durability%"
+    - "<#F0F0F0>Владелец: <#FFaa00>%player%"
+    - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
   # Включить ли механику ХП (прочности)?
   enable_durability_upgrade: true
   start_durability: 2
@@ -149,12 +131,15 @@ default_region:
   explosions:
     TNT: true
     WITHER: true
+    CREEPER: false
+    ENDER_CRYSTAL: false
+    BED: false
   # Какие эффекты можно купить в этом привате? (Оставьте пустым [], чтобы запретить все)
   allowed_effects: []
-  
+
   # Настройки Голограммы
   hologram-type: "MODERN" # MODERN - FancyHolograms, LEGACY - DecentHolograms
-  hologram_offset: 2.5 # Высота текста над блоком
+  hologram_offset: 1.1 # Высота текста над блоком
   hologram_display_range: 15 # Дистанция отрисовки в блоках
   fancyholograms_settings:
     shadow: true # Тень от текста
@@ -187,16 +172,16 @@ regions:
 
     # Линии голограммы. Поддерживают HEX (&#RRGGBB) и плейсхолдеры.
     lines:
-      - "  &#00FBFF💎 &#00FBFF&lАЛМАЗНЫЙ РЕГИОН &#00FBFF💎  "
+      - "  <#00d8ff>Маленький приват  "
       - ""
-      - "&f🛡 Владелец: &#00FBFF%player%"
-      - "&f🛡 Прочность: &#4DE2FF%durability% &#8B969A/ &#00FBFF%max_durability% &b✦"
-      - "&f"
+      - "  <#F0F0F0>Владелец: <#00d8ff>%player%  "
+      - "  <#F0F0F0>Прочность: <#00d8ff>[ %durability% / %max_durability% ]  "
+      - ""
 
     # Настройки ХП (для премиум-блока делаем выше)
-    enable_durability_upgrade: true
-    start_durability: 5
-    max_durability: 25
+    enable_durability_upgrade: false
+    start_durability: 1
+    max_durability: 1
 
     spawn-egg-use: true
     shift_to_place_normal_block: true
@@ -205,13 +190,198 @@ regions:
     explosions:
       TNT: true
       WITHER: true
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
 
     # Для Алмазного привата разрешаем покупку всех этих эффектов
     allowed_effects:
-      - "FAST_DIGGING"
       - "SPEED"
-      - "ALERTS"
+      - "SLOW"
+
+    hologram-type: "MODERN"
+    hologram_offset: 1.1
+    hologram_display_range: 20
+
+    fancyholograms_settings:
+      shadow: true
+      scale: 1.1
+      billboard: "CENTER"
+
+    create:
+      sound: "BLOCK_BEACON_ACTIVATE"
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+    damage:
+      sound: "BLOCK_GLASS_BREAK"
+      volume: 1.0
+      pitch: 0.8
+      lightning: false
+
+    remove:
+      sound: "BLOCK_BEACON_DEACTIVATE"
+      volume: 1.0
+      pitch: 1.0
+      lightning: true
+
+  DEEPSLATE_EMERALD_ORE:
+    name: "&f"
+    lines:
+      - "  <#fc6f00>Средний приват  "
+      - ""
+      - "  <#F0F0F0>Владелец: <#fc6f00>%player%  "
+      - "  <#F0F0F0>Прочность: <#fc6f00>[ %durability% / %max_durability% ]  "
+      - ""
+
+    enable_durability_upgrade: false
+    start_durability: 1
+    max_durability: 1
+
+    spawn-egg-use: true
+    shift_to_place_normal_block: true
+    hologram: true
+
+    explosions:
+      TNT: true
+      WITHER: true
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
+
+    allowed_effects:
+      - "SPEED"
+      - "SLOW"
       - "EXP_BOOST"
+      - "INCREASE_DAMAGE"
+
+    hologram-type: "MODERN"
+    hologram_offset: 1.1
+    hologram_display_range: 20
+
+    fancyholograms_settings:
+      shadow: true
+      scale: 1.1
+      billboard: "CENTER"
+
+    create:
+      sound: "BLOCK_BEACON_ACTIVATE"
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+    damage:
+      sound: "BLOCK_GLASS_BREAK"
+      volume: 1.0
+      pitch: 0.8
+      lightning: false
+
+    remove:
+      sound: "BLOCK_BEACON_DEACTIVATE"
+      volume: 1.0
+      pitch: 1.0
+      lightning: true
+
+  ANCIENT_DEBRIS:
+    name: "&f"
+    lines:
+      - "  <gradient:#F8BA47:#FF9F41>Большой приват</gradient>  "
+      - ""
+      - "  <#F0F0F0>Владелец: <gradient:#F8BA47:#FF9F41>%player%</gradient>  "
+      - "  <#F0F0F0>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  "
+      - ""
+      - "  Этот приват почти <gradient:#F8BA47:#FF9F41>невозможно</gradient>  "
+      - "  <gradient:#F8BA47:#FF9F41>взорвать, загриферить, найти</gradient>  "
+      - ""
+
+    enable_durability_upgrade: true
+    start_durability: 4
+    max_durability: 24
+
+    spawn-egg-use: true
+    shift_to_place_normal_block: true
+    hologram: true
+
+    explosions:
+      TNT: true
+      WITHER: true
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
+
+    allowed_effects:
+      - "SPEED"
+      - "SLOW"
+      - "EXP_BOOST"
+      - "INCREASE_DAMAGE"
+      - "INVISIBILITY"
+      - "FAST_DIGGING"
+
+    hologram-type: "MODERN"
+    hologram_offset: 1.1
+    hologram_display_range: 20
+
+    fancyholograms_settings:
+      shadow: true
+      scale: 1.1
+      billboard: "CENTER"
+
+    create:
+      sound: "BLOCK_BEACON_ACTIVATE"
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+    damage:
+      sound: "BLOCK_GLASS_BREAK"
+      volume: 1.0
+      pitch: 0.8
+      lightning: false
+
+    remove:
+      sound: "BLOCK_BEACON_DEACTIVATE"
+      volume: 1.0
+      pitch: 1.0
+      lightning: true
+
+  RED_MUSHROOM_BLOCK:
+    name: "&f"
+    lines:
+      - "  <gradient:#F84747:#DD4141>Огромный приват</gradient>  "
+      - ""
+      - "  <#F0F0F0>Владелец: <gradient:#F84747:#DD4141>%player%</gradient>  "
+      - "  <#F0F0F0>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  "
+      - ""
+      - "  Этот приват почти <gradient:#F84747:#DD4141>невозможно</gradient>  "
+      - "  <gradient:#F84747:#DD4141>взорвать, загриферить, найти</gradient>  "
+      - ""
+
+    enable_durability_upgrade: true
+    start_durability: 8
+    max_durability: 48
+
+    spawn-egg-use: true
+    shift_to_place_normal_block: true
+    hologram: true
+
+    explosions:
+      TNT: true
+      WITHER: false
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
+
+    allowed_effects:
+      - "SPEED"
+      - "SLOW"
+      - "EXP_BOOST"
+      - "INCREASE_DAMAGE"
+      - "INVISIBILITY"
+      - "FAST_DIGGING"
+      - "HEALTH_BOOST"
+      - "WITHER"
+      - "ALERTS"
 
     hologram-type: "MODERN"
     hologram_offset: 1.1

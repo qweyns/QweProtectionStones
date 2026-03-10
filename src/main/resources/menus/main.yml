@@ -1,15 +1,18 @@
-menu_title: "&8Управление регионом"
+# ============
+# ГЛАВНОЕ МЕНЮ
+# ============
+menu_title: "<bold><gradient:#c21500:#ffc500>Управление регионом</gradient></bold>"
 size: 27
 items:
   upgrade_btn:
     slot: 11
     material: ANCIENT_DEBRIS
-    display_name: "&aУлучшить прочность"
+    display_name: "<bold><gradient:#E67E22:#F39C12>Улучшить прочность</gradient></bold>"
     lore:
-      - "&7Нажмите, чтобы перейти к"
-      - "&7укреплению защиты привата."
+      - "<#BDC3C7>▪ Нажмите, чтобы перейти к"
+      - "<#BDC3C7>  укреплению защиты привата."
       - ""
-      - "&fШтраф от недавних атак: &c%penalty%"
+      - "<#E74C3C>⚠ Штраф от недавних атак: <#F1C40F>%penalty%"
     click_commands:
       - "[openguimenu] upgrade"
       - "[sound] UI_BUTTON_CLICK"
@@ -17,10 +20,10 @@ items:
   effects_btn:
     slot: 15
     material: BEACON
-    display_name: "&eМагазин эффектов"
+    display_name: "<bold><gradient:#00B4DB:#0083B0>Магазин эффектов</gradient></bold>"
     lore:
-      - "&7Покупка постоянных баффов,"
-      - "&7уведомлений и бустеров."
+      - "<#BDC3C7>▪ Покупка постоянных баффов,"
+      - "<#BDC3C7>  уведомлений и бустеров."
     click_commands:
       - "[openguimenu] effects"
       - "[sound] UI_BUTTON_CLICK"
@@ -28,7 +31,7 @@ items:
   close_btn:
     slot: 22
     material: BARRIER
-    display_name: "&cЗакрыть"
+    display_name: "<bold><#E74C3C>Закрыть</bold>"
     click_commands:
       - "[close]"
       - "[sound] UI_BUTTON_CLICK"
@@ -38,16 +41,16 @@ items:
   # ==========================================
   anim_cover:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: "&8Запуск интерфейса..."
+    display_name: "<#7F8C8D>Запуск систем защиты..."
   anim_bg:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: " "
+    display_name: "<white> "
   anim_bg2:
     material: GRAY_STAINED_GLASS_PANE
-    display_name: " "
+    display_name: "<white> "
   anim_chain:
     material: CHAIN
-    display_name: " "
+    display_name: "<white> "
 
 # ==========================================
 # ДВИЖОК АНИМАЦИИ (Без миганий)

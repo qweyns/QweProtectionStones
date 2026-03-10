@@ -1,4 +1,7 @@
-menu_title: "&8Прочность региона"
+# =============
+# МЕНЮ ПРОКАЧКИ
+# =============
+menu_title: "<bold><gradient:#E67E22:#F39C12>Прочность региона</gradient></bold>"
 size: 27
 upgrade_slots:
   - 12
@@ -6,65 +9,70 @@ upgrade_slots:
   - 14
   - 15
   - 16
+
 upgrade_item_template:
   material: NETHERITE_INGOT
-  display_name: "&aУлучшить до %level% ед."
+  display_name: "<bold><gradient:#2ECC71:#27AE60>Улучшить до %level% ед.</gradient></bold>"
   lore:
-    - "&7Увеличивает защиту вашего"
-    - "&7привата от взрывов."
+    - "<#BDC3C7>▪ Увеличивает защиту вашего"
+    - "<#BDC3C7>  привата от взрывов."
     - ""
-    - "&fСтоимость: &e%cost% %item%"
+    - "<#95A5A6>Стоимость: <#F1C40F>%cost% %item%"
     - ""
-    - "&aНажмите, чтобы вложить ресурсы!"
+    - "<#2ECC71>▶ Нажмите, чтобы вложить ресурсы!"
 
 max_upgrade_item_template:
   material: BARRIER
-  display_name: "&cПредел прочности"
+  display_name: "<bold><#E74C3C>Предел прочности</bold>"
   lore:
-    - "&7Этот регион достиг"
-    - "&7максимальной защиты."
+    - "<#BDC3C7>▪ Этот регион достиг"
+    - "<#BDC3C7>  максимальной защиты."
     - ""
-    - "&a✔ Максимальный уровень!"
-
+    - "<#2ECC71>✔ Максимальный уровень!"
 
 items:
   region_core:
     slot: 10
     material: "%region_material%"
-    display_name: "&dЯдро привата"
+    display_name: "<bold><gradient:#9B59B6:#8E44AD>Ядро привата</gradient></bold>"
     lore:
-      - "&7Текущая прочность: &f%current%/%max%"
-      - "&7Штраф: &c%penalty%"
-
+      - "<#BDC3C7>▪ Текущая прочность: <white>%current%<#BDC3C7>/<white>%max%"
+      - "<#BDC3C7>▪ Штраф: <#E74C3C>%penalty%"
 
   back_btn:
     slot: 22
     material: ARROW
-    display_name: "&cНазад"
+    display_name: "<bold><#E74C3C>Назад</bold>"
     click_commands:
       - "[openguimenu] main"
       - "[sound] UI_BUTTON_CLICK"
 
+  # ==========================================
+  # ПРЕДМЕТЫ ДЛЯ АНИМАЦИИ
+  # ==========================================
   anim_cover:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: "&8Запуск интерфейса..."
+    display_name: "<#7F8C8D>Запуск интерфейса..."
 
   anim_bg:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: " "
+    display_name: "<white> "
 
   anim_bg2:
     material: GRAY_STAINED_GLASS_PANE
-    display_name: " "
+    display_name: "<white> "
 
   anim_chain:
     material: CHAIN
-    display_name: " "
+    display_name: "<white> "
 
   anim_spark:
     material: LIGHT_BLUE_STAINED_GLASS_PANE
-    display_name: "&b⚡ Передача энергии..."
+    display_name: "<bold><#3498DB>⚡ Передача энергии...</bold>"
 
+# ==========================================
+# ДВИЖОК АНИМАЦИИ
+# ==========================================
 animations:
   default:
     - tick: 0
@@ -143,6 +151,8 @@ animations:
       opcodes:
         - remove: 16
         - sound: BLOCK_NOTE_BLOCK_HAT 1.0 2.0
+    
+    # ⚡ Эффект передачи энергии от Ядра к Прокачке
     - tick: 60
       opcodes:
         - set: anim_spark 11
