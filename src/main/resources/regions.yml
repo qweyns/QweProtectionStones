@@ -1,0 +1,297 @@
+# ===========================================================================
+#  QweProtectStones — настройки приватов
+# ===========================================================================
+#  Здесь описываются блоки-ядра: размер территории, прочность, флаги,
+#  голограммы, звуки и всё остальное, что относится к самому привату.
+#
+#  Как это читается:
+#    default_region — значения по умолчанию для всех типов;
+#    region_types.<БЛОК> — то, чем конкретный тип отличается от умолчаний.
+#  Ключ, не указанный у типа, берётся из default_region. Указывать в типе
+#  нужно только отличия.
+#
+#  Ключ типа — это идентификатор материала Minecraft (DIAMOND_BLOCK и т.п.).
+#  Один материал может принадлежать только одному типу.
+#
+#  Плейсхолдеры в строках голограмм:
+#    %owner% %name% %durability% %max_durability% %members% %size%
+#    %id% %item% %siege% %penalty% %attacks%
+# ===========================================================================
+
+default_region:
+
+  # --- Внешний вид ---
+  display_name: "<#FFaa00>Приват"
+
+  hologram_lines:
+    - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
+    - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
+
+  # Строки во время осады. Если не задать — показываются обычные.
+  hologram_lines_under_attack:
+    - "<#FF5555>⚔ ПОД АТАКОЙ"
+    - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
+    - "<#F0F0F0>Прочность: <#FF5555>[ %durability% / %max_durability% ]"
+
+  # --- Территория ---
+  radius: 16              # половина стороны: 16 даёт площадку 33x33
+  # radius_x и radius_z задают неквадратную территорию и важнее radius:
+  # radius_x: 24
+  # radius_z: 8
+  radius_y: 64            # высота вверх и вниз от ядра
+  full_height: false      # true — territория от бедрока до неба, radius_y не нужен
+
+  # --- Прочность и прокачка ---
+  start_durability: 2
+  max_durability: 10
+  enable_durability_upgrade: true
+
+  upgrade:
+    item: ""              # пусто — общий предмет из config.yml
+    cost_multiplier: -1   # -1 — общее значение
+    tax: -1               # -1 — общее значение
+
+  # --- Лимиты и доступ ---
+  max_per_player: 0       # 0 — без ограничения
+  min_distance_to_others: 0
+  place_permission: ""
+  worlds: []              # пустой список — разрешено везде
+  worlds_mode: whitelist  # whitelist или blacklist
+
+  # --- Поведение ---
+  return_block_on_remove: true
+  spawn-egg-use: false
+  menu: ""                # какое меню открывает клик по ядру; пусто — выбрать само
+  border_color: ""        # цвет каркаса именно этого типа, например "#00FF00"
+
+  # Тексты при входе и выходе по умолчанию для типа. Владелец может задать
+  # свои через /ps greeting и /ps farewell — они важнее.
+  greeting: ""
+  farewell: ""
+
+  # --- Осада ---
+  raid_immune: false          # true — приват нельзя повредить взрывом вообще
+  damage_cooldown_ticks: -1   # -1 — общее значение из config.yml
+  explosion_damage_radius: -1 # -1 — общее значение
+
+  explosions:
+    TNT: true
+    WITHER: true
+    CREEPER: false
+    ENDER_CRYSTAL: false
+    BED: false
+
+  # --- Эффекты ---
+  allowed_effects: []
+
+  # --- Флаги ---
+  flags:
+    pvp: false
+    entry: true
+    public_access: false
+    monster_spawning: true
+    animal_spawning: true
+    animal_protection: true
+    mob_griefing: false
+    fire_spread: false
+    liquid_flow_in: false
+    pistons_from_outside: false
+    crop_trample: false
+    explosion_damage: false
+    teleport_in: true
+    item_pickup: true
+    greeting: true
+    leaf_decay: true
+    ice_and_snow: true
+    block_growth: true
+
+  # =========================================================================
+  #  Голограммы
+  # =========================================================================
+  hologram: true
+  hologram_provider: MODERN   # MODERN (FancyHolograms) или DECENT (DecentHolograms)
+  hologram_offset: 1.1        # высота над ядром
+  hologram_display_range: 16  # с какого расстояния видно
+
+  hologram_settings:
+    # --- работает у обоих провайдеров ---
+    update_interval: 20       # период обновления текста, тиков
+    see_through: false        # видно ли текст сквозь блоки
+    permission: ""            # право на просмотр; пусто — видно всем
+
+    # --- FancyHolograms ---
+    shadow: true              # тень у текста
+    scale: 1.0
+    billboard: CENTER         # CENTER, VERTICAL, HORIZONTAL или FIXED
+    text_alignment: CENTER    # LEFT, CENTER или RIGHT
+    background: ""            # подложка, например "#40000000"; пусто — без неё
+    visibility: ALL           # ALL, PERMISSION_REQUIRED или MANUAL
+    shadow_radius: 0.0        # тень под голограммой на земле
+    shadow_strength: 1.0
+    interpolation_ticks: 0    # плавность перемещения
+    translation:              # дополнительное смещение текста
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    brightness:               # -1 — брать освещение сцены
+      block: -1
+      sky: -1
+
+    # --- DecentHolograms ---
+    update_range: 48          # радиус, в котором обновляется содержимое
+    down_origin: false        # считать точку низом голограммы, а не верхом
+
+  # =========================================================================
+  #  Звук и молния на события привата
+  # =========================================================================
+  create:
+    sound: ENTITY_PLAYER_LEVELUP
+    volume: 1.0
+    pitch: 1.0
+    lightning: false
+  damage:
+    sound: ENTITY_GENERIC_EXPLODE
+    volume: 1.0
+    pitch: 0.5
+    lightning: false
+  remove:
+    sound: BLOCK_BEACON_DEACTIVATE
+    volume: 1.0
+    pitch: 0.5
+    lightning: true
+
+
+# ===========================================================================
+#  Типы приватов. Указывайте только отличия от default_region.
+# ===========================================================================
+region_types:
+
+  DIAMOND_BLOCK:
+    display_name: <#00d8ff>Маленький приват
+    hologram_lines:
+    - '  <#00d8ff>Маленький приват  '
+    - ''
+    - '  <#F0F0F0>Владелец: <#00d8ff>%owner%  '
+    - '  <#F0F0F0>Размер: <#00d8ff>%size%  '
+    - ''
+    radius: 8
+    radius_y: 32
+    enable_durability_upgrade: false
+    start_durability: 1
+    max_durability: 1
+    max_per_player: 3
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    hologram_display_range: 20
+    fancyholograms_settings:
+      scale: 1.1
+    create:
+      sound: BLOCK_BEACON_ACTIVATE
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+  DEEPSLATE_EMERALD_ORE:
+    display_name: <#fc6f00>Средний приват
+    hologram_lines:
+    - '  <#fc6f00>Средний приват  '
+    - ''
+    - '  <#F0F0F0>Владелец: <#fc6f00>%owner%  '
+    - '  <#F0F0F0>Прочность: <#fc6f00>[ %durability% / %max_durability% ]  '
+    - ''
+    radius: 16
+    radius_y: 48
+    enable_durability_upgrade: true
+    start_durability: 2
+    max_durability: 12
+    max_per_player: 2
+    min_distance_to_others: 8
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    hologram_display_range: 20
+    fancyholograms_settings:
+      scale: 1.1
+    create:
+      sound: BLOCK_BEACON_ACTIVATE
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+  ANCIENT_DEBRIS:
+    display_name: <gradient:#F8BA47:#FF9F41>Большой приват</gradient>
+    hologram_lines:
+    - '  <gradient:#F8BA47:#FF9F41>Большой приват</gradient>  '
+    - ''
+    - '  <#F0F0F0>Владелец: <gradient:#F8BA47:#FF9F41>%owner%</gradient>  '
+    - '  <#F0F0F0>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F0F0F0>Участников: <gradient:#F8BA47:#FF9F41>%members%</gradient>  '
+    - ''
+    radius: 32
+    radius_y: 64
+    enable_durability_upgrade: true
+    start_durability: 4
+    max_durability: 24
+    max_per_player: 1
+    min_distance_to_others: 16
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    - INVISIBILITY
+    - FAST_DIGGING
+    flags:
+      pvp: false
+      monster_spawning: false
+    hologram_display_range: 24
+    fancyholograms_settings:
+      scale: 1.1
+
+  RED_MUSHROOM_BLOCK:
+    display_name: <gradient:#F84747:#DD4141>Огромный приват</gradient>
+    hologram_lines:
+    - '  <gradient:#F84747:#DD4141>Огромный приват</gradient>  '
+    - ''
+    - '  <#F0F0F0>Владелец: <gradient:#F84747:#DD4141>%owner%</gradient>  '
+    - '  <#F0F0F0>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F0F0F0>Участников: <gradient:#F84747:#DD4141>%members%</gradient>  '
+    - ''
+    radius: 48
+    radius_y: 96
+    enable_durability_upgrade: true
+    start_durability: 8
+    max_durability: 48
+    max_per_player: 1
+    min_distance_to_others: 32
+    place_permission: qweprotectstones.region.huge
+    spawn-egg-use: true
+    explosions:
+      TNT: true
+      WITHER: false
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    - INVISIBILITY
+    - FAST_DIGGING
+    - HEALTH_BOOST
+    - WITHER
+    - ALERTS
+    flags:
+      pvp: false
+      monster_spawning: false
+      teleport_in: false
+    hologram_display_range: 24
+    fancyholograms_settings:
+      scale: 1.1

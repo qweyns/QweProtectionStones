@@ -61,7 +61,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 5000"
-      - "[ps_add_effect] EXP_BOOST:0"
+      - "[region_add_effect] EXP_BOOST:0"
       - "[sound] ENTITY_PLAYER_LEVELUP"
       - "[refresh]"
 
@@ -129,7 +129,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takepoints] 100"
-      - "[ps_add_effect] ALERTS:0"
+      - "[region_add_effect] ALERTS:0"
       - "[sound] BLOCK_NOTE_BLOCK_PLING"
       - "[refresh]"
 
@@ -194,7 +194,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takeexp] 30"
-      - "[ps_add_effect] FAST_DIGGING:1"
+      - "[region_add_effect] FAST_DIGGING:1"
       - "[sound] ENTITY_EXPERIENCE_OR_PICKUP"
       - "[refresh]"
 
@@ -260,7 +260,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 15000"
-      - "[ps_add_effect] SPEED:1"
+      - "[region_add_effect] SPEED:1"
       - "[sound] ITEM_BOTTLE_FILL"
       - "[refresh]"
 
@@ -324,7 +324,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 25000"
-      - "[ps_add_effect] INCREASE_DAMAGE:1"
+      - "[region_add_effect] INCREASE_DAMAGE:1"
       - "[sound] ITEM_FIRECHARGE_USE"
       - "[refresh]"
 
@@ -388,7 +388,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takepoints] 150"
-      - "[ps_add_effect] INVISIBILITY:0"
+      - "[region_add_effect] INVISIBILITY:0"
       - "[sound] ENTITY_ILLUSIONER_MIRROR_MOVE"
       - "[refresh]"
 
@@ -452,7 +452,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 30000"
-      - "[ps_add_effect] HEALTH_BOOST:1"
+      - "[region_add_effect] HEALTH_BOOST:1"
       - "[sound] ENTITY_PLAYER_BURP"
       - "[refresh]"
 
@@ -521,7 +521,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 10000"
-      - "[ps_add_effect] SLOW:1"
+      - "[region_add_effect] SLOW:1"
       - "[sound] ENTITY_SPIDER_DEATH"
       - "[refresh]"
 
@@ -587,7 +587,7 @@ items:
         - "[sound] ENTITY_VILLAGER_NO"
     click_commands:
       - "[takemoney] 50000"
-      - "[ps_add_effect] WITHER:0"
+      - "[region_add_effect] WITHER:0"
       - "[sound] ENTITY_WITHER_AMBIENT"
       - "[refresh]"
 
