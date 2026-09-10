@@ -25,8 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AutoAddManager implements Listener {
 
-    /** Ограничение, чтобы одна учётка не раздувала строку в базе. */
-
     private final QweProtectStones plugin;
 
     private final Map<UUID, Set<String>> autoAddLists = new ConcurrentHashMap<>();

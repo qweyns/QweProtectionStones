@@ -143,7 +143,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.dynmapIntegration = new DynmapIntegration(this);
         this.dynmapIntegration.enable();
 
-        getLogger().info("QweProtectStones v" + getDescription().getVersion() + " запущен"
+        getLogger().info("QweProtectStones v" + getPluginMeta().getVersion() + " запущен"
                 + (schedulers.isFolia() ? " (режим Folia)" : "") + ": приватов — " + regionManager.size());
     }
 

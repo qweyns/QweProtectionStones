@@ -39,7 +39,7 @@ default_region:
   # radius_x: 24
   # radius_z: 8
   radius_y: 64            # высота вверх и вниз от ядра
-  full_height: false      # true — territория от бедрока до неба, radius_y не нужен
+  full_height: false      # true — территория от бедрока до неба, radius_y не нужен
 
   # --- Прочность и прокачка ---
   start_durability: 2

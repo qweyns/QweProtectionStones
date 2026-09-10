@@ -24,7 +24,11 @@ public final class RegionText {
     public static String normalize(String value) {
         if (value == null) return "";
 
-        String cleaned = value.replace('\n', ' ').replace('\r', ' ').trim();
+        // \r\n — это один перевод строки, а не два пробела.
+        String cleaned = value.replace("\r\n", " ")
+                .replace('\n', ' ')
+                .replace('\r', ' ')
+                .trim();
         return cleaned.length() > MAX_LENGTH ? cleaned.substring(0, MAX_LENGTH) : cleaned;
     }
 

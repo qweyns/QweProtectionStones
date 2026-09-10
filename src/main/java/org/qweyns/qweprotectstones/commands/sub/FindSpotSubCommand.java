@@ -19,8 +19,6 @@ import java.util.List;
  */
 public class FindSpotSubCommand extends AbstractRegionSubCommand {
 
-    /** Шагов поиска по спирали — дальше искать бессмысленно, проще уйти в другой биом. */
-
     public FindSpotSubCommand(QweProtectStones plugin) {
         super(plugin);
     }

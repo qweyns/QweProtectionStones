@@ -86,7 +86,6 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
 
         for (String raw : section.getStringList("commands")) {
             String parsed = raw.replace("%player%", player.getName())
-                    .replace("%region_id%", region.getShortId())
                     .replace("%region_id%", region.getShortId());
 
             if (parsed.startsWith("[console] ")) {

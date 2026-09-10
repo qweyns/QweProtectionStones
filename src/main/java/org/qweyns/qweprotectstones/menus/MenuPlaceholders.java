@@ -48,7 +48,6 @@ public class MenuPlaceholders {
 
     private String applyRegion(String text, Region region) {
         text = text.replace("%region_id%", region.getShortId())
-                .replace("%region_id%", region.getShortId())
                 .replace("%owner%", region.getOwnerName())
                 .replace("%name%", region.getLabel())
                 .replace("%members%", String.valueOf(region.getMemberCount()))

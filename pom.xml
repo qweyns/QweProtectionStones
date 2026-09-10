@@ -122,8 +122,9 @@
             <url>https://repo.rosewooddev.io/repository/public/</url>
         </repository>
         <repository>
-            <id>codemc-repo</id>
-            <url>https://repo.codemc.io/repository/maven-public/</url>
+            <id>fancyinnovations-releases</id>
+            <name>FancyInnovations Repository</name>
+            <url>https://repo.fancyinnovations.com/releases</url>
         </repository>
     </repositories>
 

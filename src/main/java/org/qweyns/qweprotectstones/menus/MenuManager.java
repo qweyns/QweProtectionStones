@@ -161,9 +161,9 @@ public class MenuManager implements Listener {
         if (menuCfg.contains("animations.default")) {
             MenuAnimator animator = new MenuAnimator(plugin, player, menuCfg, region, inv, holder);
             holder.animator = animator;
-            plugin.getSchedulers().runTimer(() -> {
-                if (!animator.isCancelled()) animator.run();
-            }, 1L, 1L);
+            // Задачу обязательно сохраняем в holder: без этого она тикала бы
+            // вечно, даже после закрытия меню, — по задаче на каждое открытие.
+            holder.animatorTask = plugin.getSchedulers().runTimer(animator::run, 1L, 1L);
         }
 
         player.openInventory(inv);

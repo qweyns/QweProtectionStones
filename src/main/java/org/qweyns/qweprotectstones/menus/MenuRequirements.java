@@ -46,9 +46,13 @@ public class MenuRequirements {
                 String permission = reqs.getString(key + ".permission");
                 yield permission == null || player.hasPermission(permission);
             }
-            case "region_durability_enabled", "region_durability_enabled" -> {
+            case "region_durability_enabled" -> {
                 RegionType regionType = region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
                 yield regionType == null || regionType.durabilityUpgradeEnabled();
+            }
+            case "region_durability_disabled" -> {
+                RegionType regionType = region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
+                yield regionType == null || !regionType.durabilityUpgradeEnabled();
             }
             case "has effect" -> region == null || placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) > 0;
             case "does not have effect" -> region == null || placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) <= 0;

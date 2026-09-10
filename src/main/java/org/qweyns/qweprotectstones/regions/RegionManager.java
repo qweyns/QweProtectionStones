@@ -86,8 +86,9 @@ public class RegionManager {
         int skippedUnknownWorld = 0;
         for (Region region : loaded) {
             if (Bukkit.getWorld(region.getWorldName()) == null) {
-                // Мир может быть просто не подключён (мультиверс) — держим приват
-                // в памяти, но не индексируем: защищать всё равно нечего.
+                // Мир может быть просто не подключён (мультиверс) — приват
+                // остаётся в памяти и в индексе: когда мир подключат, защита
+                // заработает сама, без перезапуска.
                 skippedUnknownWorld++;
             }
             register(region);

@@ -127,7 +127,8 @@ public final class Region implements Bounded {
 
     public boolean contains(Location loc) {
         if (loc == null || loc.getWorld() == null) return false;
-        return world.equals(loc.getWorld().getName()) && bounds.contains(loc);
+        return world.equals(loc.getWorld().getName())
+                && bounds.contains(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     // ------------------------------------------------------------------

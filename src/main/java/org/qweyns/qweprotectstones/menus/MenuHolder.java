@@ -15,6 +15,7 @@ public class MenuHolder implements InventoryHolder {
 
     Inventory inventory;
     Schedulers.Task updateTask;
+    Schedulers.Task animatorTask;
     ItemStack[] baseLayer;
     MenuAnimator animator;
 
@@ -41,6 +42,10 @@ public class MenuHolder implements InventoryHolder {
         if (updateTask != null) {
             updateTask.cancel();
             updateTask = null;
+        }
+        if (animatorTask != null) {
+            animatorTask.cancel();
+            animatorTask = null;
         }
         if (animator != null) {
             animator.cancel();

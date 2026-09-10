@@ -93,22 +93,6 @@ public class ProtectionService {
         return allows(player, location, requiredFor(action));
     }
 
-    public boolean canBuild(Player player, Location location) {
-        return allows(player, location, Tunables.TrustAction.BUILD);
-    }
-
-    public boolean canUseContainer(Player player, Location location) {
-        return allows(player, location, Tunables.TrustAction.CONTAINER);
-    }
-
-    public boolean canInteract(Player player, Location location) {
-        return allows(player, location, Tunables.TrustAction.INTERACT);
-    }
-
-    public boolean canUseEntity(Player player, Location location) {
-        return allows(player, location, Tunables.TrustAction.ENTITY);
-    }
-
     public boolean canManage(Player player, Region region) {
         return region != null && has(region, player, requiredFor(Tunables.TrustAction.MANAGE));
     }
@@ -163,10 +147,10 @@ public class ProtectionService {
         player.sendActionBar(plugin.getLanguageManager().getMessage("protection_denied", "%owner%", owner));
     }
 
-    /** Комбинация «проверить и, если нельзя, сообщить». */
+    /** Комбинация «проверить и, если нельзя, сообщить». Уровень берётся из trust.required.build. */
     public boolean denyBuild(Player player, Location location) {
         Region region = regionAt(location);
-        if (region == null || has(region, player, TrustLevel.BUILD)) return false;
+        if (region == null || has(region, player, requiredFor(Tunables.TrustAction.BUILD))) return false;
 
         notifyDenied(player, region);
         return true;

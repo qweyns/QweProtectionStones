@@ -75,7 +75,6 @@ public class RegionInteractListener implements Listener {
 
         for (String raw : commands) {
             String parsed = raw.replace("%player%", player.getName())
-                    .replace("%region_id%", region.getShortId())
                     .replace("%region_id%", region.getShortId());
 
             if (parsed.startsWith("[console] ")) {

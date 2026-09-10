@@ -48,7 +48,7 @@ public record RegionBounds(int minX, int minY, int minZ, int maxX, int maxY, int
                 maxX + amount, maxY + amount, maxZ + amount);
     }
 
-    /** Расширение только по горизонтали — используется командой /ps expand. */
+    /** Расширение по горизонтали — вертикальные границы не меняются. */
     public RegionBounds expandHorizontally(int amount) {
         return new RegionBounds(minX - amount, minY, minZ - amount,
                 maxX + amount, maxY, maxZ + amount);

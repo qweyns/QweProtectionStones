@@ -87,7 +87,7 @@ public class MenuItemFactory {
         String matStr = cfg.getString("material", "STONE");
         if (matStr == null || matStr.isBlank()) matStr = "STONE";
 
-        if (matStr.equalsIgnoreCase("%region_material%") || matStr.equalsIgnoreCase("%region_material%")) {
+        if (matStr.equalsIgnoreCase("%region_material%")) {
             RegionType type = region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
             matStr = type != null ? type.material().name() : "STONE";
         }

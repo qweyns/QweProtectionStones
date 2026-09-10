@@ -225,7 +225,7 @@ public class VisualManager {
 
     /**
      * Предпросмотр будущих границ: зелёный каркас — место свободно,
-     * красный — territory пересекается с чужим приватом.
+     * красный — территория пересекается с чужим приватом.
      */
     public void showPreview(Player player, World world, RegionBounds bounds, boolean free) {
         List<Location> points = wireframeOf(world, bounds, player.getLocation().getBlockY());

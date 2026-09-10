@@ -25,7 +25,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
     public @NotNull String getAuthor() { return "Qweyns"; }
 
     @Override
-    public @NotNull String getVersion() { return plugin.getDescription().getVersion(); }
+    public @NotNull String getVersion() { return plugin.getPluginMeta().getVersion(); }
 
     /** Без этого PlaceholderAPI выгружает расширение при /papi reload. */
     @Override

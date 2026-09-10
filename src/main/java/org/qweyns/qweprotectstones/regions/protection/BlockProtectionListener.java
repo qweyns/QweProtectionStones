@@ -35,11 +35,9 @@ import java.util.List;
  */
 public class BlockProtectionListener implements Listener {
 
-    private final QweProtectStones plugin;
     private final ProtectionService protection;
 
     public BlockProtectionListener(QweProtectStones plugin) {
-        this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 

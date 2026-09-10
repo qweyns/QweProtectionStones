@@ -39,7 +39,7 @@ public class RegionExporter {
 
         StringBuilder json = new StringBuilder(1024);
         json.append("{\n  \"exported_at\": \"").append(stamp).append("\",\n");
-        json.append("  \"plugin_version\": \"").append(escape(plugin.getDescription().getVersion())).append("\",\n");
+        json.append("  \"plugin_version\": \"").append(escape(plugin.getPluginMeta().getVersion())).append("\",\n");
         json.append("  \"regions\": [\n");
 
         boolean first = true;
