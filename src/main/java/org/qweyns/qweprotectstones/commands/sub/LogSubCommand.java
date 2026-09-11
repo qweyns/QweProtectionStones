@@ -71,6 +71,10 @@ public class LogSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
-        return args.length == 1 ? filter(List.of("10", "25", "50"), args[0]) : List.of();
+        if (args.length != 1) return List.of();
+        // Аргумент — сколько строк показать: подсказываем стандартный
+        // и максимальный размер страницы из config.yml (limits).
+        return filter(List.of(String.valueOf(plugin.getTunables().logPageSize()),
+                String.valueOf(plugin.getTunables().logMaxPageSize())), args[0]);
     }
 }

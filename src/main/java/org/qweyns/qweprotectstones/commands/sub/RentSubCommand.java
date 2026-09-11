@@ -178,6 +178,18 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
         if (args.length == 1) {
             return filter(List.of("offer", "take", "cancel"), args[0]);
         }
+        // offer <цена> <минуты>: подсказываем потолок цены и границы
+        // длительности периода — всё из market.rent (features.yml).
+        if (args.length == 2 && args[0].equalsIgnoreCase("offer")) {
+            return filter(List.of(String.valueOf(plugin.getConfigManager().getConfig()
+                    .getInt("market.rent.max-price", 100000))), args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("offer")) {
+            var cfg = plugin.getConfigManager().getConfig();
+            return filter(List.of(
+                    String.valueOf(cfg.getInt("market.rent.min-duration-minutes", 10)),
+                    String.valueOf(cfg.getInt("market.rent.max-duration-minutes", 4320))), args[2]);
+        }
         return List.of();
     }
 }

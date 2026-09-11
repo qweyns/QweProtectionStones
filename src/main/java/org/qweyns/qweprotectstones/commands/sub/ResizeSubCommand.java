@@ -224,7 +224,12 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
 
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
-        if (mode == Mode.EXPAND && args.length == 2) {
+        if (mode != Mode.EXPAND) return List.of();
+        // Количество блоков: подсказываем максимальный шаг из resize.expand.
+        if (args.length == 1) {
+            return filter(List.of(String.valueOf(maxStep())), args[0]);
+        }
+        if (args.length == 2) {
             return filter(List.of("all", "horizontal", "up", "down"), args[1]);
         }
         return List.of();

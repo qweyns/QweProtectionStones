@@ -160,7 +160,9 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
         if (mode == Mode.SELL && args.length == 1) {
-            return filter(List.of("off"), args[0]);
+            // off — снять с продажи; число — потолок цены из market.sell.
+            return filter(List.of("off", String.valueOf(plugin.getConfigManager().getConfig()
+                    .getInt("market.sell.max-price", 1000000))), args[0]);
         }
         return List.of();
     }

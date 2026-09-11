@@ -849,11 +849,10 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return filter(ids, args[1]);
         }
 
-        if (args.length == 2 && (action.equals("give") || action.equals("transfer") || action.equals("setowner")
-                || action.equals("ban") || action.equals("unban") || action.equals("trust") || action.equals("untrust"))) {
-            List<String> names = new ArrayList<>();
-            for (Player online : Bukkit.getOnlinePlayers()) names.add(online.getName());
-            return filter(names, args[1]);
+        // give: <игрок> <тип> [кол-во]. Остальные действия с игроком
+        // (transfer, setowner, ban, trust…) сначала требуют id привата.
+        if (args.length == 2 && action.equals("give")) {
+            return filter(onlineNames(), args[1]);
         }
 
         if (args.length == 2 && action.equals("import")) {
@@ -878,17 +877,38 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return filter(names, args[2]);
         }
 
-        if (args.length == 3 && action.equals("trust")) {
-            List<String> names = new ArrayList<>();
-            for (TrustLevel level : TrustLevel.grantable()) names.add(level.key());
-            return filter(names, args[2]);
+        // <id> <ник> — у всех действий, где после привата идёт игрок.
+        if (args.length == 3 && (action.equals("transfer") || action.equals("setowner")
+                || action.equals("ban") || action.equals("unban")
+                || action.equals("trust") || action.equals("untrust"))) {
+            return filter(onlineNames(), args[2]);
         }
 
         if (args.length == 4 && action.equals("flag")) {
             return filter(List.of("true", "false", "reset"), args[3]);
         }
 
+        // trust <id> <ник> [уровень] — уровень выдачи.
+        if (args.length == 4 && action.equals("trust")) {
+            List<String> levels = new ArrayList<>();
+            for (TrustLevel level : TrustLevel.grantable()) levels.add(level.key());
+            return filter(levels, args[3]);
+        }
+
+        // give <игрок> <тип> [кол-во] — потолок выдачи из config.yml.
+        if (args.length == 4 && action.equals("give")) {
+            return filter(List.of(String.valueOf(plugin.getConfigManager().getConfig()
+                    .getInt("admin.give.max-amount", 64))), args[3]);
+        }
+
         return List.of();
+    }
+
+    /** Ники игроков онлайн — универсальная подсказка для аргумента-игрока. */
+    private List<String> onlineNames() {
+        List<String> names = new ArrayList<>();
+        for (Player online : Bukkit.getOnlinePlayers()) names.add(online.getName());
+        return names;
     }
 
     private List<String> filter(List<String> candidates, String prefix) {
