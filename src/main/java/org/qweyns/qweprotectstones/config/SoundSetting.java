@@ -32,7 +32,9 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
      * Разбирает строку конфига.
      *
      * @param raw      значение из конфига
-     * @param fallback что вернуть, если строка пустая или звук не распознан
+     * @param fallback что вернуть, если строка пустая или звук не распознан;
+     *                 {@code null} допустим — тогда громкость и высота для
+     *                 частично заданной строки берутся стандартные (1.0)
      */
     public static SoundSetting parse(String raw, SoundSetting fallback) {
         if (raw == null) return fallback;
@@ -47,9 +49,12 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
         Sound sound = resolve(parts[0]);
         if (sound == null) return fallback;
 
+        // Fallback бывает null: Tunables так отличает «ключа нет» от
+        // «звук задан». Стандартные громкость и высота — 1.0.
+        boolean hasFallback = fallback != null && fallback.isEnabled();
         return new SoundSetting(sound,
-                readFloat(parts, 1, fallback.isEnabled() ? fallback.volume() : 1f),
-                readFloat(parts, 2, fallback.isEnabled() ? fallback.pitch() : 1f));
+                readFloat(parts, 1, hasFallback ? fallback.volume() : 1f),
+                readFloat(parts, 2, hasFallback ? fallback.pitch() : 1f));
     }
 
     /** Принимает и {@code BLOCK_ANVIL_USE}, и {@code block.anvil.use}. */
