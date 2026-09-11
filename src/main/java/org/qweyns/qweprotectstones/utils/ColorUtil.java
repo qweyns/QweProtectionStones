@@ -74,7 +74,9 @@ public final class ColorUtil {
 
     /** Экранирует MiniMessage-разметку в чужом тексте (например, выводе PlaceholderAPI). */
     public static String escapeMini(String text) {
-        return text == null ? null : MiniMessage.miniMessage().escapeText(text);
+        if (text == null) return null;
+        // экранируем сам слэш, затем угол: тег становится обычным текстом
+        return text.replace("\\", "\\\\").replace("<", "\\<");
     }
 
     public static String formatLegacyString(String text) {

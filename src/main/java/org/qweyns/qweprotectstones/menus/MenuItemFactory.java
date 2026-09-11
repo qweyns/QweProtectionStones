@@ -28,10 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MenuItemFactory {
 
-    // кеш голов: createProfile без сетевого резолва
-    private static final java.util.Map<String, org.bukkit.profile.PlayerProfile> PROFILE_CACHE =
-            new java.util.concurrent.ConcurrentHashMap<>();
-
     private final QweProtectStones plugin;
     private final MenuPlaceholders placeholders;
 
@@ -124,9 +120,10 @@ public class MenuItemFactory {
             SkullMeta meta = (SkullMeta) head.getItemMeta();
             if (meta != null) {
                 String owner = matStr.substring("head-".length()).replace("%player_name%", player.getName());
-                // getOfflinePlayer(ник) лез к Mojang синхронно и морозил главный поток
-                meta.setPlayerProfile(PROFILE_CACHE.computeIfAbsent(
-                        owner.toLowerCase(java.util.Locale.ROOT), Bukkit::createProfile));
+                // getOfflinePlayer(ник) лез к Mojang синхронно и морозил главный поток:
+                // берём владельца только из кеша сервера, никого не ждём из сети
+                org.bukkit.OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(owner);
+                if (cached != null) meta.setOwningPlayer(cached);
                 head.setItemMeta(meta);
             }
             return head;

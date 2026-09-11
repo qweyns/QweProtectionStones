@@ -164,7 +164,8 @@ public class MenuManager implements Listener {
             }, interval, interval);
         }
 
-        if (animator != null) {
+        final MenuAnimator anim = animator;
+        if (anim != null) {
             // задачу держим в holder, иначе тикает вечно
 
             holder.animatorTask = plugin.getSchedulers().runAtEntityTimer(player, () -> {
@@ -172,7 +173,7 @@ public class MenuManager implements Listener {
                     holder.cancelTasks();
                     return;
                 }
-                animator.run();
+                anim.run();
             }, 1L, 1L);
         }
     }
