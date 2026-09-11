@@ -1,28 +1,35 @@
 # ===========================================================================
-#  QweProtectStones — настройки приватов
+#  QweProtectStones v2.0.0 — типы приватов
 # ===========================================================================
 #  Здесь описываются блоки-ядра: размер территории, прочность, флаги,
 #  голограммы, звуки и всё остальное, что относится к самому привату.
 #
 #  Как это читается:
-#    default_region — значения по умолчанию для всех типов;
-#    region_types.<БЛОК> — то, чем конкретный тип отличается от умолчаний.
-#  Ключ, не указанный у типа, берётся из default_region. Указывать в типе
-#  нужно только отличия.
+#    default_region  — значения по умолчанию для всех типов;
+#    region_types.<БЛОК> — отличия конкретного типа от умолчаний.
+#  Указывайте в типе только то, что отличается от default_region —
+#  остальное подставится само.
 #
-#  Ключ типа — это идентификатор материала Minecraft (DIAMOND_BLOCK и т.п.).
+#  Ключ типа — материал блока Minecraft (DIAMOND_BLOCK и т.п.).
 #  Один материал может принадлежать только одному типу.
 #
-#  Плейсхолдеры в строках голограмм:
-#    %owner% %name% %durability% %max_durability% %members% %size%
-#    %id% %item% %siege% %penalty% %attacks%
+#  Плейсхолдеры для строк голограмм и greeting/farewell:
+#    %owner%  — ник владельца          %name%   — название привата
+#    %members% — число участников      %size%   — размер (например 33x33)
+#    %durability% / %max_durability% — текущая и максимальная прочность
+#    %id%     — короткий id привата    %item%   — предмет прокачки
+#    %siege%  — идёт ли осада          %penalty% — множитель штрафа
+#    %attacks% — сколько было атак
 # ===========================================================================
 
 default_region:
 
-  # --- Внешний вид ---
+  # --- Название и голограмма ---------------------------------------------
+  # Название показывается первой строкой голограммы, а также в /ps list,
+  # меню и на карте Dynmap. Поддерживаются цвета MiniMessage.
   display_name: "<#FFaa00>Приват"
 
+  # Строки голограммы ПОСЛЕ названия (само оно добавляется всегда).
   hologram_lines:
     - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
     - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
@@ -33,47 +40,78 @@ default_region:
     - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
     - "<#F0F0F0>Прочность: <#FF5555>[ %durability% / %max_durability% ]"
 
-  # --- Территория ---
-  radius: 16              # половина стороны: 16 даёт площадку 33x33
-  # radius_x и radius_z задают неквадратную территорию и важнее radius:
+  # --- Территория ----------------------------------------------------------
+  # Радиус считается от блока-ядра. radius: 16 → площадка 33×33 блока.
+  radius: 16
+  # Неквадратная территория: radius_x и radius_z важнее radius.
   # radius_x: 24
   # radius_z: 8
-  radius_y: 64            # высота вверх и вниз от ядра
-  full_height: false      # true — территория от бедрока до неба, radius_y не нужен
+  # Высота вверх и вниз от ядра.
+  radius_y: 64
+  # true — от бедрока до неба (radius_y при этом игнорируется).
+  full_height: false
 
-  # --- Прочность и прокачка ---
+  # --- Прочность и прокачка --------------------------------------------------
+  # Прочность — сколько взрывов рядом с ядром выдержит приват.
   start_durability: 2
   max_durability: 10
+  # Разрешить владельцу прокачивать прочность в меню «Улучшение».
   enable_durability_upgrade: true
 
+  # Переопределение оплаты прокачки для этого типа.
+  # item: "" — общий предмет из config.yml (settings.upgrade_item).
+  # cost_multiplier / tax: -1 — общие значения из config.yml.
   upgrade:
-    item: ""              # пусто — общий предмет из config.yml
-    cost_multiplier: -1   # -1 — общее значение
-    tax: -1               # -1 — общее значение
+    item: ""
+    cost_multiplier: -1
+    tax: -1
 
-  # --- Лимиты и доступ ---
-  max_per_player: 0       # 0 — без ограничения
+  # --- Лимиты и доступ ----------------------------------------------------------
+  # Сколько приватов этого типа может иметь один игрок.
+  # 0 — без ограничения.
+  # Право qweprotectstones.limit.<тип>.<число> перекрывает это значение,
+  # а qweprotectstones.limit.unlimited снимает лимит полностью.
+  max_per_player: 0
+  # Минимальное расстояние между ядрами этого и других приватов (в блоках).
   min_distance_to_others: 0
+  # Право, нужное для установки этого блока-ядра. Пусто — не нужно.
   place_permission: ""
-  worlds: []              # пустой список — разрешено везде
-  worlds_mode: whitelist  # whitelist или blacklist
+  # В каких мирах разрешён тип. Пустой список — во всех.
+  worlds: []
+  # whitelist — разрешены ТОЛЬКО миры из списка; blacklist — все КРОМЕ них.
+  worlds_mode: whitelist
 
-  # --- Поведение ---
+  # --- Поведение -----------------------------------------------------------------
+  # Возвращать блок-ядро владельцу при удалении привата.
   return_block_on_remove: true
+  # Разрешить доверенным игрокам использовать яйцо призыва прямо на ядре
+  # (моб появится, меню не откроется).
   spawn-egg-use: false
-  menu: ""                # какое меню открывает клик по ядру; пусто — выбрать само
-  border_color: ""        # цвет каркаса именно этого типа, например "#00FF00"
+  # Какое меню открывает клик по ядру (файл из папки /menus/ без .yml).
+  # Пусто — плагин выберет сам: «main», если доступна прокачка, иначе «effects».
+  menu: ""
+  # Цвет каркаса границ именно этого типа (предпросмотр и подсветка),
+  # например "#00FF00". Пусто — цвет из visuals.boundaries в config.yml.
+  border_color: ""
 
-  # Тексты при входе и выходе по умолчанию для типа. Владелец может задать
-  # свои через /ps greeting и /ps farewell — они важнее.
+  # Сообщения при входе на территорию и выходе. Пусто — шаблон из lang-файла.
+  # Владелец может задать свои: /ps name, /ps greeting, /ps farewell —
+  # его текст важнее настроек типа.
   greeting: ""
   farewell: ""
 
-  # --- Осада ---
-  raid_immune: false          # true — приват нельзя повредить взрывом вообще
-  damage_cooldown_ticks: -1   # -1 — общее значение из config.yml
-  explosion_damage_radius: -1 # -1 — общее значение
+  # --- Осада ----------------------------------------------------------------------
+  # true — приват вообще неуязвим для взрывов (прочность не тратится).
+  raid_immune: false
+  # -1 — брать из config.yml (settings.damage_cooldown_ticks и
+  # settings.explosion_damage_radius). Свои значения — только для типа.
+  damage_cooldown_ticks: -1
+  explosion_damage_radius: -1
 
+  # Каким ВИДАМ взрывов разрешено снимать прочность ядра (осада).
+  # Внимание: это не защита блоков — за неё отвечает флаг explosion_damage.
+  # WITHER — визер и его черепа; TNT — всё прочее (ТНТ, вагонетка, гаст);
+  # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере.
   explosions:
     TNT: true
     WITHER: true
@@ -81,74 +119,88 @@ default_region:
     ENDER_CRYSTAL: false
     BED: false
 
-  # --- Эффекты ---
+  # --- Эффекты ------------------------------------------------------------------------
+  # Эффекты, доступные для покупки в меню «Эффекты» для этого типа.
+  # Пусто — меню эффектов недоступно. Имена — как у зачарований зельй:
+  # SPEED, SLOW, FAST_DIGGING, INCREASE_DAMAGE, INVISIBILITY,
+  # HEALTH_BOOST, WITHER, ...
+  # Псевдоэффекты: ALERTS (уведомления о рейдах), EXP_BOOST (бустер опыта).
   allowed_effects: []
 
-  # --- Флаги ---
+  # --- Флаги ---------------------------------------------------------------------------
+  # Начальные значения флагов привата этого типа.
+  # Игрок может менять их через /ps flag, если флаг не закрыт в
+  # flags.locked (config.yml). Описание каждого — в /ps flag без аргументов.
   flags:
-    pvp: false
-    entry: true
-    public_access: false
-    monster_spawning: true
-    animal_spawning: true
-    animal_protection: true
-    mob_griefing: false
-    fire_spread: false
-    liquid_flow_in: false
-    pistons_from_outside: false
-    crop_trample: false
-    explosion_damage: false
-    teleport_in: true
-    item_pickup: true
-    greeting: true
-    leaf_decay: true
-    ice_and_snow: true
-    block_growth: true
+    pvp: false                  # PvP между игроками на территории
+    entry: true                 # вход посторонних (false = не пускать)
+    public_access: false        # «публичный доступ»: сундуки открыты всем
+    monster_spawning: true      # спавн враждебных мобов
+    animal_spawning: true       # спавн животных
+    animal_protection: true     # защита животных от урона
+    mob_griefing: false         # могут ли мобы ломать блоки (эндермены, крипера...)
+    fire_spread: false          # распространение огня
+    liquid_flow_in: false       # затекание жидкостей снаружи
+    pistons_from_outside: false # поршни с внешней стороны
+    crop_trample: false         # вытаптывание грядок
+    explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри привата
+    teleport_in: true           # телепорты внутрь (эндер-жемчуг, /ps home чужие)
+    item_pickup: true           # подбор предметов посторонними
+    greeting: true              # показывать приветствие при входе
+    leaf_decay: true            # опадание листвы
+    ice_and_snow: true          # образование льда и снега
+    block_growth: true          # рост растений
 
   # =========================================================================
   #  Голограммы
   # =========================================================================
-  hologram: true
-  hologram_provider: MODERN   # MODERN (FancyHolograms) или DECENT (DecentHolograms)
-  hologram_offset: 1.1        # высота над ядром
-  hologram_display_range: 16  # с какого расстояния видно
+  hologram: true                  # показывать голограмму над ядром
+  # MODERN — FancyHolograms (текстовые дисплеи, богаче настройки);
+  # DECENT — DecentHolograms. Выбранный плагин должен быть установлен.
+  hologram_provider: MODERN
+  hologram_offset: 1.1            # высота первой строки над ядром
+  hologram_display_range: 16      # с какого расстояния видно
 
+  # Общие настройки голограмм. Работают и под секцией hologram_settings
+  # у конкретного типа. Старое имя секции fancyholograms_settings тоже
+  # читается — конфиги, написанные раньше, продолжают работать.
   hologram_settings:
-    # --- работает у обоих провайдеров ---
+    # --- у обоих провайдеров ---
     update_interval: 20       # период обновления текста, тиков
     see_through: false        # видно ли текст сквозь блоки
     permission: ""            # право на просмотр; пусто — видно всем
 
-    # --- FancyHolograms ---
-    shadow: true              # тень у текста
-    scale: 1.0
-    billboard: CENTER         # CENTER, VERTICAL, HORIZONTAL или FIXED
+    # --- только FancyHolograms ---
+    shadow: true              # тень у букв
+    scale: 1.0                # размер текста
+    billboard: CENTER         # поворот к игроку: CENTER, VERTICAL, HORIZONTAL, FIXED
     text_alignment: CENTER    # LEFT, CENTER или RIGHT
     background: ""            # подложка, например "#40000000"; пусто — без неё
     visibility: ALL           # ALL, PERMISSION_REQUIRED или MANUAL
-    shadow_radius: 0.0        # тень под голограммой на земле
+    shadow_radius: 0.0        # тень «на земле» под голограммой
     shadow_strength: 1.0
     interpolation_ticks: 0    # плавность перемещения
-    translation:              # дополнительное смещение текста
+    translation:              # дополнительное смещение текста (в блоках)
       x: 0.0
       y: 0.0
       z: 0.0
-    brightness:               # -1 — брать освещение сцены
+    brightness:               # освещение текста; -1 — как в окружении
       block: -1
       sky: -1
 
-    # --- DecentHolograms ---
+    # --- только DecentHolograms ---
     update_range: 48          # радиус, в котором обновляется содержимое
     down_origin: false        # считать точку низом голограммы, а не верхом
 
   # =========================================================================
   #  Звук и молния на события привата
+  #  (create — создан, damage — по ядру ударили, remove — удалён)
   # =========================================================================
   create:
     sound: ENTITY_PLAYER_LEVELUP
     volume: 1.0
     pitch: 1.0
-    lightning: false
+    lightning: false          # эффект молнии (только визуально)
   damage:
     sound: ENTITY_GENERIC_EXPLODE
     volume: 1.0
