@@ -277,11 +277,12 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         // Не помещается в инвентарь — выпадает на землю, а не пропадает.
-        // Предмет метится PDC-тегом типа (для «покупных» типов — всегда) и
-        // получает собственное описание из regions.yml, если задано.
+        // Пред предмета (имя, описание, свечение — секция item в regions.yml),
+        // а для ограниченных типов — ещё и PDC-тег, без которого блок
+        // не создаст приват.
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
         ItemStack core = org.qweyns.qweprotectstones.utils.RegionItems.core(
-                plugin, type, amount, null, tags || type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND);
+                plugin, type, amount, null, tags || type.restrictObtaining(), true);
         target.getInventory().addItem(core)
                 .forEach((slot, leftover) -> target.getWorld().dropItemNaturally(target.getLocation(), leftover));
 

@@ -52,9 +52,10 @@ public class RegionLifecycleListener implements Listener {
         RegionType type = tagged != null ? tagged : plugin.getRegionTypes().byMaterial(block.getType());
         if (type == null) return;
 
-        // «Покупной» тип работает только предметом с тегом: добытый в мире
-        // блок того же материала остаётся обычным блоком, без создания привата.
-        if (type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND && tagged == null) return;
+        // Ограниченный тип (restrict-obtaining: true) работает только
+        // предметом с тегом: добытый в мире блок того же материала
+        // остаётся обычным блоком, без создания привата.
+        if (type.restrictObtaining() && tagged == null) return;
 
         Player player = event.getPlayer();
 
@@ -164,16 +165,19 @@ public class RegionLifecycleListener implements Listener {
      */
     private void giveOrDrop(Player player, Location location, RegionType type, Region region) {
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
-        // «Покупной» тип помечаем тегом всегда: без тега возвращённый блок
+        // Ограниченный тип помечаем тегом всегда: без тега возвращённый блок
         // больше не создал бы приват — игрок потерял бы покупку.
-        boolean tagType = tags || type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND;
+        boolean tagType = tags || type.restrictObtaining();
         Integer durability = region != null
                 && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
                 && tags
                 ? region.getDurability() : null;
+        // Обычный тип возвращается как обычный блок (только невидимые теги
+        // прочности), ограниченный — в полном оформлении, как выдали.
+        boolean styled = type.restrictObtaining();
 
         ItemStack stack = org.qweyns.qweprotectstones.utils.RegionItems.core(
-                plugin, type, 1, durability, tagType);
+                plugin, type, 1, durability, tagType, styled);
 
         var leftovers = player.getInventory().addItem(stack);
 

@@ -5,7 +5,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ShapedRecipe;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.CoreRecipe;
-import org.qweyns.qweprotectstones.regions.RegionSource;
 import org.qweyns.qweprotectstones.regions.RegionType;
 import org.qweyns.qweprotectstones.utils.RegionItems;
 
@@ -17,9 +16,9 @@ import java.util.Locale;
  * Собственные крафты блоков-ядер (секция {@code recipe} у типа в regions.yml).
  *
  * <p>Если у типа рецепта нет — ничего не регистрируется: блок получается
- * как обычный блок Minecraft, каким он и является. «Покупные» типы
- * ({@code source: COMMAND}) крафтами не добываются — их рецепт игнорируется
- * с предупреждением в лог.</p>
+ * как обычный блок Minecraft, каким он и является. Для типов с
+ * {@code restrict-obtaining: true} рецепт — легальный способ получить
+ * предмет (как в ProtectionStones): результат крафта помечается тегом.</p>
  */
 public class CoreRecipeManager {
 
@@ -43,12 +42,6 @@ public class CoreRecipeManager {
         for (RegionType type : plugin.getRegionTypes().all()) {
             CoreRecipe recipe = type.recipe();
             if (recipe == null) continue;
-
-            if (type.source() != RegionSource.SURVIVAL) {
-                plugin.getLogger().warning("recipe у " + type.id() + " проигнорирован: тип '"
-                        + type.id() + "' получаемый только командой (/qps give).");
-                continue;
-            }
             if (register(type, recipe)) count++;
         }
         if (count > 0) {
@@ -59,11 +52,12 @@ public class CoreRecipeManager {
     private boolean register(RegionType type, CoreRecipe recipe) {
         NamespacedKey key = keyOf(type);
 
-        // Результат помечаем тегом типа (по настройке settings.core-item-tags),
-        // чтобы крафт гарантированно давал именно этот тип привата.
+        // Результат помечаем тегом типа (по настройке settings.core-item-tags;
+        // для ограниченных типов — всегда) и красим по секции item.
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
         ShapedRecipe shaped = new ShapedRecipe(key,
-                RegionItems.core(plugin, type, recipe.resultAmount(), null, tags));
+                RegionItems.core(plugin, type, recipe.resultAmount(), null,
+                        tags || type.restrictObtaining(), true));
 
         shaped.shape(recipe.pattern().toArray(new String[0]));
         recipe.ingredients().forEach(shaped::setIngredient);

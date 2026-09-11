@@ -49,10 +49,13 @@ public record RegionType(
         String farewell,
         boolean fullHeight,
 
-        // Получение: обычный блок или «покупной» (только через /qps give).
-        RegionSource source,
-        // Описание предмета (lore) для выдачи командой.
-        List<String> description,
+        // Ограничено ли получение: true — приват создаёт только предмет,
+        // выданный командой /qps give или скрафченный по recipe.
+        boolean restrictObtaining,
+        // Внешний вид предмета-ядра, когда его создаёт плагин.
+        String itemName,
+        List<String> itemLore,
+        boolean itemGlow,
         // Собственный крафт; null — блок получается как обычный.
         CoreRecipe recipe
 ) {
@@ -68,6 +71,8 @@ public record RegionType(
         allowedEffects = List.copyOf(allowedEffects);
         defaultFlags = Map.copyOf(defaultFlags);
         explosionRules = Map.copyOf(explosionRules);
+        itemName = itemName == null ? "" : itemName.trim();
+        itemLore = itemLore == null ? List.of() : List.copyOf(itemLore);
         radiusX = Math.max(0, radiusX);
         radiusY = Math.max(0, radiusY);
         radiusZ = Math.max(0, radiusZ);

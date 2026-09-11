@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Единая точка сборки предмета-ядра: PDC-тег типа, накопленная прочность
- * и собственное описание (например, у «покупных» приватов).
+ * и внешний вид (имя, описание, свечение — секция item в regions.yml).
  *
  * <p>Раньше тег ставили в трёх местах независимо (/qps give, возврат при
  * поломке, клавиши дублировались строками) — теперь клавиши и логика
@@ -37,13 +37,18 @@ public final class RegionItems {
     /**
      * Собирает блок-ядро.
      *
-     * @param tagType ставить ли PDC-тег типа: для «покупных» типов — всегда
-     *               (без тега блок приват не создаст), для обычных — по
-     *               настройке {@code settings.core-item-tags};
-     * @param carriedDurability накопленная прочность или null — не переносить.
+     * @param tagType ставить ли PDC-тег типа: для типов с
+     *               {@code restrict-obtaining: true} — всегда (без тега блок
+     *               приват не создаст), для обычных — по настройке
+     *               {@code settings.core-item-tags};
+     * @param carriedDurability накопленная прочность или null — не переносить;
+     * @param styled применять ли внешний вид из секции item (имя, описание,
+     *               свечение). Включено для выдачи командой и крафта;
+     *               при поломке ядра — только у ограниченных типов,
+     *               обычные возвращаются как обычный блок.
      */
     public static ItemStack core(QweProtectStones plugin, RegionType type, int amount,
-                                 Integer carriedDurability, boolean tagType) {
+                                 Integer carriedDurability, boolean tagType, boolean styled) {
         ItemStack stack = new ItemStack(type.material(), Math.max(1, amount));
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) return stack;
@@ -57,13 +62,22 @@ public final class RegionItems {
                     durabilityKey(plugin), PersistentDataType.INTEGER, carriedDurability);
         }
 
-        // Собственное описание типа — например, у покупного привата.
-        if (!type.description().isEmpty()) {
-            List<Component> lore = new ArrayList<>();
-            for (String line : type.description()) {
-                lore.add(ColorUtil.formatItemComponent(line));
+        if (styled) {
+            // Имя предмета (MiniMessage); пусто — стандартное имя блока.
+            if (!type.itemName().isEmpty()) {
+                meta.displayName(ColorUtil.formatItemComponent(type.itemName()));
             }
-            meta.lore(lore);
+            if (!type.itemLore().isEmpty()) {
+                List<Component> lore = new ArrayList<>();
+                for (String line : type.itemLore()) {
+                    lore.add(ColorUtil.formatItemComponent(line));
+                }
+                meta.lore(lore);
+            }
+            // Свечение, как у зачарованного предмета.
+            if (type.itemGlow()) {
+                meta.setEnchantmentGlintOverride(true);
+            }
         }
 
         stack.setItemMeta(meta);

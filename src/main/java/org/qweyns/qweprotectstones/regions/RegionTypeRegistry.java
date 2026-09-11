@@ -119,8 +119,10 @@ public class RegionTypeRegistry {
                 readString(section, defaults, "farewell", ""),
                 readBoolean(section, defaults, "full_height", false),
 
-                RegionSource.parse(readString(section, defaults, "source", "SURVIVAL")),
-                readStringList(section, defaults, "description"),
+                readBoolean(section, defaults, "restrict-obtaining", false),
+                readString(section, defaults, "item.name", ""),
+                readStringList(section, defaults, "item.lore"),
+                readBoolean(section, defaults, "item.glow", false),
                 parseRecipe(section, defaults, id));
     }
 
