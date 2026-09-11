@@ -1,0 +1,814 @@
+# ================
+# МАГАЗИН ЭФФЕКТОВ
+# ================
+# Особенности этого меню:
+#   update_interval: N — перерисовывать каждые N тиков
+#     (нужно, когда видимость предметов зависит от купленных эффектов)
+#   Покупка эффекта: [region_add_effect] ИМЯ УРОВЕНЬ в click_commands
+#     (старые имена [claim_add_effect] / [ps_add_effect] тоже работают)
+#
+# ------------------------------------------------------------------
+#  СПРАВКА ПО ФОРМАТУ МЕНЮ (одинакова для всех файлов в /menus/)
+#
+#  Поля предмета:
+#    slot: N                  — слот (0 … size-1); slots: [N, N, N] — сразу несколько
+#    priority: N              — порядок отрисовки при конфликте за слот (меньше — раньше)
+#    material: X              — предмет; %region_material% = блок-ядро привата
+#    display_name / lore      — текст (MiniMessage: <bold>, <#RRGGBB>, <gradient:...>)
+#    amount: N                — количество в стаке
+#    enchantments:            — зачарования, например ["unbreaking:1"]
+#    view_requirement         — условия, при которых предмет ВИДЕН
+#    click_requirement        — условия клика (не прошёл — выполнятся deny_commands)
+#
+#  Действия в click_commands (по порядку; если оплата не прошла —
+#  цепочка обрывается):
+#    [close]                        закрыть меню
+#    [refresh]                      перерисовать меню
+#    [openguimenu] <имя>            открыть другое меню из /menus/
+#    [message] <текст>              сообщение игроку
+#    [player] <команда>             команда от имени игрока
+#    [console] <команда>            команда от имени консоли
+#    [sound] ЗВУК[:громкость[:высота]]
+#    [connect] <сервер>             перевести на сервер (BungeeCord)
+#    [takemoney] <сумма>            снять деньги (нужен Vault)
+#    [takeexp] <уровни>             снять уровни опыта
+#    [takepoints] <число>           снять очки (нужен PlayerPoints)
+#    [region_add_effect] <ИМЯ> <уровень>
+#    Строка без [префикса] игнорируется — пишите [player] явно.
+#
+#  Типы требований (…requirement.requirements.<ключ>.type):
+#    has money / has points / has exp     (amount: N)
+#    has permission                       (permission: право)
+#    region_durability_enabled / region_durability_disabled
+#    is_owner / under_siege / trust_level (level: manager)
+#    has effect / does not have effect    (effect_name: SPEED)
+#    allowed_effect / not_allowed_effect  (effect_name: SPEED)
+#
+#  Плейсхолдеры: %player% %region_id% %owner% %name% %members%
+#    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
+#    и любые из PlaceholderAPI, если он установлен.
+# ------------------------------------------------------------------
+menu_title: "<bold><gradient:#7DD3FC:#E0F2FE>Магазин эффектов</gradient></bold>"
+size: 45
+update_interval: 10
+
+items:
+  # ==========================================
+  # [РЯД 1] СИСТЕМА И БАФФЫ (Слоты 11, 13, 15)
+  # ==========================================
+  exp_boost_bought:
+    slot: 11
+    priority: 1
+    material: EXPERIENCE_BOTTLE
+    display_name: "<bold><gradient:#86EFAC:#34D399>✨ Бустер опыта (Куплен)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#F2EFFA>▪ Дает x2 опыта с мобов и блоков."
+      - ""
+      - "<#86EFAC>✔ Эффект активен!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "EXP_BOOST"
+        b:
+          type: "has effect"
+          effect_name: "EXP_BOOST"
+    click_commands:
+      - "[sound] ENTITY_VILLAGER_NO"
+
+  exp_boost_buy:
+    slot: 11
+    priority: 2
+    material: EXPERIENCE_BOTTLE
+    display_name: "<bold><gradient:#86EFAC:#5EEAD4>✨ Бустер опыта</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Дает x2 опыта."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>5000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "EXP_BOOST"
+        b:
+          type: "does not have effect"
+          effect_name: "EXP_BOOST"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 5000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 5000"
+      - "[region_add_effect] EXP_BOOST:0"
+      - "[sound] ENTITY_PLAYER_LEVELUP"
+      - "[refresh]"
+
+  exp_boost_locked:
+    slot: 11
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Бустер опыта (Блок)</bold>"
+    lore:
+      - "<#F2EFFA>▪ Тип привата (<white>%region_material%<#F2EFFA>)"
+      - "<#F2EFFA>  не поддерживает этот бафф."
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "EXP_BOOST"
+
+  alerts_bought:
+    slot: 13
+    priority: 1
+    material: BELL
+    display_name: "<bold><gradient:#86EFAC:#34D399>🚨 Оповещения (Куплено)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#F2EFFA>▪ Оповещения об атаке и вторжении."
+      - ""
+      - "<#86EFAC>✔ Включены!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "ALERTS"
+        b:
+          type: "has effect"
+          effect_name: "ALERTS"
+
+  alerts_buy:
+    slot: 13
+    priority: 2
+    material: BELL
+    display_name: "<bold><gradient:#FDE68A:#F59E0B>🚨 Радары вторжения</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Сообщит, если зайдет чужак."
+      - ""
+      - "<#A79FC0>Цена: <#C4B5FD>100 Очков"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "ALERTS"
+        b:
+          type: "does not have effect"
+          effect_name: "ALERTS"
+    click_requirement:
+      requirements:
+        c:
+          type: "has points"
+          amount: 100
+      deny_commands:
+        - "[message] <#FB7185>Мало поинтов!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takepoints] 100"
+      - "[region_add_effect] ALERTS:0"
+      - "[sound] BLOCK_NOTE_BLOCK_PLING"
+      - "[refresh]"
+
+  alerts_locked:
+    slot: 13
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Радары (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "ALERTS"
+
+  haste_bought:
+    slot: 15
+    priority: 1
+    material: GOLDEN_PICKAXE
+    display_name: "<bold><gradient:#86EFAC:#34D399>⛏ Спешка II (Куплено)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    hide_attributes: true
+    lore:
+      - "<#86EFAC>✔ Эффект активен!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "FAST_DIGGING"
+        b:
+          type: "has effect"
+          effect_name: "FAST_DIGGING"
+
+  haste_buy:
+    slot: 15
+    priority: 2
+    material: GOLDEN_PICKAXE
+    display_name: "<bold><gradient:#FCD34D:#F59E0B>⛏ Спешка II</gradient></bold>"
+    hide_attributes: true
+    lore:
+      - "<#F2EFFA>▪ Позволяет мгновенно копать."
+      - ""
+      - "<#A79FC0>Цена: <#A78BFA>30 Уровней"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "FAST_DIGGING"
+        b:
+          type: "does not have effect"
+          effect_name: "FAST_DIGGING"
+    click_requirement:
+      requirements:
+        c:
+          type: "has exp"
+          amount: 30
+      deny_commands:
+        - "[message] <#FB7185>Мало опыта!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takeexp] 30"
+      - "[region_add_effect] FAST_DIGGING:1"
+      - "[sound] ENTITY_EXPERIENCE_OR_PICKUP"
+      - "[refresh]"
+
+  haste_locked:
+    slot: 15
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Спешка II (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "FAST_DIGGING"
+
+
+  # ==========================================
+  # [РЯД 2] БОЕВЫЕ БАФФЫ (Слоты 19, 21, 23, 25)
+  # ==========================================
+  speed_bought:
+    slot: 19
+    priority: 1
+    material: POTION
+    display_name: "<bold><gradient:#86EFAC:#34D399>⚡ Скорость II (Куплено)</gradient></bold>"
+    hide_potion_effects: true
+    lore:
+      - "<#86EFAC>✔ Активно для жителей!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "SPEED"
+        b:
+          type: "has effect"
+          effect_name: "SPEED"
+
+  speed_buy:
+    slot: 19
+    priority: 2
+    material: POTION
+    display_name: "<bold><gradient:#93C5FD:#67E8F9>⚡ Скорость II</gradient></bold>"
+    hide_potion_effects: true
+    lore:
+      - "<#F2EFFA>▪ Скорость передвижения по базе."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>15000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "SPEED"
+        b:
+          type: "does not have effect"
+          effect_name: "SPEED"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 15000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 15000"
+      - "[region_add_effect] SPEED:1"
+      - "[sound] ITEM_BOTTLE_FILL"
+      - "[refresh]"
+
+  speed_locked:
+    slot: 19
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Скорость II (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "SPEED"
+
+
+  dmg_bought:
+    slot: 21
+    priority: 1
+    material: BLAZE_POWDER
+    display_name: "<bold><gradient:#86EFAC:#34D399>⚔ Сила II (Куплено)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#86EFAC>✔ Активно для жителей!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "INCREASE_DAMAGE"
+        b:
+          type: "has effect"
+          effect_name: "INCREASE_DAMAGE"
+
+  dmg_buy:
+    slot: 21
+    priority: 2
+    material: BLAZE_POWDER
+    display_name: "<bold><gradient:#FDBA74:#FB7185>⚔ Сила II</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Огромный урон по чужакам."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>25000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "INCREASE_DAMAGE"
+        b:
+          type: "does not have effect"
+          effect_name: "INCREASE_DAMAGE"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 25000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 25000"
+      - "[region_add_effect] INCREASE_DAMAGE:1"
+      - "[sound] ITEM_FIRECHARGE_USE"
+      - "[refresh]"
+
+  dmg_locked:
+    slot: 21
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Сила II (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "INCREASE_DAMAGE"
+
+
+  invis_bought:
+    slot: 23
+    priority: 1
+    material: GLASS
+    display_name: "<bold><gradient:#86EFAC:#34D399>👻 Невидимость (Куплено)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#86EFAC>✔ Активно для жителей!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "INVISIBILITY"
+        b:
+          type: "has effect"
+          effect_name: "INVISIBILITY"
+
+  invis_buy:
+    slot: 23
+    priority: 2
+    material: GLASS
+    display_name: "<bold><gradient:#DDD6FE:#A79FC0>👻 Невидимость</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Скрывает жителей привата."
+      - ""
+      - "<#A79FC0>Цена: <#C4B5FD>150 Очков"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "INVISIBILITY"
+        b:
+          type: "does not have effect"
+          effect_name: "INVISIBILITY"
+    click_requirement:
+      requirements:
+        c:
+          type: "has points"
+          amount: 150
+      deny_commands:
+        - "[message] <#FB7185>Мало поинтов!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takepoints] 150"
+      - "[region_add_effect] INVISIBILITY:0"
+      - "[sound] ENTITY_ILLUSIONER_MIRROR_MOVE"
+      - "[refresh]"
+
+  invis_locked:
+    slot: 23
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Невидимость (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "INVISIBILITY"
+
+
+  hp_bought:
+    slot: 25
+    priority: 1
+    material: GOLDEN_APPLE
+    display_name: "<bold><gradient:#86EFAC:#34D399>❤ Прилив здоровья (Куплен)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#86EFAC>✔ Активно для жителей!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "HEALTH_BOOST"
+        b:
+          type: "has effect"
+          effect_name: "HEALTH_BOOST"
+
+  hp_buy:
+    slot: 25
+    priority: 2
+    material: GOLDEN_APPLE
+    display_name: "<bold><gradient:#FDE68A:#FB7185>❤ Прилив здоровья II</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ +4 дополнительных сердца."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>30000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "HEALTH_BOOST"
+        b:
+          type: "does not have effect"
+          effect_name: "HEALTH_BOOST"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 30000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 30000"
+      - "[region_add_effect] HEALTH_BOOST:1"
+      - "[sound] ENTITY_PLAYER_BURP"
+      - "[refresh]"
+
+  hp_locked:
+    slot: 25
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Прилив здоровья (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "HEALTH_BOOST"
+
+
+  # ==========================================
+  # [РЯД 3] ЛОВУШКИ ДЛЯ ВРАГОВ (Слоты 29, 33)
+  # ==========================================
+  slow_bought:
+    slot: 29
+    priority: 1
+    material: COBWEB
+    display_name: "<bold><gradient:#86EFAC:#34D399>🕸 Ловушка: Замедление (Активна)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#F2EFFA>▪ Чужаки не смогут убежать."
+      - ""
+      - "<#FB7185>✔ Активно на врагах!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "SLOW"
+        b:
+          type: "has effect"
+          effect_name: "SLOW"
+
+  slow_buy:
+    slot: 29
+    priority: 2
+    material: COBWEB
+    display_name: "<bold><gradient:#CBD5E1:#94A3B8>🕸 Замедление II (На чужаков)</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Замедляет всех незваных гостей."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>10000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "SLOW"
+        b:
+          type: "does not have effect"
+          effect_name: "SLOW"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 10000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 10000"
+      - "[region_add_effect] SLOW:1"
+      - "[sound] ENTITY_SPIDER_DEATH"
+      - "[refresh]"
+
+  slow_locked:
+    slot: 29
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Замедление (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "SLOW"
+
+
+  wither_bought:
+    slot: 33
+    priority: 1
+    material: WITHER_ROSE
+    display_name: "<bold><gradient:#86EFAC:#34D399>☠ Ловушка: Иссушение (Активна)</gradient></bold>"
+    enchantments:
+      - "unbreaking:1"
+    hide_enchantments: true
+    lore:
+      - "<#F2EFFA>▪ Медленно убивает нарушителей."
+      - ""
+      - "<#FB7185>✔ Активно на врагах!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "WITHER"
+        b:
+          type: "has effect"
+          effect_name: "WITHER"
+
+  wither_buy:
+    slot: 33
+    priority: 2
+    material: WITHER_ROSE
+    display_name: "<bold><gradient:#6D28D9:#F43F5E>☠ Иссушение (Смертельная ловушка)</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Иссушает тех, кого нет в привате."
+      - ""
+      - "<#A79FC0>Цена: <#86EFAC>50000$"
+      - ""
+      - "<#FDE68A>▶ Нажмите, чтобы купить!"
+    view_requirement:
+      requirements:
+        a:
+          type: "allowed_effect"
+          effect_name: "WITHER"
+        b:
+          type: "does not have effect"
+          effect_name: "WITHER"
+    click_requirement:
+      requirements:
+        c:
+          type: "has money"
+          amount: 50000.0
+      deny_commands:
+        - "[message] <#FB7185>Мало денег!"
+        - "[sound] ENTITY_VILLAGER_NO"
+    click_commands:
+      - "[takemoney] 50000"
+      - "[region_add_effect] WITHER:0"
+      - "[sound] ENTITY_WITHER_AMBIENT"
+      - "[refresh]"
+
+  wither_locked:
+    slot: 33
+    priority: 3
+    material: BARRIER
+    display_name: "<bold><#FB7185>🔒 Иссушение (Блок)</bold>"
+    view_requirement:
+      requirements:
+        a:
+          type: "not_allowed_effect"
+          effect_name: "WITHER"
+
+  # ==========================================
+  # ВЫХОД
+  # ==========================================
+  back_to_main:
+    slot: 40
+    priority: 1
+    material: ARROW
+    display_name: "<bold><#C4B5FD>Назад</bold>"
+    view_requirement:
+      requirements:
+        d:
+          type: "region_durability_enabled"
+    click_commands:
+      - "[openguimenu] main"
+      - "[sound] UI_BUTTON_CLICK"
+
+  back_close:
+    slot: 40
+    priority: 2
+    material: BARRIER
+    display_name: "<bold><#FB7185>Закрыть</bold>"
+    click_commands:
+      - "[close]"
+      - "[sound] UI_BUTTON_CLICK"
+
+  # ==========================================
+  # ПРЕДМЕТЫ АНИМАЦИИ
+  # ==========================================
+  anim_cover:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: "&8Сборка интерфейса..."
+  anim_bg:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: " "
+  anim_bg2:
+    material: GRAY_STAINED_GLASS_PANE
+    display_name: " "
+  anim_chain:
+    material: CHAIN
+    display_name: " "
+
+# ==========================================
+# ДВИЖОК АНИМАЦИИ (КУЗНИЦА - СБОРКА РАМКИ 45 СЛОТОВ)
+# БЕЗ МИГАНИЙ И ЗАЦИКЛИВАНИЙ
+# ==========================================
+animations:
+  default:
+    # 1. Заливаем всё меню черным экраном
+    - tick: 0
+      opcodes:
+        - fill: anim_cover
+
+    # 2. Начинаем симметричную "отрисовку" рамки с верхнего центра (слот 4)
+    - tick: 2
+      opcodes:
+        - set: anim_bg2 4
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 4
+      opcodes:
+        - set: anim_bg 3,5
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 6
+      opcodes:
+        - set: anim_bg2 2,6
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 8
+      opcodes:
+        - set: anim_bg 1,7
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # 3. Углы закрепляем цепями (звук наковальни)
+    - tick: 10
+      opcodes:
+        - set: anim_chain 0,8
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+
+    # 4. Спускаемся вниз по бокам (1-й ряд сверху)
+    - tick: 12
+      opcodes:
+        - set: anim_bg2 9,17
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # 5. Спускаемся по бокам (Центральный ряд)
+    - tick: 14
+      opcodes:
+        - set: anim_bg 18,26
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # 6. Спускаемся по бокам (3-й ряд сверху)
+    - tick: 16
+      opcodes:
+        - set: anim_bg2 27,35
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # 7. Нижние углы закрепляем цепями
+    - tick: 18
+      opcodes:
+        - set: anim_chain 36,44
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+
+    # 8. Идем к центру по нижней грани
+    - tick: 20
+      opcodes:
+        - set: anim_bg 37,43
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 22
+      opcodes:
+        - set: anim_bg2 38,42
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 24
+      opcodes:
+        - set: anim_bg 39,41
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+
+    # 9. Рамка замкнулась! Открываем кнопку Назад (Слот 40)
+    - tick: 26
+      opcodes:
+        - remove: 40
+        - sound: BLOCK_NOTE_BLOCK_CHIME 1.0 1.0
+
+    # 10. Очищаем пустоты вокруг кнопок эффектов
+    - tick: 30
+      opcodes:
+        - remove: 10,12,14,16,20,22,24,28,30,31,32,34
+        - sound: BLOCK_IRON_TRAPDOOR_OPEN 1.0 0.8
+
+    # 11. Каскадное появление всех 9 эффектов (Сверху вниз, слева направо)
+    - tick: 34
+      opcodes:
+        - remove: 11
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.0
+    - tick: 36
+      opcodes:
+        - remove: 13
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.1
+    - tick: 38
+      opcodes:
+        - remove: 15
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.2
+    - tick: 40
+      opcodes:
+        - remove: 19
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.3
+    - tick: 42
+      opcodes:
+        - remove: 21
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.4
+    - tick: 44
+      opcodes:
+        - remove: 23
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.5
+    - tick: 46
+      opcodes:
+        - remove: 25
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.6
+    - tick: 48
+      opcodes:
+        - remove: 29
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.7
+    - tick: 50
+      opcodes:
+        - remove: 33
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.8

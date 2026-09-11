@@ -1,0 +1,212 @@
+# =============
+# МЕНЮ ПРОКАЧКИ
+# =============
+# Особенности этого меню:
+#   upgrade_slots             — слоты кнопок прокачки (заполняются шаблоном)
+#   upgrade_item_template     — шаблон кнопки «купить уровень N»
+#   max_upgrade_item_template — что показать, когда достигнут максимум
+#   Плейсхолдеры шаблона: %level% (уровень), %cost% (цена), %item% (предмет)
+#
+# ------------------------------------------------------------------
+#  СПРАВКА ПО ФОРМАТУ МЕНЮ (одинакова для всех файлов в /menus/)
+#
+#  Поля предмета:
+#    slot: N                  — слот (0 … size-1); slots: [N, N, N] — сразу несколько
+#    priority: N              — порядок отрисовки при конфликте за слот (меньше — раньше)
+#    material: X              — предмет; %region_material% = блок-ядро привата
+#    display_name / lore      — текст (MiniMessage: <bold>, <#RRGGBB>, <gradient:...>)
+#    amount: N                — количество в стаке
+#    enchantments:            — зачарования, например ["unbreaking:1"]
+#    view_requirement         — условия, при которых предмет ВИДЕН
+#    click_requirement        — условия клика (не прошёл — выполнятся deny_commands)
+#
+#  Действия в click_commands (по порядку; если оплата не прошла —
+#  цепочка обрывается):
+#    [close]                        закрыть меню
+#    [refresh]                      перерисовать меню
+#    [openguimenu] <имя>            открыть другое меню из /menus/
+#    [message] <текст>              сообщение игроку
+#    [player] <команда>             команда от имени игрока
+#    [console] <команда>            команда от имени консоли
+#    [sound] ЗВУК[:громкость[:высота]]
+#    [connect] <сервер>             перевести на сервер (BungeeCord)
+#    [takemoney] <сумма>            снять деньги (нужен Vault)
+#    [takeexp] <уровни>             снять уровни опыта
+#    [takepoints] <число>           снять очки (нужен PlayerPoints)
+#    [region_add_effect] <ИМЯ> <уровень>
+#    Строка без [префикса] игнорируется — пишите [player] явно.
+#
+#  Типы требований (…requirement.requirements.<ключ>.type):
+#    has money / has points / has exp     (amount: N)
+#    has permission                       (permission: право)
+#    region_durability_enabled / region_durability_disabled
+#    is_owner / under_siege / trust_level (level: manager)
+#    has effect / does not have effect    (effect_name: SPEED)
+#    allowed_effect / not_allowed_effect  (effect_name: SPEED)
+#
+#  Плейсхолдеры: %player% %region_id% %owner% %name% %members%
+#    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
+#    и любые из PlaceholderAPI, если он установлен.
+# ------------------------------------------------------------------
+menu_title: "<bold><gradient:#F8BA47:#FF9F41>Прочность региона</gradient></bold>"
+size: 27
+upgrade_slots:
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+
+upgrade_item_template:
+  material: NETHERITE_INGOT
+  display_name: "<bold><gradient:#C4B5FD:#8B5CF6>Улучшить до %level% ед.</gradient></bold>"
+  lore:
+    - "<#F2EFFA>▪ Увеличивает защиту вашего"
+    - "<#F2EFFA>  привата от взрывов."
+    - ""
+    - "<#A79FC0>Стоимость: <#FDE68A>%cost% %item%"
+    - ""
+    - "<#86EFAC>▶ Нажмите, чтобы вложить ресурсы!"
+
+max_upgrade_item_template:
+  material: BARRIER
+  display_name: "<bold><#FB7185>Предел прочности</bold>"
+  lore:
+    - "<#F2EFFA>▪ Этот регион достиг"
+    - "<#F2EFFA>  максимальной защиты."
+    - ""
+    - "<#86EFAC>✔ Максимальный уровень!"
+
+items:
+  region_core:
+    slot: 10
+    material: "%region_material%"
+    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>Ядро привата</gradient></bold>"
+    lore:
+      - "<#F2EFFA>▪ Текущая прочность: <white>%current%<#F2EFFA>/<white>%max%"
+      - "<#F2EFFA>▪ Штраф: <#FB7185>%penalty%"
+
+  back_btn:
+    slot: 22
+    material: ARROW
+    display_name: "<bold><#C4B5FD>Назад</bold>"
+    click_commands:
+      - "[openguimenu] main"
+      - "[sound] UI_BUTTON_CLICK"
+
+  # ==========================================
+  # ПРЕДМЕТЫ ДЛЯ АНИМАЦИИ
+  # ==========================================
+  anim_cover:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: "<#A79FC0>Запуск интерфейса..."
+
+  anim_bg:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: "<white> "
+
+  anim_bg2:
+    material: GRAY_STAINED_GLASS_PANE
+    display_name: "<white> "
+
+  anim_chain:
+    material: CHAIN
+    display_name: "<white> "
+
+  anim_spark:
+    material: LIGHT_BLUE_STAINED_GLASS_PANE
+    display_name: "<bold><#C4B5FD>⚡ Передача энергии...</bold>"
+
+# ==========================================
+# ДВИЖОК АНИМАЦИИ
+# ==========================================
+animations:
+  default:
+    - tick: 0
+      opcodes:
+        - fill: anim_cover
+    - tick: 2
+      opcodes:
+        - set: anim_bg2 4
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 4
+      opcodes:
+        - set: anim_bg 3,5
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 6
+      opcodes:
+        - set: anim_bg2 2,6
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 8
+      opcodes:
+        - set: anim_bg 1,7
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 10
+      opcodes:
+        - set: anim_chain 0,8
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+    - tick: 12
+      opcodes:
+        - set: anim_bg2 9,17
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 14
+      opcodes:
+        - set: anim_chain 18,26
+        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
+    - tick: 16
+      opcodes:
+        - set: anim_bg 19,25
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 18
+      opcodes:
+        - set: anim_bg2 20,24
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 20
+      opcodes:
+        - set: anim_bg 21,23
+        - sound: UI_BUTTON_CLICK 1.0 1.5
+    - tick: 22
+      opcodes:
+        - remove: 22
+        - sound: BLOCK_NOTE_BLOCK_CHIME 1.0 1.0
+
+    # 8. Появление Ядра (Слот 10)
+    - tick: 28
+      opcodes:
+        - remove: 10
+        - sound: ITEM_TRIDENT_RETURN 1.0 0.5
+    - tick: 32
+      opcodes:
+        - remove: 11
+    - tick: 34
+      opcodes:
+        - remove: 12
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.5
+    - tick: 36
+      opcodes:
+        - remove: 13
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.6
+    - tick: 38
+      opcodes:
+        - remove: 14
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.7
+    - tick: 40
+      opcodes:
+        - remove: 15
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.8
+    - tick: 42
+      opcodes:
+        - remove: 16
+        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 2.0
+    
+    # ⚡ Эффект передачи энергии от Ядра к Прокачке
+    - tick: 60
+      opcodes:
+        - set: anim_spark 11
+        - sound: BLOCK_AMETHYST_BLOCK_RESONATE 0.8 2.0
+    - tick: 65
+      opcodes:
+        - remove: 11
+    - tick: 120
+      opcodes:
+        - goto: 60
