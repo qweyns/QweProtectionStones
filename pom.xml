@@ -121,6 +121,15 @@
             <id>rosewood-repo</id>
             <url>https://repo.rosewooddev.io/repository/public/</url>
         </repository>
+        <!--
+            CodeMC: отсюда берётся de.tr7zw:item-nbt-api — транзитивная
+            зависимость DecentHolograms ( jitpack ). Без этого репозитория
+            импорт Maven падает на резолве графа зависимостей.
+        -->
+        <repository>
+            <id>codemc-repo</id>
+            <url>https://repo.codemc.io/repository/maven-public/</url>
+        </repository>
         <repository>
             <id>fancyinnovations-releases</id>
             <name>FancyInnovations Repository</name>
@@ -159,12 +168,16 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!--
+            FancyHolograms API. Раньше подключался локальным jar из libs/,
+            которого не было в репозитории — из-за этого сборка падала у любого,
+            кто клонировал проект. Берём из официального репозитория.
+        -->
         <dependency>
             <groupId>de.oliver</groupId>
             <artifactId>FancyHolograms</artifactId>
             <version>2.9.1</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/FancyHolograms.jar</systemPath>
+            <scope>provided</scope>
         </dependency>
         <!-- PlayerPoints API -->
         <dependency>
