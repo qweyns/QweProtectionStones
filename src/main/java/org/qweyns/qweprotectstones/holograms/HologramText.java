@@ -16,6 +16,9 @@ final class HologramText {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
 
         return line.replace("%player%", region.getOwnerName())
+                // Название типа (display_name из regions.yml): чтобы не
+                // вписывать его дважды — и в display_name, и в строки голограммы.
+                .replace("%type%", type == null ? region.getTypeId() : type.displayName())
                 .replace("%owner%", region.getOwnerName())
                 .replace("%name%", region.getLabel())
                 .replace("%durability%", String.valueOf(region.getDurability()))

@@ -83,8 +83,8 @@ public class FHProvider implements IHologramProvider {
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {
         // Голограмма целиком состоит из hologram_lines (или _under_attack):
-        // display_name не подставляется — заголовок, если нужен, настраивается
-        // в конфиге вручную. Плейсхолдеры работают в каждой строке.
+        // display_name автоматически не подставляется — заголовок, если
+        // нужен, задаётся строкой с плейсхолдером %type%.
         List<String> lines = new ArrayList<>();
         for (String line : config.getHologramLines(typeId, plugin.isUnderSiege(region))) {
             lines.add(HologramText.apply(plugin, line, region));

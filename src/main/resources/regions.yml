@@ -14,6 +14,7 @@
 #  Один материал может принадлежать только одному типу.
 #
 #  Плейсхолдеры для строк голограмм и greeting/farewell:
+#    %type%   — название типа (display_name, вместе с цветами)
 #    %owner%  — ник владельца          %name%   — название привата
 #    %members% — число участников      %size%   — размер (например 33x33)
 #    %durability% / %max_durability% — текущая и максимальная прочность
@@ -32,19 +33,20 @@ default_region:
   display_name: "<#FFaa00>Приват"
 
   # Строки голограммы — целиком ваши, display_name сверху не добавляется.
-  # Заголовок, если нужен, впишите первой строкой (можно с %name% —
-  # названием привата, которое задал владелец, вместо названия типа).
-  # Плейсхолдеры работают в каждой строке: %owner% %name% %members%
+  # Заголовок — плейсхолдером %type%: подставится display_name типа вместе
+  # с цветами. Название типа пишется один раз — в display_name выше.
+  # Плейсхолдеры работают в каждой строке: %type% %owner% %name% %members%
   # %size% %durability% %max_durability% %id% %item% %siege% %penalty%
   # %attacks%
   hologram_lines:
-    - "<#FFaa00>Приват"
+    - "%type%"
     - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
     - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
 
   # Строки во время осады. Если не задать — показываются обычные.
-  # Здесь тоже всё вручную: display_name не подставляется.
+  # %type% работает и здесь.
   hologram_lines_under_attack:
+    - "%type%"
     - "<#FF5555>⚔ ПОД АТАКОЙ"
     - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
     - "<#F0F0F0>Прочность: <#FF5555>[ %durability% / %max_durability% ]"
@@ -258,7 +260,7 @@ region_types:
   DIAMOND_BLOCK:
     display_name: <#00d8ff>Маленький приват
     hologram_lines:
-    - '  <#00d8ff>Маленький приват  '
+    - '  %type%  '
     - ''
     - '  <#F0F0F0>Владелец: <#00d8ff>%owner%  '
     - '  <#F0F0F0>Размер: <#00d8ff>%size%  '
@@ -285,7 +287,7 @@ region_types:
   DEEPSLATE_EMERALD_ORE:
     display_name: <#fc6f00>Средний приват
     hologram_lines:
-    - '  <#fc6f00>Средний приват  '
+    - '  %type%  '
     - ''
     - '  <#F0F0F0>Владелец: <#fc6f00>%owner%  '
     - '  <#F0F0F0>Прочность: <#fc6f00>[ %durability% / %max_durability% ]  '
@@ -315,7 +317,7 @@ region_types:
   ANCIENT_DEBRIS:
     display_name: <gradient:#F8BA47:#FF9F41>Большой приват</gradient>
     hologram_lines:
-    - '  <gradient:#F8BA47:#FF9F41>Большой приват</gradient>  '
+    - '  %type%  '
     - ''
     - '  <#F0F0F0>Владелец: <gradient:#F8BA47:#FF9F41>%owner%</gradient>  '
     - '  <#F0F0F0>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  '
@@ -346,7 +348,7 @@ region_types:
   RED_MUSHROOM_BLOCK:
     display_name: <gradient:#F84747:#DD4141>Огромный приват</gradient>
     hologram_lines:
-    - '  <gradient:#F84747:#DD4141>Огромный приват</gradient>  '
+    - '  %type%  '
     - ''
     - '  <#F0F0F0>Владелец: <gradient:#F84747:#DD4141>%owner%</gradient>  '
     - '  <#F0F0F0>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  '

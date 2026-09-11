@@ -116,11 +116,18 @@ public class RegionMovementListener implements Listener {
         return renderTransition(region, text, fallbackKey);
     }
 
+    /** Название типа привата (display_name) для плейсхолдера %type%. */
+    private String typeName(Region region) {
+        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
+        return type != null ? type.displayName() : region.getTypeId();
+    }
+
     private Component renderTransition(Region region, String custom, String fallbackKey) {
         String[] placeholders = {
                 "%owner%", region.getOwnerName(),
                 "%name%", region.getLabel(),
-                "%player%", region.getOwnerName()
+                "%player%", region.getOwnerName(),
+                "%type%", typeName(region)
         };
 
         return custom.isEmpty()
