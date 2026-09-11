@@ -45,6 +45,15 @@ public class PAPIExpansion extends PlaceholderExpansion {
             case "regions_total" -> {
                 return String.valueOf(plugin.getRegionManager().size());
             }
+            case "regions_area" -> {
+                // Суммарная охраняемая площадь всех приватов игрока (в блоках).
+                long area = 0;
+                for (Region owned : plugin.getRegionManager().getRegionsOf(player.getUniqueId())) {
+                    RegionType type = plugin.getRegionTypes().byId(owned.getTypeId());
+                    if (type != null) area += (long) type.widthX() * type.widthZ();
+                }
+                return String.valueOf(area);
+            }
             default -> { /* дальше смотрим на приват под ногами */ }
         }
 
@@ -73,6 +82,8 @@ public class PAPIExpansion extends PlaceholderExpansion {
             case "standing_siege" -> plugin.getLanguageManager()
                     .getRawMessage(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm");
             case "standing_attacks" -> String.valueOf(region.getAttackCount());
+            case "standing_last_attacker" -> region.getLastAttackerName();
+            case "standing_unseen_attacks" -> String.valueOf(region.getUnseenAttacks());
             default -> null;
         };
     }

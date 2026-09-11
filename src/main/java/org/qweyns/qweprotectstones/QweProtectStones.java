@@ -137,7 +137,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.marketManager.load();
 
         PluginManager pm = getServer().getPluginManager();
-        if (pm.isPluginEnabled("PlaceholderAPI")) {
+        if (pm.isPluginEnabled("PlaceholderAPI") && getConfigManager().getConfig().getBoolean("placeholders.enabled", true)) {
             new PAPIExpansion(this).register();
         }
 
@@ -199,6 +199,7 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(new EntityProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.BorderProtectionListener(this), this);
+        pm.registerEvents(new org.qweyns.qweprotectstones.listeners.RaidSummaryListener(this), this);
 
         this.actionLogger = new RegionActionLogger(this);
         this.previewListener = new RegionPreviewListener(this);

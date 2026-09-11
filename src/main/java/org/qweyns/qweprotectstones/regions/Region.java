@@ -58,6 +58,8 @@ public final class Region implements Bounded {
     private volatile int attackCount;
     private volatile long lastAttackAt;
     private volatile String lastAttackerName = "";
+    /** Атаки, случившиеся, пока владелец был не в сети: о них сообщим при входе. */
+    private volatile int unseenAttacks;
 
     /**
      * Счётчик изменений. Меню перерисовывается только когда версия выросла,
@@ -388,10 +390,27 @@ public final class Region implements Bounded {
     }
 
     /** Восстановление из базы — без изменения времени последней атаки. */
-    public void restoreStats(int attackCount, long lastAttackAt, String lastAttackerName) {
+    public void restoreStats(int attackCount, long lastAttackAt, String lastAttackerName, int unseenAttacks) {
         this.attackCount = Math.max(0, attackCount);
         this.lastAttackAt = lastAttackAt;
         this.lastAttackerName = lastAttackerName == null ? "" : lastAttackerName;
+        this.unseenAttacks = Math.max(0, unseenAttacks);
+    }
+
+    /** Сколько атак случилось, пока владельца не было в сети. */
+    public int getUnseenAttacks() { return unseenAttacks; }
+
+    /** Атака при оффлайновом владельце: попадёт в сводку при его входе. */
+    public void markUnseenAttack() {
+        unseenAttacks++;
+        touch();
+    }
+
+    /** Сводка показана — счётчик обнуляется. */
+    public void clearUnseenAttacks() {
+        if (unseenAttacks == 0) return;
+        unseenAttacks = 0;
+        touch();
     }
 
     /** Идёт ли осада прямо сейчас: атака была не дольше указанного времени назад. */

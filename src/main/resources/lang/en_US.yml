@@ -331,6 +331,11 @@ findspot_none: "%prefix%<#E74C3C>No free spot within %distance% blocks."
 region_cooldown: "%prefix%<#E74C3C>Wait <#F1C40F>%seconds% <#E74C3C>s before creating another region."
 siege_active: "<#E74C3C>under siege"
 siege_calm: "<#2ECC71>calm"
+raid_summary_header:
+  - "%prefix%<#E67E22>While you were away, your regions were attacked:"
+
+raid_summary_line:
+  - "<#E74C3C> ⚔ <#F1C40F>%id% <#7F8C8D>| attacks: <#E74C3C>%attacks% <#7F8C8D>| durability: <#E67E22>%durability%<#7F8C8D>/<#E67E22>%max% <#7F8C8D>| <#95A5A6>%attacker%  <dark_gray>[</dark_gray><click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Click to teleport to the region'><#3498DB> Teleport </#3498DB></hover></click><dark_gray>]</dark_gray>"
 
 # --- Администрирование: новое ---
 admin_never: "never"

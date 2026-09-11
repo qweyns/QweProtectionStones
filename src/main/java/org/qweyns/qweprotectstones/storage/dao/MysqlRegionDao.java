@@ -64,8 +64,8 @@ public class MysqlRegionDao extends AbstractSqlRegionDao {
     protected String regionUpsert() {
         return "INSERT INTO " + regionsTable() + " (id, world, min_x, min_y, min_z, max_x, max_y, max_z," +
                 " core_x, core_y, core_z, type, owner_uuid, owner_name, durability, max_durability, effects, created_at," +
-                " attack_count, last_attack_at, last_attacker, display_name, greeting, farewell)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
+                " attack_count, last_attack_at, last_attacker, unseen_attacks, display_name, greeting, farewell)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
                 " ON DUPLICATE KEY UPDATE world = VALUES(world)," +
                 " min_x = VALUES(min_x), min_y = VALUES(min_y), min_z = VALUES(min_z)," +
                 " max_x = VALUES(max_x), max_y = VALUES(max_y), max_z = VALUES(max_z)," +
@@ -73,7 +73,8 @@ public class MysqlRegionDao extends AbstractSqlRegionDao {
                 " type = VALUES(type), owner_uuid = VALUES(owner_uuid), owner_name = VALUES(owner_name)," +
                 " durability = VALUES(durability), max_durability = VALUES(max_durability), effects = VALUES(effects)," +
                 " attack_count = VALUES(attack_count), last_attack_at = VALUES(last_attack_at)," +
-                " last_attacker = VALUES(last_attacker), display_name = VALUES(display_name)," +
+                " last_attacker = VALUES(last_attacker), unseen_attacks = VALUES(unseen_attacks)," +
+                " display_name = VALUES(display_name)," +
                 " greeting = VALUES(greeting), farewell = VALUES(farewell)";
     }
 
