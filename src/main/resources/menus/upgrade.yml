@@ -48,7 +48,7 @@
 #    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
-menu_title: "<bold><gradient:#E67E22:#F39C12>Прочность региона</gradient></bold>"
+menu_title: "<bold><gradient:#E9D5FF:#DDD6FE:#FBCFE8>Прочность региона</gradient></bold>"
 size: 27
 upgrade_slots:
   - 12
@@ -59,37 +59,37 @@ upgrade_slots:
 
 upgrade_item_template:
   material: NETHERITE_INGOT
-  display_name: "<bold><gradient:#2ECC71:#27AE60>Улучшить до %level% ед.</gradient></bold>"
+  display_name: "<bold><gradient:#86EFAC:#34D399>Улучшить до %level% ед.</gradient></bold>"
   lore:
-    - "<#BDC3C7>▪ Увеличивает защиту вашего"
-    - "<#BDC3C7>  привата от взрывов."
+    - "<#F2EFFA>▪ Увеличивает защиту вашего"
+    - "<#F2EFFA>  привата от взрывов."
     - ""
-    - "<#95A5A6>Стоимость: <#F1C40F>%cost% %item%"
+    - "<#A79FC0>Стоимость: <#FDE68A>%cost% %item%"
     - ""
-    - "<#2ECC71>▶ Нажмите, чтобы вложить ресурсы!"
+    - "<#86EFAC>▶ Нажмите, чтобы вложить ресурсы!"
 
 max_upgrade_item_template:
   material: BARRIER
-  display_name: "<bold><#E74C3C>Предел прочности</bold>"
+  display_name: "<bold><#FB7185>Предел прочности</bold>"
   lore:
-    - "<#BDC3C7>▪ Этот регион достиг"
-    - "<#BDC3C7>  максимальной защиты."
+    - "<#F2EFFA>▪ Этот регион достиг"
+    - "<#F2EFFA>  максимальной защиты."
     - ""
-    - "<#2ECC71>✔ Максимальный уровень!"
+    - "<#86EFAC>✔ Максимальный уровень!"
 
 items:
   region_core:
     slot: 10
     material: "%region_material%"
-    display_name: "<bold><gradient:#9B59B6:#8E44AD>Ядро привата</gradient></bold>"
+    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>Ядро привата</gradient></bold>"
     lore:
-      - "<#BDC3C7>▪ Текущая прочность: <white>%current%<#BDC3C7>/<white>%max%"
-      - "<#BDC3C7>▪ Штраф: <#E74C3C>%penalty%"
+      - "<#F2EFFA>▪ Текущая прочность: <white>%current%<#F2EFFA>/<white>%max%"
+      - "<#F2EFFA>▪ Штраф: <#FB7185>%penalty%"
 
   back_btn:
     slot: 22
     material: ARROW
-    display_name: "<bold><#E74C3C>Назад</bold>"
+    display_name: "<bold><#FB7185>Назад</bold>"
     click_commands:
       - "[openguimenu] main"
       - "[sound] UI_BUTTON_CLICK"
@@ -99,7 +99,7 @@ items:
   # ==========================================
   anim_cover:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: "<#7F8C8D>Запуск интерфейса..."
+    display_name: "<#A79FC0>Запуск интерфейса..."
 
   anim_bg:
     material: BLACK_STAINED_GLASS_PANE
@@ -115,7 +115,7 @@ items:
 
   anim_spark:
     material: LIGHT_BLUE_STAINED_GLASS_PANE
-    display_name: "<bold><#3498DB>⚡ Передача энергии...</bold>"
+    display_name: "<bold><#C4B5FD>⚡ Передача энергии...</bold>"
 
 # ==========================================
 # ДВИЖОК АНИМАЦИИ

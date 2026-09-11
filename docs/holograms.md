@@ -14,8 +14,8 @@
 ```yaml
 hologram_lines:              # обычный вид
   - "%type%"
-  - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
-  - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
+  - "<#F2EFFA>Владелец: <#C4B5FD>%owner%"
+  - "<#F2EFFA>Прочность: <#C4B5FD>[ %durability% / %max_durability% ]"
 hologram_lines_under_attack: # вид во время осады
   - "%type%"
   - "<#FF5555>⚔ ПОД АТАКОЙ"
@@ -23,7 +23,8 @@ hologram_lines_under_attack: # вид во время осады
 
 - Строки целиком ваши: `display_name` типа не подставляется автоматически —
   только плейсхолдером `%type%` (вместе с цветами).
-- Поддерживается MiniMessage: `<bold>`, `<#RRGGBB>`, `<gradient:#A:#B>`.
+- Поддерживается MiniMessage: `<bold>`, `<#RRGGBB>`, `<gradient:#A:#B>`
+  (стопов может быть больше: `<gradient:#A:#B:#C>` — плавнее перелив).
 - Переключение на осадный вид — только при `hologram_under_attack: true`.
 
 Плейсхолдеры строк: `%type%` `%owner%` `%name%` `%members%` `%size%`

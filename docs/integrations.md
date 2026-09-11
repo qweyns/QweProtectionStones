@@ -13,8 +13,8 @@ map:
   dynmap:
     enable: true
     layer_name: "Приваты"
-    line_color: "#00B4DB"
-    fill_color: "#00B4DB"
+    line_color: "#A78BFA"
+    fill_color: "#C4B5FD"
     fill_opacity: 0.25
 ```
 
@@ -25,8 +25,8 @@ map:
   bluemap:
     enable: true
     marker_set_label: "Приваты"
-    line_color: "#00B4DB"
-    fill_color: "#00B4DB"
+    line_color: "#A78BFA"
+    fill_color: "#C4B5FD"
     fill_opacity: 0.25
     line_width: 2
     default_hidden: false  # скрыть слой по умолчанию

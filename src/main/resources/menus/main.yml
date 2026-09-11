@@ -42,18 +42,18 @@
 #    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
-menu_title: "<bold><gradient:#c21500:#ffc500>Управление регионом</gradient></bold>"
+menu_title: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>Управление регионом</gradient></bold>"
 size: 27
 items:
   upgrade_btn:
     slot: 11
     material: ANCIENT_DEBRIS
-    display_name: "<bold><gradient:#E67E22:#F39C12>Улучшить прочность</gradient></bold>"
+    display_name: "<bold><gradient:#E9D5FF:#DDD6FE:#FBCFE8>Улучшить прочность</gradient></bold>"
     lore:
-      - "<#BDC3C7>▪ Нажмите, чтобы перейти к"
-      - "<#BDC3C7>  укреплению защиты привата."
+      - "<#F2EFFA>▪ Нажмите, чтобы перейти к"
+      - "<#F2EFFA>  укреплению защиты привата."
       - ""
-      - "<#E74C3C>⚠ Штраф от недавних атак: <#F1C40F>%penalty%"
+      - "<#FB7185>⚠ Штраф от недавних атак: <#FDE68A>%penalty%"
     click_commands:
       - "[openguimenu] upgrade"
       - "[sound] UI_BUTTON_CLICK"
@@ -61,10 +61,10 @@ items:
   effects_btn:
     slot: 15
     material: BEACON
-    display_name: "<bold><gradient:#00B4DB:#0083B0>Магазин эффектов</gradient></bold>"
+    display_name: "<bold><gradient:#8B5CF6:#A78BFA:#F472B6>Магазин эффектов</gradient></bold>"
     lore:
-      - "<#BDC3C7>▪ Покупка постоянных баффов,"
-      - "<#BDC3C7>  уведомлений и бустеров."
+      - "<#F2EFFA>▪ Покупка постоянных баффов,"
+      - "<#F2EFFA>  уведомлений и бустеров."
     click_commands:
       - "[openguimenu] effects"
       - "[sound] UI_BUTTON_CLICK"
@@ -72,7 +72,7 @@ items:
   close_btn:
     slot: 22
     material: BARRIER
-    display_name: "<bold><#E74C3C>Закрыть</bold>"
+    display_name: "<bold><#FB7185>Закрыть</bold>"
     click_commands:
       - "[close]"
       - "[sound] UI_BUTTON_CLICK"
@@ -82,7 +82,7 @@ items:
   # ==========================================
   anim_cover:
     material: BLACK_STAINED_GLASS_PANE
-    display_name: "<#7F8C8D>Запуск систем защиты..."
+    display_name: "<#A79FC0>Запуск систем защиты..."
   anim_bg:
     material: BLACK_STAINED_GLASS_PANE
     display_name: "<white> "

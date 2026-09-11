@@ -30,7 +30,7 @@ default_region:
   # меню и сообщение /qps give. Поддерживаются цвета MiniMessage.
   # В голограмму оно НЕ подставляется — содержимое голограммы целиком
   # задаётся строками ниже, включая заголовок, если он нужен.
-  display_name: "<#FFaa00>Приват"
+  display_name: "<#C4B5FD>Приват"
 
   # Строки голограммы — целиком ваши, display_name сверху не добавляется.
   # Заголовок — плейсхолдером %type%: подставится display_name типа вместе
@@ -40,17 +40,17 @@ default_region:
   # %attacks%
   hologram_lines:
     - "%type%"
-    - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
-    - "<#F0F0F0>Прочность: <#FFaa00>[ %durability% / %max_durability% ]"
+    - "<#F2EFFA>Владелец: <#C4B5FD>%owner%"
+    - "<#F2EFFA>Прочность: <#C4B5FD>[ %durability% / %max_durability% ]"
 
   # Строки во время осады. Если не задать — показываются обычные.
   # Используются только при hologram_under_attack: true — сам
   # переключатель в блоке «Голограммы» ниже. %type% работает и здесь.
   hologram_lines_under_attack:
     - "%type%"
-    - "<#FF5555>⚔ ПОД АТАКОЙ"
-    - "<#F0F0F0>Владелец: <#FFaa00>%owner%"
-    - "<#F0F0F0>Прочность: <#FF5555>[ %durability% / %max_durability% ]"
+    - "<#F43F5E>⚔ ПОД АТАКОЙ"
+    - "<#F2EFFA>Владелец: <#C4B5FD>%owner%"
+    - "<#F2EFFA>Прочность: <#F43F5E>[ %durability% / %max_durability% ]"
 
   # --- Территория ----------------------------------------------------------
   # Радиус считается от блока-ядра. radius: 16 → площадка 33×33 блока.
@@ -136,7 +136,7 @@ default_region:
   # Какое меню открывает клик по ядру (файл из папки /menus/ без .yml).
   # Пусто — плагин выберет сам: «main», если доступна прокачка, иначе «effects».
   menu: ""
-  # Цвет каркаса границ именно этого типа (подсветка), например "#00FF00".
+  # Цвет каркаса границ именно этого типа (подсветка), например "#C4B5FD".
   # Пусто — цвет из visuals.boundaries в visuals.yml.
   border_color: ""
 
@@ -269,12 +269,12 @@ default_region:
 region_types:
 
   DIAMOND_BLOCK:
-    display_name: <#00d8ff>Маленький приват
+    display_name: <#DDD6FE>Маленький приват
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F0F0F0>Владелец: <#00d8ff>%owner%  '
-    - '  <#F0F0F0>Размер: <#00d8ff>%size%  '
+    - '  <#F2EFFA>Владелец: <#DDD6FE>%owner%  '
+    - '  <#F2EFFA>Размер: <#DDD6FE>%size%  '
     - ''
     radius: 8
     radius_y: 32
@@ -296,12 +296,12 @@ region_types:
       lightning: true
 
   DEEPSLATE_EMERALD_ORE:
-    display_name: <#fc6f00>Средний приват
+    display_name: <#C4B5FD>Средний приват
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F0F0F0>Владелец: <#fc6f00>%owner%  '
-    - '  <#F0F0F0>Прочность: <#fc6f00>[ %durability% / %max_durability% ]  '
+    - '  <#F2EFFA>Владелец: <#C4B5FD>%owner%  '
+    - '  <#F2EFFA>Прочность: <#C4B5FD>[ %durability% / %max_durability% ]  '
     - ''
     radius: 16
     radius_y: 48
@@ -326,13 +326,13 @@ region_types:
       lightning: true
 
   ANCIENT_DEBRIS:
-    display_name: <gradient:#F8BA47:#FF9F41>Большой приват</gradient>
+    display_name: <gradient:#A78BFA:#C4B5FD:#F9A8D4>Большой приват</gradient>
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F0F0F0>Владелец: <gradient:#F8BA47:#FF9F41>%owner%</gradient>  '
-    - '  <#F0F0F0>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  '
-    - '  <#F0F0F0>Участников: <gradient:#F8BA47:#FF9F41>%members%</gradient>  '
+    - '  <#F2EFFA>Владелец: <gradient:#A78BFA:#C4B5FD:#F9A8D4>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#A78BFA:#C4B5FD:#F9A8D4>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#A78BFA:#C4B5FD:#F9A8D4>%members%</gradient>  '
     - ''
     radius: 32
     radius_y: 64
@@ -357,13 +357,13 @@ region_types:
       scale: 1.1
 
   RED_MUSHROOM_BLOCK:
-    display_name: <gradient:#F84747:#DD4141>Огромный приват</gradient>
+    display_name: <gradient:#8B5CF6:#A78BFA:#F472B6>Огромный приват</gradient>
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F0F0F0>Владелец: <gradient:#F84747:#DD4141>%owner%</gradient>  '
-    - '  <#F0F0F0>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  '
-    - '  <#F0F0F0>Участников: <gradient:#F84747:#DD4141>%members%</gradient>  '
+    - '  <#F2EFFA>Владелец: <gradient:#8B5CF6:#A78BFA:#F472B6>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#8B5CF6:#A78BFA:#F472B6>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#8B5CF6:#A78BFA:#F472B6>%members%</gradient>  '
     - ''
     radius: 48
     radius_y: 96
@@ -405,14 +405,14 @@ region_types:
   # описано в item (имя, описание, свечение).
   #
   # NETHERITE_BLOCK:
-  #   display_name: "<gradient:#FFAA00:#FFEE55>Элитный приват</gradient>"
+  #   display_name: "<gradient:#8B5CF6:#A78BFA:#F472B6>Элитный приват</gradient>"
   #   restrict-obtaining: true
   #   item:
-  #     name: "<gradient:#FFAA00:#FFEE55>Элитный приват</gradient>"
+  #     name: "<gradient:#8B5CF6:#A78BFA:#F472B6>Элитный приват</gradient>"
   #     lore:
-  #       - "<#F0F0F0>Радиус: 64 × 64, высота: 128"
-  #       - "<#F0F0F0>Прочность: 16 (до 64)"
-  #       - "<#AAAAAA>Продаётся в магазине сервера"
+  #       - "<#F2EFFA>Радиус: 64 × 64, высота: 128"
+  #       - "<#F2EFFA>Прочность: 16 (до 64)"
+  #       - "<#A79FC0>Продаётся в магазине сервера"
   #     glow: true
   #   radius: 64
   #   radius_y: 128
@@ -432,11 +432,11 @@ region_types:
   # предмет выглядит красиво. Крафт — по желанию.
   #
   # EMERALD_BLOCK:
-  #   display_name: "<#55FF55>Изумрудный приват</#55FF55>"
+  #   display_name: "<#86EFAC>Изумрудный приват</#86EFAC>"
   #   item:
-  #     name: "<#55FF55>Изумрудный приват"
+  #     name: "<#86EFAC>Изумрудный приват"
   #     lore:
-  #       - "<#F0F0F0>Поставьте, чтобы занять территорию 49×49"
+  #       - "<#F2EFFA>Поставьте, чтобы занять территорию 49×49"
   #   recipe:
   #     pattern: ["EE", "EE"]
   #     ingredients: { E: EMERALD }

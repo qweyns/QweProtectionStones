@@ -14,9 +14,9 @@ visuals:
     max_points: 2000
   # Цвета кратковременной подсветки границ:
   boundaries:
-    color_open: "#00FF00"    # создание привата
-    color_closed: "#FF0000"  # удаление привата
-    color_info: "#00B4DB"    # показ границ по /ps info
+    color_open: "#C4B5FD"    # создание привата
+    color_closed: "#FB7185"  # удаление привата
+    color_info: "#F9A8D4"    # показ границ по /ps info
     show_time_ticks: 40      # сколько тиков показывается подсветка
 
 # --- ЗВУКИ -------------------------------------------------------------------
@@ -41,15 +41,15 @@ map:
     # Рисовать границы приватов на Dynmap, если он установлен.
     enable: true
     layer_name: "Приваты"
-    line_color: "#00B4DB"
-    fill_color: "#00B4DB"
+    line_color: "#A78BFA"
+    fill_color: "#C4B5FD"
     fill_opacity: 0.25
   bluemap:
     # Рисовать границы приватов на BlueMap, если он установлен (API 2.x).
     enable: true
     marker_set_label: "Приваты"
-    line_color: "#00B4DB"
-    fill_color: "#00B4DB"
+    line_color: "#A78BFA"
+    fill_color: "#C4B5FD"
     fill_opacity: 0.25
     line_width: 2
     # Слой можно скрыть по умолчанию и включать кнопкой в интерфейсе карты.

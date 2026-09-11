@@ -32,7 +32,8 @@ items:
       - "[sound] UI_BUTTON_CLICK"
 ```
 
-Тексты — MiniMessage: `<bold>`, `<#RRGGBB>`, `<gradient:#A:#B>`.
+Тексты — MiniMessage: `<bold>`, `<#RRGGBB>`, `<gradient:#A:#B>`
+(стопов может быть больше — `<gradient:#A:#B:#C>` — для плавного перелива).
 
 ## Действия (click_commands)
 
