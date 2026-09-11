@@ -1,4 +1,6 @@
 # --- Общие ---
+# Sugerencia: cualquier clave puede ser una lista multilínea —
+# cada línea '-' se envía como una línea de chat aparte; '- ""' es un espacio.
 prefix: "<bold><gradient:#00B4DB:#0083B0>QweProtectStones</gradient></bold> <#7F8C8D>»</#7F8C8D> "
 no_permission: "%prefix%<#E74C3C>¡No tienes permiso!"
 reload_success: "%prefix%<#2ECC71>¡Configuración recargada!"
@@ -27,8 +29,10 @@ region_world_not_loaded: "%prefix%<#E74C3C>El mundo <#F1C40F>%world% <#E74C3C>no
 protection_denied: "<#E74C3C>Esta tierra pertenece a <#F1C40F>%owner%"
 region_entry_denied: "<#E74C3C>La entrada a la parcela de <#F1C40F>%owner% <#E74C3C>está cerrada"
 region_teleport_denied: "<#E74C3C>Teletransporte a la parcela de <#F1C40F>%owner% <#E74C3C>bloqueado"
-region_enter: "<#2ECC71>Has entrado en la parcela de <#F1C40F>%owner%"
-region_leave: "<#95A5A6>Has salido de la parcela de <#F1C40F>%owner%"
+region_enter:
+  - "%prefix%<#2ECC71>Has entrado en la parcela de <#F1C40F>%owner%<#2ECC71>."
+  - "<#95A5A6>El territorio está protegido."
+region_leave: "%prefix%<#95A5A6>Has salido de la parcela de <#F1C40F>%owner%<#95A5A6>."
 
 # --- Уровни доступа ---
 trust_none: "sin acceso"

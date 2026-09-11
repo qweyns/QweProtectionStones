@@ -1,4 +1,6 @@
 # --- Общие ---
+# Hint: any key can be a multi-line list — each '-' line is sent
+# as a separate chat line; '- ""' is a blank line.
 prefix: "<bold><gradient:#00B4DB:#0083B0>QweProtectStones</gradient></bold> <#7F8C8D>»</#7F8C8D> "
 no_permission: "%prefix%<#E74C3C>You don't have permission!"
 reload_success: "%prefix%<#2ECC71>Configuration reloaded!"
@@ -27,8 +29,10 @@ region_world_not_loaded: "%prefix%<#E74C3C>World <#F1C40F>%world% <#E74C3C>is no
 protection_denied: "<#E74C3C>This land belongs to <#F1C40F>%owner%"
 region_entry_denied: "<#E74C3C>Entry to <#F1C40F>%owner%<#E74C3C>'s region is closed"
 region_teleport_denied: "<#E74C3C>Teleporting into <#F1C40F>%owner%<#E74C3C>'s region is blocked"
-region_enter: "<#2ECC71>You entered <#F1C40F>%owner%<#2ECC71>'s region"
-region_leave: "<#95A5A6>You left <#F1C40F>%owner%<#95A5A6>'s region"
+region_enter:
+  - "%prefix%<#2ECC71>You entered the region of <#F1C40F>%owner%<#2ECC71>."
+  - "<#95A5A6>The territory is protected."
+region_leave: "%prefix%<#95A5A6>You left the region of <#F1C40F>%owner%<#95A5A6>."
 
 # --- Уровни доступа ---
 trust_none: "no access"

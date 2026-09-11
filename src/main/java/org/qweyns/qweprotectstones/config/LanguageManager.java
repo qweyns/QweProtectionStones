@@ -77,7 +77,24 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Сообщение из lang-файла — работает с ЛЮБЫМ ключом, как бы тот ни был
+     * записан: одиночной строкой или списком. Список превращается в
+     * многострочный компонент (строки разделены переводом строки), поэтому
+     * любой {@code sendMessage(getMessage(...))} в плагине выводит все строки.
+     *
+     * <p>МиниMessage-теги, включая кликабельность ({@code <click:...>},
+     * {@code <hover:...>}), работают в каждой строке.</p>
+     */
     public Component getMessage(String path, String... replacements) {
+        if (langConfig.isList(path)) {
+            List<Component> lines = getMessageList(path, replacements);
+            if (lines.isEmpty()) return Component.empty();
+            return Component.join(
+                    net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()),
+                    lines);
+        }
+
         String raw = resolve(path, replacements);
         return raw.isEmpty() ? Component.empty() : ColorUtil.formatComponent(raw);
     }
@@ -88,8 +105,7 @@ public class LanguageManager {
      * строкой с переводами \n. Одиночная строка тоже принимается — так
      * старые конфиги продолжают работать.
      *
-     * <p>МиниMessage-теги кликабельности ({@code <click:...>}, {@code <hover:...>})
-     * работают в каждой строке — кнопки описываются прямо в переводе.</p>
+     * <p>Отправка построчно — через {@link #sendList}.</p>
      */
     public List<Component> getMessageList(String path, String... replacements) {
         List<String> raw = langConfig.getStringList(path);
@@ -115,7 +131,20 @@ public class LanguageManager {
         }
     }
 
+    /** Как {@link #getMessage}, но legacy-строкой: многострочный список склеивается \n. */
     public String getRawMessage(String path, String... replacements) {
+        if (langConfig.isList(path)) {
+            List<String> raw = langConfig.getStringList(path);
+            if (raw.isEmpty()) return "";
+            String prefix = langConfig.getString("prefix", "");
+            StringBuilder joined = new StringBuilder();
+            for (String line : raw) {
+                if (!joined.isEmpty()) joined.append('\n');
+                String text = line == null ? "" : line.replace("%prefix%", prefix);
+                joined.append(ColorUtil.formatLegacyString(applyReplacements(text, replacements)));
+            }
+            return joined.toString();
+        }
         return ColorUtil.formatLegacyString(resolve(path, replacements));
     }
 

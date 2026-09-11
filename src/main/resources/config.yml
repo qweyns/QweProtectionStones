@@ -151,6 +151,30 @@ limits:
   log_max_page_size: 50            # максимум строк, который можно запросить
   findspot_rings: 24               # как далеко /ps findspot ищет место
 
+# --- СООБЩЕНИЯ ПРИ ВХОДЕ И ВЫХОДЕ -------------------------------------------
+# Куда писать приветствие и прощание привата.
+# Порядок текста: строка владельца (/ps greeting, /ps farewell),
+# затем greeting / farewell типа из regions.yml, затем шаблоны
+# region_enter / region_leave из lang-файла. Плейсхолдеры (%owner%,
+# %name%, %type%) работают везде.
+# channel:  CHAT — в чат (по умолчанию); ACTIONBAR — полоска над хотбаром;
+#           TITLE — крупный текст по центру экрана; NONE — не показывать.
+# enabled:  false — отключить сообщение целиком (для входа и выхода раздельно).
+# Флаг привата greeting (/ps flag greeting) по-прежнему выключает оба
+# сообщения для конкретного привата.
+region-messages:
+  enter:
+    enabled: true
+    channel: "CHAT"
+  leave:
+    enabled: true
+    channel: "CHAT"
+  # Параметры показа TITLE (учитываются только при channel: TITLE).
+  title:
+    fade-in-ticks: 10
+    stay-ticks: 50
+    fade-out-ticks: 10
+
 # --- УРОВНИ ДОСТУПА ----------------------------------------------------------
 # Минимальный уровень, нужный для действия внутри чужого привата.
 # Заметка: игроки с правом qweprotectstones.admin проходят везде.

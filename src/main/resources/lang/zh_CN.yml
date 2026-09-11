@@ -1,4 +1,6 @@
 # --- Общие ---
+# 提示：任何键都可以写成多行列表——
+# 每个 '-' 行都会作为单独的聊天行发送；'- ""' 表示空行。
 prefix: "<bold><gradient:#00B4DB:#0083B0>QweProtectStones</gradient></bold> <#7F8C8D>»</#7F8C8D> "
 no_permission: "%prefix%<#E74C3C>你没有权限！"
 reload_success: "%prefix%<#2ECC71>配置已重载！"
@@ -27,8 +29,10 @@ region_world_not_loaded: "%prefix%<#E74C3C>世界 <#F1C40F>%world% <#E74C3C>未�
 protection_denied: "<#E74C3C>这是 <#F1C40F>%owner% <#E74C3C>的领地"
 region_entry_denied: "<#E74C3C>禁止进入 <#F1C40F>%owner% <#E74C3C>的领地"
 region_teleport_denied: "<#E74C3C>禁止传送进入 <#F1C40F>%owner% <#E74C3C>的领地"
-region_enter: "<#2ECC71>你进入了 <#F1C40F>%owner% <#2ECC71>的领地"
-region_leave: "<#95A5A6>你离开了 <#F1C40F>%owner% <#95A5A6>的领地"
+region_enter:
+  - "%prefix%<#2ECC71>你进入了 <#F1C40F>%owner%<#2ECC71> 的领地。"
+  - "<#95A5A6>该区域受保护。"
+region_leave: "%prefix%<#95A5A6>你离开了 <#F1C40F>%owner%<#95A5A6> 的领地。"
 
 # --- Уровни доступа ---
 trust_none: "无权限"

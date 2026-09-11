@@ -96,10 +96,35 @@ public class RegionMovementListener implements Listener {
 
         Region previous = previousId == null ? null : plugin.getRegionManager().getById(previousId);
         if (previous != null && protection.flag(previous, RegionFlag.GREETING)) {
-            player.sendActionBar(transitionText(previous, previous.getFarewell(), false, "region_leave"));
+            sendTransition(player, transitionText(previous, previous.getFarewell(), false, "region_leave"), "leave");
         }
         if (to != null && protection.flag(to, RegionFlag.GREETING)) {
-            player.sendActionBar(transitionText(to, to.getGreeting(), true, "region_enter"));
+            sendTransition(player, transitionText(to, to.getGreeting(), true, "region_enter"), "enter");
+        }
+    }
+
+    /**
+     * Куда писать сообщение о входе или выходе — секция region-messages
+     * в config.yml: CHAT (в чат), ACTIONBAR (полоска над хотбаром),
+     * TITLE (крупный текст по центру) или NONE (не показывать).
+     * Отдельный мастер-выключатель для входа и выхода — enabled.
+     */
+    private void sendTransition(Player player, Component message, String kind) {
+        var cfg = plugin.getConfigManager().getConfig();
+        if (!cfg.getBoolean("region-messages." + kind + ".enabled", true)) return;
+
+        String channel = cfg.getString("region-messages." + kind + ".channel", "CHAT");
+        switch (channel.toUpperCase(java.util.Locale.ROOT)) {
+            case "CHAT" -> player.sendMessage(message);
+            case "TITLE" -> player.showTitle(net.kyori.adventure.title.Title.title(
+                    message,
+                    Component.empty(),
+                    net.kyori.adventure.title.Title.Times.times(
+                            java.time.Duration.ofMillis(Math.max(0, cfg.getInt("region-messages.title.fade-in-ticks", 10)) * 50L),
+                            java.time.Duration.ofMillis(Math.max(1, cfg.getInt("region-messages.title.stay-ticks", 50)) * 50L),
+                            java.time.Duration.ofMillis(Math.max(0, cfg.getInt("region-messages.title.fade-out-ticks", 10)) * 50L))));
+            case "ACTIONBAR" -> player.sendActionBar(message);
+            default -> { /* NONE и опечатки — сообщение выключено */ }
         }
     }
 
