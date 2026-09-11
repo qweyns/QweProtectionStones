@@ -3,25 +3,74 @@ package org.qweyns.qweprotectstones.config;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.qweyns.qweprotectstones.QweProtectStones;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
 public class ConfigManager {
+
+    /**
+     * Настройки разложены по темам, чтобы главный файл не разрастался:
+     * config.yml — ядро, protection.yml — защита, siege.yml — осады,
+     * effects.yml — эффекты, visuals.yml — звуки и карта,
+     * features.yml — рынок, бэкапы и прочие функции.
+     *
+     * <p>Для чтения всё собирается в одну конфигурацию: пути ключей
+     * не менялись, поэтому в коде обращение выглядит как раньше.</p>
+     */
+    private static final List<String> FILES = List.of(
+            "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml");
 
     private final QweProtectStones plugin;
     private FileConfiguration config;
 
     public ConfigManager(QweProtectStones plugin) {
         this.plugin = plugin;
-        plugin.saveDefaultConfig();
-        this.config = plugin.getConfig();
+        reload();
     }
 
     public void reload() {
-        plugin.reloadConfig();
-        this.config = plugin.getConfig();
+        YamlConfiguration merged = new YamlConfiguration();
+        YamlConfiguration defaults = new YamlConfiguration();
+
+        for (String name : FILES) {
+            // Файл создаётся из jar при первом запуске.
+            if (!new File(plugin.getDataFolder(), name).isFile() && plugin.getResource(name) != null) {
+                plugin.saveResource(name, false);
+            }
+            YamlConfiguration loaded = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), name));
+
+            // Дефолты из jar: у обновившихся серверов в старом файле может
+            // не хватать новых ключей — значения возьмутся отсюда.
+            try (InputStream in = plugin.getResource(name)) {
+                if (in != null) {
+                    YamlConfiguration jar = YamlConfiguration.loadConfiguration(
+                            new InputStreamReader(in, StandardCharsets.UTF_8));
+                    for (String key : jar.getKeys(false)) {
+                        defaults.set(key, jar.get(key));
+                    }
+                }
+            } catch (IOException e) {
+                plugin.getLogger().warning("Не удалось прочитать " + name + " из jar: " + e.getMessage());
+            }
+
+            for (String key : loaded.getKeys(false)) {
+                if (merged.contains(key)) {
+                    plugin.getLogger().warning("Секция '" + key + "' описана больше чем в одном файле конфигурации — значение из " + name + " перезапишет прежнее.");
+                }
+                merged.set(key, loaded.get(key));
+            }
+        }
+
+        merged.setDefaults(defaults);
+        this.config = merged;
     }
 
     public FileConfiguration getConfig() { return config; }
@@ -94,20 +143,23 @@ public class ConfigManager {
 
     public int getUpgradeMultiplier() { return Math.max(1, config.getInt("settings.upgrade_cost_multiplier", 3)); }
     public int getUpgradeTax() { return Math.max(0, config.getInt("settings.upgrade_tax", 0)); }
-    public long getDamageCooldownTicks() { return Math.max(0L, config.getLong("settings.damage_cooldown_ticks", 20L)); }
+    public long getDamageCooldownTicks() { return Math.max(0L, config.getLong("siege.damage_cooldown_ticks", 20L)); }
     public int getMenuCommandRadius() { return Math.max(1, config.getInt("settings.menu_command_radius", 6)); }
-    public double getExpBoostMultiplier() { return config.getDouble("settings.exp_boost_multiplier", 2.0); }
+    public double getExpBoostMultiplier() { return config.getDouble("effects.exp_boost_multiplier", 2.0); }
 
-    public int getExplosionDamageRadius() { return Math.max(0, config.getInt("settings.explosion_damage_radius", 4)); }
-    public int getExplosionPenaltyMultiplier() { return Math.max(1, config.getInt("settings.explosion_penalty_multiplier", 2)); }
+    public int getExplosionDamageRadius() { return Math.max(0, config.getInt("siege.explosion_damage_radius", 4)); }
+    public int getExplosionPenaltyMultiplier() { return Math.max(1, config.getInt("siege.penalty_multiplier", 2)); }
 
     /** Длительность штрафа в секундах. */
     public long getExplosionPenaltySeconds() {
-        long seconds = config.getLong("settings.explosion_penalty_time", 300L);
+        long seconds = config.getLong("siege.penalty_time", 300L);
         return seconds > 0 ? seconds : 300L;
     }
 
-    public boolean isDamageIndicatorEnabled() { return config.getBoolean("settings.enable_damage_indicator", true); }
+    public boolean isDamageIndicatorEnabled() { return config.getBoolean("siege.damage_indicator", true); }
+
+    /** Мастер-выключатель осад: могут ли взрывы снимать прочность ядра (siege.yml). */
+    public boolean isSiegeEnabled() { return config.getBoolean("siege.enabled", true); }
 
     public Component getDamageIndicator(int damage) {
         return plugin.getLanguageManager().getMessage("damage_indicator", "%damage%", String.valueOf(damage));

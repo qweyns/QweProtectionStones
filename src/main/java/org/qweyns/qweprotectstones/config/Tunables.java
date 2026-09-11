@@ -103,7 +103,8 @@ public final class Tunables {
         effectDurationTicks = (int) positive(cfg.getLong("timings.effect_duration_ticks", 60L), 60L);
         dbFlushTicks = positive(cfg.getLong("timings.db_flush_ticks", 60L), 60L);
         animationPeriodTicks = positive(cfg.getLong("timings.animation_period_ticks", 10L), 10L);
-        siegeWindowMs = positive(cfg.getLong("timings.siege_window_seconds", 300L), 300L) * 1000L;
+        // Окно осады живёт в siege.yml (переехало из timings).
+        siegeWindowMs = positive(cfg.getLong("siege.window_seconds", 300L), 300L) * 1000L;
 
         maxAutoAddFriends = (int) bounded(cfg.getLong("limits.autoadd_friends", 50L), 1, 500);
         dbBatchSize = (int) bounded(cfg.getLong("limits.db_batch_size", 500L), 25, 10_000);

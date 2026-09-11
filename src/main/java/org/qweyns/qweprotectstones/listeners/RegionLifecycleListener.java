@@ -2,7 +2,6 @@ package org.qweyns.qweprotectstones.listeners;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -49,9 +48,13 @@ public class RegionLifecycleListener implements Listener {
 
         // Предмет с PDC-тегом типа (выдан /qps give или возвращён при поломке)
         // создаёт приват именного типа, даже если по материалу он не опознан.
-        RegionType type = taggedType(event.getItemInHand(), block);
-        if (type == null) type = plugin.getRegionTypes().byMaterial(block.getType());
+        RegionType tagged = taggedType(event.getItemInHand(), block);
+        RegionType type = tagged != null ? tagged : plugin.getRegionTypes().byMaterial(block.getType());
         if (type == null) return;
+
+        // «Покупной» тип работает только предметом с тегом: добытый в мире
+        // блок того же материала остаётся обычным блоком, без создания привата.
+        if (type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND && tagged == null) return;
 
         Player player = event.getPlayer();
 
@@ -148,7 +151,7 @@ public class RegionLifecycleListener implements Listener {
         } else if (type != null && player.getGameMode() != GameMode.CREATIVE) {
             // Блок возвращаем сами, чтобы он не потерялся из-за настроек дропа.
             event.setDropItems(false);
-            giveOrDrop(player, block.getLocation(), type.material(), region);
+            giveOrDrop(player, block.getLocation(), type, region);
         }
 
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
@@ -159,19 +162,18 @@ public class RegionLifecycleListener implements Listener {
      * в предмет записывается PDC-тег с текущей прочностью привата — поставив
      * ядро заново, владелец не потеряет прокачку.
      */
-    private void giveOrDrop(Player player, Location location, Material material, Region region) {
-        ItemStack stack = new ItemStack(material);
+    private void giveOrDrop(Player player, Location location, RegionType type, Region region) {
+        boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
+        // «Покупной» тип помечаем тегом всегда: без тега возвращённый блок
+        // больше не создал бы приват — игрок потерял бы покупку.
+        boolean tagType = tags || type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND;
+        Integer durability = region != null
+                && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
+                && tags
+                ? region.getDurability() : null;
 
-        if (region != null && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
-                && plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true)) {
-            var meta = stack.getItemMeta();
-            if (meta != null) {
-                var pdc = meta.getPersistentDataContainer();
-                pdc.set(typeKey(), org.bukkit.persistence.PersistentDataType.STRING, region.getTypeId());
-                pdc.set(durabilityKey(), org.bukkit.persistence.PersistentDataType.INTEGER, region.getDurability());
-                stack.setItemMeta(meta);
-            }
-        }
+        ItemStack stack = org.qweyns.qweprotectstones.utils.RegionItems.core(
+                plugin, type, 1, durability, tagType);
 
         var leftovers = player.getInventory().addItem(stack);
 
@@ -207,11 +209,11 @@ public class RegionLifecycleListener implements Listener {
     }
 
     private org.bukkit.NamespacedKey typeKey() {
-        return new org.bukkit.NamespacedKey(plugin, "core-type");
+        return org.qweyns.qweprotectstones.utils.RegionItems.typeKey(plugin);
     }
 
     private org.bukkit.NamespacedKey durabilityKey() {
-        return new org.bukkit.NamespacedKey(plugin, "core-durability");
+        return org.qweyns.qweprotectstones.utils.RegionItems.durabilityKey(plugin);
     }
 
     /** Общая уборка после удаления привата любым способом. */

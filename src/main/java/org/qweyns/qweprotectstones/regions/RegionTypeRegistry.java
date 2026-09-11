@@ -26,6 +26,8 @@ public class RegionTypeRegistry {
 
     private final QweProtectStones plugin;
     private final Map<String, RegionType> byId = new LinkedHashMap<>();
+    /** Тот же реестр, но ключи в нижнем регистре — для поиска без учёта регистра. */
+    private final Map<String, RegionType> byIdNormalized = new LinkedHashMap<>();
     private final Map<Material, RegionType> byMaterial = new EnumMap<>(Material.class);
 
     public RegionTypeRegistry(QweProtectStones plugin) {
@@ -34,6 +36,7 @@ public class RegionTypeRegistry {
 
     public void load() {
         byId.clear();
+        byIdNormalized.clear();
         byMaterial.clear();
 
         ConfigurationSection defaults = plugin.getRegionConfig().defaults();
@@ -60,6 +63,7 @@ public class RegionTypeRegistry {
 
             RegionType type = parse(key, material, section, defaults);
             byId.put(type.id(), type);
+            byIdNormalized.put(type.id().toLowerCase(Locale.ROOT), type);
             byMaterial.put(material, type);
         }
 
@@ -113,7 +117,64 @@ public class RegionTypeRegistry {
                 readString(section, defaults, "menu", ""),
                 readString(section, defaults, "greeting", ""),
                 readString(section, defaults, "farewell", ""),
-                readBoolean(section, defaults, "full_height", false));
+                readBoolean(section, defaults, "full_height", false),
+
+                RegionSource.parse(readString(section, defaults, "source", "SURVIVAL")),
+                readStringList(section, defaults, "description"),
+                parseRecipe(section, defaults, id));
+    }
+
+    /**
+     * Собственный крафт блока-ядра. Отсутствие секции recipe — это норма:
+     * блок получается как обычный блок Minecraft.
+     */
+    private CoreRecipe parseRecipe(ConfigurationSection section, ConfigurationSection defaults, String typeId) {
+        ConfigurationSection recipe = section.contains("recipe")
+                ? section.getConfigurationSection("recipe")
+                : (defaults != null ? defaults.getConfigurationSection("recipe") : null);
+        if (recipe == null) return null;
+
+        List<String> pattern = recipe.getStringList("pattern");
+        if (pattern.isEmpty() || pattern.size() > 3) {
+            plugin.getLogger().warning("recipe у " + typeId + ": схема должна быть 1–3 строки по 1–3 символа — рецепт пропущен.");
+            return null;
+        }
+        int width = pattern.get(0).length();
+        for (String row : pattern) {
+            if (row.length() != width || row.isEmpty() || row.length() > 3) {
+                plugin.getLogger().warning("recipe у " + typeId + ": строки схемы разной длины — рецепт пропущен.");
+                return null;
+            }
+        }
+
+        Map<Character, Material> ingredients = new java.util.LinkedHashMap<>();
+        ConfigurationSection ingredientSection = recipe.getConfigurationSection("ingredients");
+        if (ingredientSection == null) {
+            plugin.getLogger().warning("recipe у " + typeId + ": нет секции ingredients — рецепт пропущен.");
+            return null;
+        }
+        for (String key : ingredientSection.getKeys(false)) {
+            if (key.length() != 1 || key.charAt(0) == ' ') {
+                plugin.getLogger().warning("recipe у " + typeId + ": символ ингредиента '" + key + "' должен быть одной буквой — пропущен.");
+                continue;
+            }
+            Material material = Material.matchMaterial(ingredientSection.getString(key, ""));
+            if (material == null || !material.isItem()) {
+                plugin.getLogger().warning("recipe у " + typeId + ": '" + ingredientSection.getString(key) + "' не является предметом — пропущен.");
+                continue;
+            }
+            ingredients.put(key.charAt(0), material);
+        }
+
+        // Каждая буква схемы должна быть известна, иначе крафт не зарегистрируется.
+        for (char c : String.join("", pattern).toCharArray()) {
+            if (c != ' ' && !ingredients.containsKey(c)) {
+                plugin.getLogger().warning("recipe у " + typeId + ": символ '" + c + "' не описан в ingredients — рецепт пропущен.");
+                return null;
+            }
+        }
+
+        return new CoreRecipe(pattern, ingredients, recipe.getInt("result_amount", 1));
     }
 
     private Map<RegionFlag, Boolean> parseFlags(ConfigurationSection section, ConfigurationSection defaults, String typeId) {
@@ -185,7 +246,11 @@ public class RegionTypeRegistry {
     // ------------------------------------------------------------------
 
     public RegionType byId(String id) {
-        return id == null ? null : byId.get(id);
+        if (id == null) return null;
+        RegionType type = byId.get(id);
+        // Регистр не должен мешать: /qps give пишет тип в нижнем регистре,
+        // а ключи в regions.yml традиционно заглавные (DIAMOND_BLOCK).
+        return type != null ? type : byIdNormalized.get(id.toLowerCase(Locale.ROOT));
     }
 
     public RegionType byMaterial(Material material) {

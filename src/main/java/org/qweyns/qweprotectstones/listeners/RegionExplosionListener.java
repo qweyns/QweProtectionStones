@@ -88,6 +88,11 @@ public class RegionExplosionListener implements Listener {
 
         if (affected.isEmpty()) return;
 
+        // Мастер-выключатель осад (siege.enabled в siege.yml): блоки внутри
+        // привата по-прежнему защищены флагом EXPLOSION_DAMAGE, но прочность
+        // ядра взрывы не снимают и атака не засчитывается.
+        if (!plugin.getConfigManager().isSiegeEnabled()) return;
+
         List<Region> damaged = new ArrayList<>();
         for (Region region : affected) {
             plugin.getPenaltyManager().markAttacked(region.getId());
@@ -183,7 +188,7 @@ public class RegionExplosionListener implements Listener {
 
     /** Соседям слышно, что рядом идёт рейд: это часть атмосферы осады. */
     private void alertNeighbours(Region region, Location core) {
-        int radius = plugin.getConfigManager().getConfig().getInt("settings.raid_neighbour_radius", 0);
+        int radius = plugin.getConfigManager().getConfig().getInt("siege.neighbour_alert_radius", 0);
         if (radius <= 0 || core.getWorld() == null) return;
 
         double radiusSq = (double) radius * radius;

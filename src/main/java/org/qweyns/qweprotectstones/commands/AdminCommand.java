@@ -277,18 +277,11 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         // Не помещается в инвентарь — выпадает на землю, а не пропадает.
-        // Предмет метится PDC-тегом типа: поставленный блок гарантированно
-        // создаёт приват выданного типа (settings.core-item-tags).
-        ItemStack core = new ItemStack(type.material(), amount);
-        if (plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true)) {
-            var meta = core.getItemMeta();
-            if (meta != null) {
-                meta.getPersistentDataContainer().set(
-                        new org.bukkit.NamespacedKey(plugin, "core-type"),
-                        org.bukkit.persistence.PersistentDataType.STRING, type.id());
-                core.setItemMeta(meta);
-            }
-        }
+        // Предмет метится PDC-тегом типа (для «покупных» типов — всегда) и
+        // получает собственное описание из regions.yml, если задано.
+        boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
+        ItemStack core = org.qweyns.qweprotectstones.utils.RegionItems.core(
+                plugin, type, amount, null, tags || type.source() == org.qweyns.qweprotectstones.regions.RegionSource.COMMAND);
         target.getInventory().addItem(core)
                 .forEach((slot, leftover) -> target.getWorld().dropItemNaturally(target.getLocation(), leftover));
 

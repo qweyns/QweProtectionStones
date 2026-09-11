@@ -87,11 +87,31 @@ default_region:
   # Разрешить доверенным игрокам использовать яйцо призыва прямо на ядре
   # (моб появится, меню не откроется).
   spawn-egg-use: false
+  # --- Получение блока-ядра ------------------------------------------------
+  # SURVIVAL — обычный блок: добывается, крафтится и ставится как любой
+  #            блок Minecraft (по умолчанию);
+  # COMMAND  — «покупной» приват: создаётся ТОЛЬКО предметом, выданным
+  #            командой /qps give (предмет помечен NBT-тегом типа и имеет
+  #            собственное описание). Добытый в мире блок того же материала
+  #            остаётся обычным блоком, крафт для таких типов недоступен.
+  source: SURVIVAL
+  # Описание предмета (lore) при выдаче через /qps give и возврате при
+  # поломке ядра. Поддерживаются цвета MiniMessage. Пусто — без описания.
+  description: []
+  # Собственный крафт блока-ядра. Если recipe не задан — блок получается
+  # как обычно (это обычный блок Minecraft). Работает только для
+  # source: SURVIVAL. Пример:
+  # recipe:
+  #   pattern: ["AAA", "ABA", "AAA"]   # схема верстака, пробел — пусто
+  #   ingredients: { A: DIAMOND, B: NETHER_STAR }
+  #   result_amount: 1                  # сколько ядер за один крафт
+  # recipe:
+
   # Какое меню открывает клик по ядру (файл из папки /menus/ без .yml).
   # Пусто — плагин выберет сам: «main», если доступна прокачка, иначе «effects».
   menu: ""
-  # Цвет каркаса границ именно этого типа (предпросмотр и подсветка),
-  # например "#00FF00". Пусто — цвет из visuals.boundaries в config.yml.
+  # Цвет каркаса границ именно этого типа (подсветка), например "#00FF00".
+  # Пусто — цвет из visuals.boundaries в visuals.yml.
   border_color: ""
 
   # Сообщения при входе на территорию и выходе. Пусто — шаблон из lang-файла.
@@ -103,8 +123,8 @@ default_region:
   # --- Осада ----------------------------------------------------------------------
   # true — приват вообще неуязвим для взрывов (прочность не тратится).
   raid_immune: false
-  # -1 — брать из config.yml (settings.damage_cooldown_ticks и
-  # settings.explosion_damage_radius). Свои значения — только для типа.
+  # -1 — брать из siege.yml (damage_cooldown_ticks и
+  # explosion_damage_radius). Свои значения — только для типа.
   damage_cooldown_ticks: -1
   explosion_damage_radius: -1
 
@@ -347,3 +367,43 @@ region_types:
     hologram_display_range: 24
     fancyholograms_settings:
       scale: 1.1
+
+  # --- Пример «покупного» привата -------------------------------------------
+  # Выдаётся только командой /qps give <игрок> NETHERITE_BLOCK 1.
+  # Добытый в мире незеритовый блок приват не создаст, крафта нет.
+  # При выдаче предмет получает собственное описание (description).
+  #
+  # NETHERITE_BLOCK:
+  #   display_name: "<gradient:#FFAA00:#FFEE55>Элитный приват</gradient>"
+  #   source: COMMAND
+  #   description:
+  #     - "<#FFEE55>Элитный приват"
+  #     - "<#F0F0F0>Радиус: 64 × 64, высота: 128"
+  #     - "<#F0F0F0>Прочность: 16 (до 64)"
+  #     - "<#AAAAAA>Продаётся в магазине сервера"
+  #   radius: 64
+  #   radius_y: 128
+  #   start_durability: 16
+  #   max_durability: 64
+  #   max_per_player: 1
+  #   raid_immune: false
+  #   explosions:
+  #     TNT: false
+  #     WITHER: false
+  #     CREEPER: false
+  #     ENDER_CRYSTAL: false
+  #     BED: false
+  #
+  # --- Пример собственного крафта --------------------------------------------
+  # Блок-ядро этого типа крафтится в верстаке; без recipe блок
+  # получался бы как обычный блок Minecraft.
+  #
+  # EMERALD_BLOCK:
+  #   display_name: "<#55FF55>Изумрудный приват</#55FF55>"
+  #   source: SURVIVAL
+  #   recipe:
+  #     pattern: ["EE", "EE"]
+  #     ingredients: { E: EMERALD }
+  #     result_amount: 1
+  #   radius: 24
+  #   radius_y: 64

@@ -223,32 +223,6 @@ public class VisualManager {
         return points;
     }
 
-    /**
-     * Предпросмотр будущих границ: зелёный каркас — место свободно,
-     * красный — территория пересекается с чужим приватом.
-     */
-    public void showPreview(Player player, World world, RegionBounds bounds, boolean free) {
-        List<Location> points = wireframeOf(world, bounds, player.getLocation().getBlockY());
-        if (points.isEmpty()) return;
-
-        Color color = free ? Color.LIME : Color.RED;
-
-        long durationTicks = plugin.getConfigManager().getConfig().getLong("visuals.preview_ticks", 60L);
-        final long period = plugin.getTunables().animationPeriodTicks();
-        final long[] elapsed = {0};
-
-        Schedulers.Task[] task = new Schedulers.Task[1];
-        task[0] = plugin.getSchedulers().runTimer(() -> {
-            if (elapsed[0] >= durationTicks || !player.isOnline()) {
-                if (task[0] != null) task[0].cancel();
-                return;
-            }
-            // Каркас показываем только этому игроку — остальным он не нужен.
-            plugin.getTunables().particles().spawnFor(player, points, color);
-            elapsed[0] += period;
-        }, 0L, period);
-    }
-
     // ------------------------------------------------------------------
     // Индикатор урона
     // ------------------------------------------------------------------

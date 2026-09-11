@@ -47,7 +47,14 @@ public record RegionType(
         String menuName,
         String greeting,
         String farewell,
-        boolean fullHeight
+        boolean fullHeight,
+
+        // Получение: обычный блок или «покупной» (только через /qps give).
+        RegionSource source,
+        // Описание предмета (lore) для выдачи командой.
+        List<String> description,
+        // Собственный крафт; null — блок получается как обычный.
+        CoreRecipe recipe
 ) {
 
     public RegionType {

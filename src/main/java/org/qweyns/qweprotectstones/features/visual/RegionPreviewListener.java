@@ -18,17 +18,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Предпросмотр границ будущего привата: взял блок-ядро в руку — увидел, какая
- * территория будет занята и не наложится ли она на чужую.
+ * Подсказка в actionbar, когда блок-ядро в руке: влезет ли здесь приват
+ * и не пересечётся ли он с чужим.
  *
- * <p>Раньше единственным способом это выяснить была установка блока и ответ
- * «здесь уже есть приват».</p>
+ * <p>Подсветка границ частицами при взятии в руку убрана как лишняя;
+ * осталась только текстовая подсказка — и она по умолчанию выключена
+ * ({@code settings.preview-messages}).</p>
  */
 public class RegionPreviewListener implements Listener {
 
     private final QweProtectStones plugin;
 
-    /** Какой тип показывали игроку последним — чтобы не перерисовывать одно и то же. */
+    /** Какой тип показывали игроку последним — чтобы не спамить одно и то же. */
     private final Map<UUID, String> showing = new ConcurrentHashMap<>();
 
     public RegionPreviewListener(QweProtectStones plugin) {
@@ -36,7 +37,7 @@ public class RegionPreviewListener implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.preview_borders", true);
+        return plugin.getConfigManager().getConfig().getBoolean("settings.preview-messages", false);
     }
 
     @EventHandler
@@ -52,7 +53,7 @@ public class RegionPreviewListener implements Listener {
             return;
         }
 
-        // Не мигаем каркасом, если игрок просто переключается между слотами с тем же блоком.
+        // Одно сообщение, пока игрок держит тот же тип блока.
         String previous = showing.put(player.getUniqueId(), type.id());
         if (type.id().equals(previous)) return;
 
@@ -69,7 +70,6 @@ public class RegionPreviewListener implements Listener {
                 world.getMinHeight(), world.getMaxHeight() - 1);
 
         Region blocking = plugin.getRegionManager().findOverlapping(world, bounds);
-        plugin.getVisualManager().showPreview(player, world, bounds, blocking == null);
 
         if (blocking != null) {
             player.sendActionBar(plugin.getLanguageManager().getMessage("preview_blocked",

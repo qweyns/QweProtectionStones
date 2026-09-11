@@ -87,6 +87,7 @@ public final class QweProtectStones extends JavaPlugin {
     private AbandonedRegionTask abandonedRegionTask;
     private RegionActionLogger actionLogger;
     private RegionPreviewListener previewListener;
+    private org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager coreRecipeManager;
 
     private RegionLifecycleListener regionLifecycleListener;
     private RegionMovementListener regionMovementListener;
@@ -109,6 +110,7 @@ public final class QweProtectStones extends JavaPlugin {
         // Типы приватов нужны раньше хранилища: по ним восстанавливаются приваты.
         this.regionTypes = new RegionTypeRegistry(this);
         this.regionTypes.load();
+        this.coreRecipeManager = new org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager(this);
 
         this.bypassManager = new BypassManager();
         this.rateLimiter = new RegionRateLimiter(this);
@@ -119,6 +121,8 @@ public final class QweProtectStones extends JavaPlugin {
         this.regionManager = new RegionManager(this);
         this.regionManager.loadAll(regionStorage.init());
         this.regionManager.refreshTypeData();
+        // Крафты зависят от типов: регистрируем после загрузки regions.yml.
+        this.coreRecipeManager.reload();
 
         this.vaultHook = new VaultHook();
         this.vaultHook.setup();
@@ -267,6 +271,7 @@ public final class QweProtectStones extends JavaPlugin {
         languageManager.init();
         regionTypes.load();
         regionManager.refreshTypeData();
+        coreRecipeManager.reload();
         menuManager.loadMenus();
         penaltyManager.rebuild();
         protectionService.reloadDenyCooldown();
@@ -286,6 +291,9 @@ public final class QweProtectStones extends JavaPlugin {
     // ------------------------------------------------------------------
 
     public Schedulers getSchedulers() { return schedulers; }
+
+    /** Крафты блоков-ядер из секций recipe в regions.yml. */
+    public org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager getCoreRecipeManager() { return coreRecipeManager; }
     public ConfigManager getConfigManager() { return configManager; }
 
     /** Настройки типов приватов из regions.yml. */
