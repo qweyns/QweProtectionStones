@@ -67,6 +67,11 @@ final class BukkitSchedulers implements Schedulers {
     }
 
     @Override
+    public Task runAtEntityTimer(Entity entity, Runnable action, long delayTicks, long periodTicks) {
+        return runTimer(action, delayTicks, periodTicks);
+    }
+
+    @Override
     public void cancelAll() {
         Bukkit.getScheduler().cancelTasks(plugin);
     }

@@ -33,6 +33,7 @@ final class FoliaSchedulers implements Schedulers {
     private final Method entityGetScheduler;
     private final Method entityRun;
     private final Method entityRunDelayed;
+    private final Method entityRunAtFixedDelay;
     private final Method taskCancel;
 
     static boolean isFoliaServer() {
@@ -71,6 +72,8 @@ final class FoliaSchedulers implements Schedulers {
             entityRun = findMethod(entitySchedulerClass, "run", Plugin.class, Consumer.class, Runnable.class);
             entityRunDelayed = findMethod(entitySchedulerClass, "runDelayed",
                     Plugin.class, Consumer.class, Runnable.class, long.class);
+            entityRunAtFixedDelay = findMethod(entitySchedulerClass, "runAtFixedDelay",
+                    Plugin.class, Consumer.class, Runnable.class, long.class, long.class);
 
             taskCancel = Class.forName("io.papermc.paper.threadedregions.scheduler.ScheduledTask").getMethod("cancel");
         } catch (ReflectiveOperationException e) {
@@ -176,6 +179,16 @@ final class FoliaSchedulers implements Schedulers {
 
         invoke(entityRunDelayed, entityScheduler, plugin, ignoreTask(action),
                 (Runnable) () -> { }, Math.max(1L, delayTicks));
+    }
+
+    @Override
+    public Task runAtEntityTimer(Entity entity, Runnable action, long delayTicks, long periodTicks) {
+        Object entityScheduler = invoke(entityGetScheduler, entity);
+        if (entityScheduler == null) return () -> { };
+
+        // таймеры меню обязаны тикать в потоке игрока, а не в глобальном
+        return wrap(invoke(entityRunAtFixedDelay, entityScheduler, plugin, ignoreTask(action),
+                (Runnable) () -> { }, Math.max(1L, delayTicks), Math.max(1L, periodTicks)));
     }
 
     @Override

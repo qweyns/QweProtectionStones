@@ -44,6 +44,7 @@ public class MenuManager implements Listener {
 
     private final Map<String, FileConfiguration> menus = new HashMap<>();
     private final Map<UUID, Long> clickCooldowns = new ConcurrentHashMap<>();
+    private final Set<String> menusWithPercent = new HashSet<>();
 
     public MenuManager(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -79,6 +80,7 @@ public class MenuManager implements Listener {
 
     public void loadMenus() {
         menus.clear();
+        menusWithPercent.clear();
         itemFactory.clearCache();
 
         File folder = new File(plugin.getDataFolder(), "menus");
@@ -100,7 +102,9 @@ public class MenuManager implements Listener {
 
         for (File file : files) {
             String name = file.getName().substring(0, file.getName().length() - ".yml".length());
-            menus.put(name, YamlConfiguration.loadConfiguration(file));
+            FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+            menus.put(name, cfg);
+            if (cfg.saveToString().indexOf('%') >= 0) menusWithPercent.add(name);
         }
         plugin.getLogger().info("Загружено меню: " + menus.size());
     }
@@ -136,9 +140,20 @@ public class MenuManager implements Listener {
 
         render(player, holder, true);
 
+        MenuAnimator animator = null;
+        if (menuCfg.contains("animations.default")) {
+            animator = new MenuAnimator(plugin, player, menuCfg, region, inv, holder);
+            holder.animator = animator;
+        }
+
+        player.openInventory(inv);
+
+        // открытие могли отменить другим плагином — таймеры только у реально открытого меню
+        if (player.getOpenInventory().getTopInventory().getHolder() != holder) return;
+
         int interval = menuCfg.getInt("update_interval", 0);
         if (interval > 0) {
-            holder.updateTask = plugin.getSchedulers().runTimer(() -> {
+            holder.updateTask = plugin.getSchedulers().runAtEntityTimer(player, () -> {
                 // страховка, игрок мог выйти без InventoryCloseEvent
 
                 if (!player.isOnline()) {
@@ -149,12 +164,10 @@ public class MenuManager implements Listener {
             }, interval, interval);
         }
 
-        if (menuCfg.contains("animations.default")) {
-            MenuAnimator animator = new MenuAnimator(plugin, player, menuCfg, region, inv, holder);
-            holder.animator = animator;
+        if (animator != null) {
             // задачу держим в holder, иначе тикает вечно
 
-            holder.animatorTask = plugin.getSchedulers().runTimer(() -> {
+            holder.animatorTask = plugin.getSchedulers().runAtEntityTimer(player, () -> {
                 if (!player.isOnline()) {
                     holder.cancelTasks();
                     return;
@@ -162,8 +175,6 @@ public class MenuManager implements Listener {
                 animator.run();
             }, 1L, 1L);
         }
-
-        player.openInventory(inv);
     }
 
     private int normalizeSize(int configured, String menuName) {
@@ -185,7 +196,7 @@ public class MenuManager implements Listener {
 
         // статичные предметы не пересобираем дважды в секунду
 
-        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(menuCfg)) return;
+        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(holder.menuName)) return;
         holder.renderedVersion = version;
 
         Inventory inv = holder.inventory;
@@ -207,16 +218,37 @@ public class MenuManager implements Listener {
                 boolean needsBuild = slots.stream().anyMatch(slot -> slot >= 0 && slot < contents.length && !filled.contains(slot));
                 if (!needsBuild) continue;
 
+                String signature = itemSignature(cfg, player, region, extra);
+                boolean reusable = true;
+                for (int slot : slots) {
+                    if (slot < 0 || slot >= contents.length || filled.contains(slot)
+                            || !signature.equals(holder.slotSignatureAt(slot))) {
+                        reusable = false;
+                        break;
+                    }
+                }
+                if (reusable) {
+                    for (int slot : slots) {
+                        if (filled.add(slot)) contents[slot] = holder.slotStackAt(slot);
+                    }
+                    continue;
+                }
+
                 ItemStack item = itemFactory.build(cfg, player, region, extra, holder.menuName + ":" + key);
                 if (item == null) continue;
 
+                holder.ensureSlotCache(inv.getSize());
                 for (int slot : slots) {
-                    if (slot >= 0 && slot < contents.length && filled.add(slot)) contents[slot] = item;
+                    if (slot >= 0 && slot < contents.length && filled.add(slot)) {
+                        contents[slot] = item;
+                        holder.slotSignatures[slot] = signature;
+                        holder.slotStacks[slot] = item;
+                    }
                 }
             }
         }
 
-        if (holder.menuName.equals("upgrade")) renderUpgradeSlots(player, region, menuCfg, contents);
+        if (holder.menuName.equals("upgrade")) renderUpgradeSlots(player, holder, region, menuCfg, contents);
 
         holder.baseLayer = contents;
 
@@ -224,12 +256,26 @@ public class MenuManager implements Listener {
         else holder.animator.refreshBaseLayer(contents);
     }
 
-    private boolean hasLivePlaceholders(FileConfiguration menuCfg) {
-        return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")
-                && menuCfg.getBoolean("live_placeholders", true);
+    // живые плейсхолдеры имеют смысл, только если в меню вообще есть %
+    private boolean hasLivePlaceholders(String menuName) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) return false;
+        FileConfiguration menuCfg = menus.get(menuName);
+        return menuCfg != null && menuCfg.getBoolean("live_placeholders", true)
+                && menusWithPercent.contains(menuName);
     }
 
-    private void renderUpgradeSlots(Player player, Region region, FileConfiguration menuCfg, ItemStack[] contents) {
+    // подпись предмета после подстановок: не менялась — не пересобираем
+    private String itemSignature(ConfigurationSection cfg, Player player, Region region, Map<String, String> extra) {
+        String material = placeholders.apply(player, cfg.getString("material", ""), region, extra);
+        String name = placeholders.apply(player, cfg.getString("display_name", ""), region, extra);
+        StringBuilder sb = new StringBuilder(material).append('\u0000').append(name).append('\u0000');
+        for (String line : cfg.getStringList("lore")) {
+            sb.append(placeholders.apply(player, line, region, extra)).append('\u0001');
+        }
+        return sb.toString();
+    }
+
+    private void renderUpgradeSlots(Player player, MenuHolder holder, Region region, FileConfiguration menuCfg, ItemStack[] contents) {
         List<Integer> slots = menuCfg.getIntegerList("upgrade_slots");
         ConfigurationSection template = menuCfg.getConfigurationSection("upgrade_item_template");
         if (slots.isEmpty() || template == null || region == null) return;
@@ -260,14 +306,24 @@ public class MenuManager implements Listener {
             extra.put("%cost%", String.valueOf(upgradeCost(region, currentDurability, targetLevel)));
             extra.put("%item%", "<translate:" + upgradeMaterial.translationKey() + ">");
 
+            String signature = "upgrade|" + targetLevel + "|" + currentDurability + "/" + maxDurability
+                    + "|" + upgradeMaterial.name();
+            if (signature.equals(holder.slotSignatureAt(slot))) {
+                contents[slot] = holder.slotStackAt(slot);
+                continue;
+            }
+
             ItemStack item = itemFactory.build(template, player, region, extra);
             if (item == null) continue;
 
             // withType, не setType, второй теряет метаданные
 
             item = item.withType(upgradeMaterial);
-            item.setAmount(Math.max(1, Math.min(64, targetLevel)));
+            item.setAmount(Math.max(1, Math.min(item.getMaxStackSize(), targetLevel)));
             contents[slot] = item;
+            holder.ensureSlotCache(contents.length);
+            holder.slotSignatures[slot] = signature;
+            holder.slotStacks[slot] = item;
         }
     }
 
@@ -324,6 +380,11 @@ public class MenuManager implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() instanceof MenuHolder holder) holder.cancelTasks();
+    }
+
+    // кулдаун переживает закрытие меню — иначе close/open обходит защиту от спама
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         clickCooldowns.remove(event.getPlayer().getUniqueId());
     }
 
@@ -355,13 +416,16 @@ public class MenuManager implements Listener {
             return;
         }
 
+        // клик под шторкой анимации не проходит, даже если под ней кнопка
+        if (holder.animator != null && holder.animator.isCovered(slot)) return;
+
         Region region = holder.region;
         // права перепроверяем, меню могло пережить исключение
 
         if (region != null && !isStillTrusted(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
                     "%level%", plugin.getLanguageManager().rawTemplate("trust_container")));
-            player.closeInventory();
+            plugin.getSchedulers().runAtEntity(player, player::closeInventory);
             return;
         }
 

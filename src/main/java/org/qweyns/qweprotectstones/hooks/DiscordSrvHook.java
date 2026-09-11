@@ -7,6 +7,9 @@ import java.util.logging.Level;
 
 public class DiscordSrvHook {
 
+    private final java.util.Map<Class<?>, Method> sendCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<Class<?>, Method> queueCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     private final org.qweyns.qweprotectstones.QweProtectStones plugin;
 
     private Object discordSrv;
@@ -45,12 +48,30 @@ public class DiscordSrvHook {
             }
             if (channel == null) return;
 
-            Object action = channel.getClass().getMethod("sendMessage", CharSequence.class).invoke(channel, message);
-            Method queue = action.getClass().getMethod("queue");
-            queue.invoke(action);
+            Method send = sendCache.computeIfAbsent(channel.getClass(),
+                    clazz -> methodOrNull(clazz, "sendMessage", CharSequence.class));
+            if (send == null) return;
+            Object action = send.invoke(channel, message);
+
+            Method queue = queueCache.computeIfAbsent(action.getClass(),
+                    clazz -> methodOrNull(clazz, "queue"));
+            if (queue != null) queue.invoke(action);
         } catch (Throwable t) {
-            active = false;
-            plugin.getLogger().log(Level.WARNING, "DiscordSRV: не удалось отправить сообщение — интеграция отключена.", t);
+            if (t instanceof LinkageError || t instanceof NoSuchMethodException) {
+                active = false;
+                plugin.getLogger().log(Level.WARNING, "DiscordSRV: API несовместимо — интеграция отключена.", t);
+            } else {
+                // разовый сбой отправки не гасит уведомления навсегда
+                plugin.getLogger().log(Level.WARNING, "DiscordSRV: не удалось отправить сообщение: " + t.getMessage());
+            }
+        }
+    }
+
+    private static Method methodOrNull(Class<?> clazz, String name, Class<?>... params) {
+        try {
+            return clazz.getMethod(name, params);
+        } catch (NoSuchMethodException e) {
+            return null;
         }
     }
 }

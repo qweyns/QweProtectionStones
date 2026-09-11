@@ -82,6 +82,7 @@ public final class QweProtectStones extends JavaPlugin {
     private InviteManager inviteManager;
     private RegionExporter regionExporter;
     private DynmapIntegration dynmapIntegration;
+    private PAPIExpansion papiExpansion;
     private BlueMapIntegration blueMapIntegration;
     private org.qweyns.qweprotectstones.features.market.MarketManager marketManager;
     private org.qweyns.qweprotectstones.features.backup.BackupTask backupTask;
@@ -137,8 +138,21 @@ public final class QweProtectStones extends JavaPlugin {
         this.marketManager.load();
 
         PluginManager pm = getServer().getPluginManager();
-        if (pm.isPluginEnabled("PlaceholderAPI") && getConfigManager().getConfig().getBoolean("placeholders.enabled", true)) {
-            new PAPIExpansion(this).register();
+        if (getConfigManager().getConfig().getBoolean("placeholders.enabled", true)) {
+            if (pm.isPluginEnabled("PlaceholderAPI")) {
+                papiExpansion = new PAPIExpansion(this);
+                papiExpansion.register();
+            } else {
+                // PlaceholderAPI может подняться позже нас
+                pm.registerEvents(new org.bukkit.event.Listener() {
+                    @org.bukkit.event.EventHandler
+                    public void onPluginEnable(org.bukkit.event.server.PluginEnableEvent event) {
+                        if (!event.getPlugin().getName().equals("PlaceholderAPI") || papiExpansion != null) return;
+                        papiExpansion = new PAPIExpansion(QweProtectStones.this);
+                        papiExpansion.register();
+                    }
+                }, this);
+            }
         }
 
         this.visualManager = new VisualManager(this);
@@ -233,6 +247,9 @@ public final class QweProtectStones extends JavaPlugin {
         // API закрываем первым, чтобы чужие плагины не ловили NPE
         QpsApi.shutdown();
         if (blueMapIntegration != null) blueMapIntegration.disable();
+        if (dynmapIntegration != null) dynmapIntegration.disable();
+        // иначе PlaceholderAPI держит мёртвый classloader после reload
+        if (papiExpansion != null) papiExpansion.unregister();
 
         // меню первыми, close снимет задачи анимации
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -307,6 +324,8 @@ public final class QweProtectStones extends JavaPlugin {
     public InviteManager getInviteManager() { return inviteManager; }
     public RegionExporter getRegionExporter() { return regionExporter; }
     public DynmapIntegration getDynmapIntegration() { return dynmapIntegration; }
+
+    public org.qweyns.qweprotectstones.regions.protection.RegionMovementListener getRegionMovementListener() { return regionMovementListener; }
 
     public BlueMapIntegration getBlueMapIntegration() { return blueMapIntegration; }
 

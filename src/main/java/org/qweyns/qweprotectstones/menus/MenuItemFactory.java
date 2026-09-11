@@ -28,6 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MenuItemFactory {
 
+    // кеш голов: createProfile без сетевого резолва
+    private static final java.util.Map<String, org.bukkit.profile.PlayerProfile> PROFILE_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private final QweProtectStones plugin;
     private final MenuPlaceholders placeholders;
 
@@ -120,7 +124,9 @@ public class MenuItemFactory {
             SkullMeta meta = (SkullMeta) head.getItemMeta();
             if (meta != null) {
                 String owner = matStr.substring("head-".length()).replace("%player_name%", player.getName());
-                meta.setOwningPlayer(Bukkit.getOfflinePlayer(owner));
+                // getOfflinePlayer(ник) лез к Mojang синхронно и морозил главный поток
+                meta.setPlayerProfile(PROFILE_CACHE.computeIfAbsent(
+                        owner.toLowerCase(java.util.Locale.ROOT), Bukkit::createProfile));
                 head.setItemMeta(meta);
             }
             return head;
@@ -187,11 +193,8 @@ public class MenuItemFactory {
         if (cfg.getBoolean("hide_destroys", false)) meta.addItemFlags(ItemFlag.HIDE_DESTROYS);
         if (cfg.getBoolean("hide_placed_on", false)) meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
         if (cfg.getBoolean("hide_potion_effects", false)) {
-            try {
-                meta.addItemFlags(ItemFlag.valueOf("HIDE_ADDITIONAL_TOOLTIP"));
-            } catch (IllegalArgumentException ignored) {
-
-            }
+            // константой, а не valueOf: опечатку поймает компилятор
+            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         }
     }
 }

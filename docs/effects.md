@@ -32,23 +32,23 @@ effect_targets:
 - **ALERTS** — уведомления о рейдах (в чат и мессенджеры);
 - **EXP_BOOST** — бустер опыта, множитель `effects.exp_boost_multiplier`.
 
-## Оплата (effects.yml → effects.purchase)
+## Оплата (menus/effects.yml)
+
+Цена покупки задаётся действиями в `click_commands` кнопки —
+`[takemoney]`, `[takepoints]` или `[takeexp]` перед `[region_add_effect]`.
+Если после списания какое-то действие цепочки не удалось — деньги, очки
+и уровни возвращаются игроку автоматически.
 
 ```yaml
-effects:
-  purchase:
-    cost-type: "none"     # none | money (Vault) | points (PlayerPoints) | item
-    cost-amount: 100
-    scale-with-amplifier: false  # уровень выше — дороже: цена × (уровень+1)
-    item: "DIAMOND"       # предмет оплаты для cost-type: item
-    per-effect:           # индивидуальные цены
-      SPEED: 150
-      # ALERTS: 500
-  exp_boost_multiplier: 2.0
+# menus/effects.yml -> items.<кнопка>.click_commands
+click_commands:
+  - "[takemoney] 15000"
+  - "[region_add_effect] SPEED 1"
 ```
 
-Повышение уровня эффекта покупается там же: каждый следующий уровень
-дороже (если включён `scale-with-amplifier`).
+Секция `effects.purchase` (в `effects.yml`) цен больше не списывает —
+её значения читают только сторонние интеграции через API
+(`EffectPurchaseManager`).
 
 ## Как это работает под капотом
 

@@ -174,6 +174,8 @@ public class EffectManager implements Listener {
 
         region.getEffects().removeIf(effect -> effect.toUpperCase(Locale.ROOT).startsWith(normalized + ":"));
         region.getEffects().add(normalized + ":" + level);
+        // без этого версия не меняется и открытые меню не узнают о покупке
+        region.touch();
         plugin.getRegionStorage().saveNow(region);
 
         refreshAll();

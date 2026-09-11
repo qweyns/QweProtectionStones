@@ -20,6 +20,25 @@ public class MenuHolder implements InventoryHolder {
 
     long renderedVersion = -1;
 
+    // кеш отрисовки: подпись слота и собранный предмет
+    String[] slotSignatures;
+    ItemStack[] slotStacks;
+
+    void ensureSlotCache(int size) {
+        if (slotSignatures == null || slotSignatures.length != size) {
+            slotSignatures = new String[size];
+            slotStacks = new ItemStack[size];
+        }
+    }
+
+    String slotSignatureAt(int slot) {
+        return slotSignatures == null || slot < 0 || slot >= slotSignatures.length ? null : slotSignatures[slot];
+    }
+
+    ItemStack slotStackAt(int slot) {
+        return slotStacks == null || slot < 0 || slot >= slotStacks.length ? null : slotStacks[slot];
+    }
+
     MenuHolder(String menuName, Region region) {
         this.menuName = menuName;
         this.region = region;

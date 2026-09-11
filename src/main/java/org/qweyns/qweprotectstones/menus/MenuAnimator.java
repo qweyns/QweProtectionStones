@@ -31,8 +31,9 @@ public class MenuAnimator implements Runnable {
     private final ItemStack[] animLayer;
 
     private int currentTick = 0;
-    private boolean changedThisTick = false;
-    private boolean cancelled = false;
+    // отмена приходит из потока закрытия инвентаря, а run — из таймера
+    private volatile boolean changedThisTick = false;
+    private volatile boolean cancelled = false;
 
     MenuAnimator(QweProtectStones plugin, Player player, FileConfiguration menuCfg,
                  Region region, Inventory inv, MenuHolder holder) {
@@ -44,6 +45,8 @@ public class MenuAnimator implements Runnable {
         this.holder = holder;
         this.animLayer = new ItemStack[inv.getSize()];
         compileAnimations();
+        // кадр 0 исполняем сразу: шторка видна с первого тика
+        if (compiledFrames.containsKey(0)) run();
     }
 
     void cancel() {
@@ -52,6 +55,11 @@ public class MenuAnimator implements Runnable {
 
     boolean isCancelled() {
         return cancelled;
+    }
+
+    // слот закрыт шторкой анимации — клик по нему не проходит
+    boolean isCovered(int slot) {
+        return slot >= 0 && slot < animLayer.length && animLayer[slot] != null;
     }
 
     void refreshBaseLayer(ItemStack[] newBaseLayer) {
@@ -177,7 +185,15 @@ public class MenuAnimator implements Runnable {
                 }
                 case "cmd", "commands" -> {
                     String command = op.trim().substring(args[0].length()).trim();
-                    tasks.add(() -> plugin.getMenuManager().getActions().execute(player, List.of(command), region));
+                    // анимация дёргает действия без кулдауна и может зациклиться goto —
+                    // разрешаем только безобидное, никаких списаний и команд
+                    boolean safe = command.startsWith("[message]") || command.startsWith("[sound]") || command.startsWith("[close]");
+                    if (!safe) {
+                        plugin.getLogger().warning("Действие '" + command
+                                + "' запрещено в анимации меню (допустимы [message], [sound], [close]).");
+                    } else {
+                        tasks.add(() -> plugin.getMenuManager().getActions().execute(player, List.of(command), region));
+                    }
                 }
                 default -> plugin.getLogger().warning("Неизвестная команда анимации: " + args[0]);
             }

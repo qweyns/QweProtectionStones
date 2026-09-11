@@ -99,6 +99,10 @@ public class BlueMapIntegration {
             }
         }
         detach();
+        // обнуляем, иначе повторный enable() не переподпишется
+        enableListener = null;
+        disableListener = null;
+        unregister = null;
     }
 
     private boolean prepareMethods() {
@@ -135,7 +139,8 @@ public class BlueMapIntegration {
     private void attach(Object bluemapApi) {
         this.api = bluemapApi;
         this.active = true;
-        updateAll();
+        // колбэк приходит в потоке BlueMap — Bukkit читаем только из основного
+        plugin.getSchedulers().runNextTick(this::updateAll);
     }
 
     private void detach() {
@@ -161,8 +166,8 @@ public class BlueMapIntegration {
                 draw(map, region);
             }
         } catch (Throwable t) {
+            // одна ошибка одного региона не гасит карту целиком
 
-            active = false;
             plugin.getLogger().log(Level.WARNING, "BlueMap: не удалось обновить маркер привата " + region.getShortId(), t);
         }
     }
@@ -179,7 +184,6 @@ public class BlueMapIntegration {
                 ((Map<?, ?>) markerSetGetMarkers.invoke(set)).remove(markerId);
             }
         } catch (Throwable t) {
-            active = false;
             plugin.getLogger().log(Level.WARNING, "BlueMap: не удалось удалить маркер привата " + region.getShortId(), t);
         }
     }

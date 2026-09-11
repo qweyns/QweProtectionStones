@@ -14,7 +14,6 @@ import org.qweyns.qweprotectstones.config.ConfigManager;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,7 +22,8 @@ import java.util.UUID;
 public class FHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
-    private final Set<String> activeHolograms = new LinkedHashSet<>();
+    // мутируется из потоков разных регионов на Folia
+    private final Set<String> activeHolograms = ConcurrentHashMap.newKeySet();
 
     public FHProvider(QweProtectStones plugin) {
         this.plugin = plugin;

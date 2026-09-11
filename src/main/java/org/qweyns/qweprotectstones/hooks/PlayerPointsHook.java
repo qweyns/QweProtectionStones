@@ -32,4 +32,9 @@ public class PlayerPointsHook {
         if (api == null || amount <= 0) return false;
         return api.take(player.getUniqueId(), amount);
     }
+
+    public boolean givePoints(Player player, int amount) {
+        if (api == null || amount <= 0) return true;
+        return api.give(player.getUniqueId(), amount);
+    }
 }

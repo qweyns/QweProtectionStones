@@ -10,7 +10,6 @@ import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
-    private final Set<String> activeHolograms = new LinkedHashSet<>();
+    // мутируется из потоков разных регионов на Folia
+    private final Set<String> activeHolograms = ConcurrentHashMap.newKeySet();
 
     private final Map<String, Method> optionalSetters = new ConcurrentHashMap<>();
     private final Set<String> missingSetters = ConcurrentHashMap.newKeySet();

@@ -55,7 +55,10 @@ public class PAPIExpansion extends PlaceholderExpansion {
             default -> {  }
         }
 
-        Region region = plugin.getRegionManager().getRegionAt(player.getLocation());
+        // PAPI зовут и из асинхронных потоков: локацию игрока читать нельзя,
+        // берём регион по последнему перемещению (обновляется в основном потоке)
+        var movement = plugin.getRegionMovementListener();
+        Region region = movement == null ? null : movement.currentRegionOf(player);
         if (region == null) return plugin.getLanguageManager().getRawMessage("papi_no_region");
 
         return switch (key) {

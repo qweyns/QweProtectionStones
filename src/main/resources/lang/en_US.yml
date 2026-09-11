@@ -252,8 +252,6 @@ admin_debug_storage: "<#A79FC0> DB: <#F2EFFA>%db% <#A79FC0>| queued: <#F2EFFA>%p
 admin_debug_hooks: "<#A79FC0> Vault <#F2EFFA>%vault% <#A79FC0>| PlayerPoints <#F2EFFA>%points% <#A79FC0>| PAPI <#F2EFFA>%papi% <#A79FC0>| Dynmap <#F2EFFA>%dynmap% <#A79FC0>| BlueMap <#F2EFFA>%bluemap% <#A79FC0>| DiscordSRV <#F2EFFA>%discordsrv%"
 admin_debug_runtime: "<#A79FC0> Runtime: <#F2EFFA>%folia% <#A79FC0>| API: <#F2EFFA>%api% <#A79FC0>| memory: <#F2EFFA>%memory% <#A79FC0>| threads: <#F2EFFA>%threads%"
 admin_debug_type: "<#A79FC0> type <#F2EFFA>%type%<#A79FC0>: <#FDE68A>%count%"
-effect_no_economy: "%prefix%<#FB7185>Paying for effects requires Vault / PlayerPoints — ask the administration."
-effect_not_enough: "%prefix%<#FB7185>Not enough to buy: <#FDE68A>%price% %unit% <#FB7185>required."
 effect_cost_money: "coins"
 effect_cost_points: "points"
 home_warmup: "%prefix%<#FDE68A>Teleport to %id% in <#FDE68A>%seconds% s <#A79FC0>— don't move and don't take damage."

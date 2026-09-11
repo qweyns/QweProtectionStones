@@ -21,6 +21,9 @@ import java.util.logging.Level;
 
 public class HologramManager implements Listener {
 
+    // ядро могли перенести — помним, в каком чанке чьё
+    private final Map<UUID, String> regionChunk = new ConcurrentHashMap<>();
+
     private final QweProtectStones plugin;
     private IHologramProvider dhProvider;
     private IHologramProvider fhProvider;
@@ -62,7 +65,16 @@ public class HologramManager implements Listener {
         Location core = region.getCoreLocation();
         if (core == null || core.getWorld() == null) return;
 
-        chunkCache.computeIfAbsent(chunkKey(core), k -> ConcurrentHashMap.newKeySet()).add(region.getId());
+        String chunkKey = chunkKey(core);
+        String previousKey = regionChunk.put(region.getId(), chunkKey);
+        if (previousKey != null && !previousKey.equals(chunkKey)) {
+            Set<UUID> previousIds = chunkCache.get(previousKey);
+            if (previousIds != null) {
+                previousIds.remove(region.getId());
+                if (previousIds.isEmpty()) chunkCache.remove(previousKey);
+            }
+        }
+        chunkCache.computeIfAbsent(chunkKey, k -> ConcurrentHashMap.newKeySet()).add(region.getId());
 
         if (!core.getWorld().isChunkLoaded(core.getBlockX() >> 4, core.getBlockZ() >> 4)) return;
 
@@ -76,8 +88,11 @@ public class HologramManager implements Listener {
             if (other != null) other.remove(region.getId());
 
             primary.createOrUpdate(region, core);
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось обновить голограмму привата " + region.getShortId(), e);
+        } catch (Throwable t) {
+            // несовместимая версия плагина голограмм бросает Error — гасим провайдер с первого сбоя
+            plugin.getLogger().log(Level.WARNING, "Провайдер голограмм упал, отключаю его (" + region.getShortId() + ")", t);
+            if (primary == fhProvider) fhProvider = null;
+            else dhProvider = null;
         }
     }
 
@@ -86,6 +101,7 @@ public class HologramManager implements Listener {
     }
 
     public void removeHologram(UUID regionId) {
+        regionChunk.remove(regionId);
         chunkCache.values().forEach(ids -> ids.remove(regionId));
         chunkCache.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         removeHologramVisual(regionId);
@@ -95,8 +111,8 @@ public class HologramManager implements Listener {
         try {
             if (dhProvider != null) dhProvider.remove(regionId);
             if (fhProvider != null) fhProvider.remove(regionId);
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось удалить голограмму привата " + regionId, e);
+        } catch (Throwable t) {
+            plugin.getLogger().log(Level.WARNING, "Не удалось удалить голограмму привата " + regionId, t);
         }
     }
 
@@ -104,11 +120,12 @@ public class HologramManager implements Listener {
         try {
             if (dhProvider != null) dhProvider.deleteAll();
             if (fhProvider != null) fhProvider.deleteAll();
-        } catch (Exception e) {
+        } catch (Throwable t) {
 
-            plugin.getLogger().log(Level.WARNING, "Ошибка при удалении голограмм", e);
+            plugin.getLogger().log(Level.WARNING, "Ошибка при удалении голограмм", t);
         }
         chunkCache.clear();
+        regionChunk.clear();
     }
 
     public void restoreHolograms() {

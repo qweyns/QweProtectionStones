@@ -11,6 +11,8 @@ import java.util.Locale;
 
 public class MenuRequirements {
 
+    private final java.util.Set<String> warnedUnknown = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     private final QweProtectStones plugin;
     private final MenuPlaceholders placeholders;
 
@@ -45,27 +47,32 @@ public class MenuRequirements {
                 String permission = reqs.getString(key + ".permission");
                 yield permission == null || player.hasPermission(permission);
             }
-            case "region_durability_enabled" -> {
-                RegionType regionType = region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
-                yield regionType == null || regionType.durabilityUpgradeEnabled();
-            }
-            case "region_durability_disabled" -> {
-                RegionType regionType = region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
-                yield regionType == null || !regionType.durabilityUpgradeEnabled();
-            }
-            case "has effect" -> region == null || placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) > 0;
-            case "does not have effect" -> region == null || placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) <= 0;
-            case "allowed_effect" -> region == null || isEffectAllowed(region, reqs.getString(key + ".effect_name"));
-            case "not_allowed_effect" -> region == null || !isEffectAllowed(region, reqs.getString(key + ".effect_name"));
+            case "region_durability_enabled" -> region != null && durabilityEnabled(region);
+            case "region_durability_disabled" -> region != null && !durabilityEnabled(region);
+            case "has effect" -> region != null && placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) > 0;
+            case "does not have effect" -> region != null && placeholders.effectLevel(region, reqs.getString(key + ".effect_name")) <= 0;
+            case "allowed_effect" -> region != null && isEffectAllowed(region, reqs.getString(key + ".effect_name"));
+            case "not_allowed_effect" -> region != null && !isEffectAllowed(region, reqs.getString(key + ".effect_name"));
             case "is_owner" -> region != null && region.isOwner(player.getUniqueId());
             case "under_siege" -> region != null && plugin.isUnderSiege(region);
             case "trust_level" -> {
                 var required = TrustLevel.parse(reqs.getString(key + ".level"));
-                yield region == null || required.isEmpty()
-                        || plugin.getProtectionService().has(region, player, required.get());
+                yield region != null && required.isPresent()
+                        && plugin.getProtectionService().has(region, player, required.get());
             }
-            default -> true;
+            // опечатка в типе не должна открывать платные кнопки всем
+            default -> {
+                if (warnedUnknown.add(type)) {
+                    plugin.getLogger().warning("Неизвестный тип требования в меню: '" + type + "' — требование не пройдено.");
+                }
+                yield false;
+            }
         };
+    }
+
+    private boolean durabilityEnabled(Region region) {
+        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
+        return type != null && type.durabilityUpgradeEnabled();
     }
 
     public boolean isEffectAllowed(Region region, String effectName) {

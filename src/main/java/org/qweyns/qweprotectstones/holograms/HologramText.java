@@ -6,6 +6,17 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 
 final class HologramText {
 
+    // NETHERITE_INGOT -> Netherite Ingot: служебное имя в голограмме ни к чему
+    private static String prettyItem(org.bukkit.Material material) {
+        String[] parts = material.name().toLowerCase(java.util.Locale.ROOT).split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!sb.isEmpty()) sb.append(' ');
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
+    }
+
     private HologramText() {
     }
 
@@ -24,7 +35,7 @@ final class HologramText {
                 .replace("%members%", String.valueOf(region.getMemberCount()))
                 .replace("%size%", type == null ? "?" : type.widthX() + "x" + type.widthZ())
                 .replace("%id%", region.getShortId())
-                .replace("%item%", plugin.getMenuManager().upgradeItemFor(region).name())
+                .replace("%item%", prettyItem(plugin.getMenuManager().upgradeItemFor(region)))
                 .replace("%siege%", plugin.getLanguageManager()
                         .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"))
                 .replace("%penalty%", plugin.getPenaltyManager().hasPenalty(region.getId())

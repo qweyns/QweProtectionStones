@@ -68,6 +68,12 @@ public class RegionMovementListener implements Listener {
         handleTransition(player, to);
     }
 
+    /** Регион по последнему перемещению — потокобезопасно для асинхронных вызовов PAPI. */
+    public Region currentRegionOf(Player player) {
+        UUID id = currentRegion.get(player.getUniqueId());
+        return id == null ? null : plugin.getRegionManager().getById(id);
+    }
+
     private boolean canEnter(Player player, Region region) {
 
         if (protection.isBanned(region, player)) return false;

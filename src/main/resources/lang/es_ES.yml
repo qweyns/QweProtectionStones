@@ -252,8 +252,6 @@ admin_debug_storage: "<#A79FC0> BD: <#F2EFFA>%db% <#A79FC0>| en cola: <#F2EFFA>%
 admin_debug_hooks: "<#A79FC0> Vault <#F2EFFA>%vault% <#A79FC0>| PlayerPoints <#F2EFFA>%points% <#A79FC0>| PAPI <#F2EFFA>%papi% <#A79FC0>| Dynmap <#F2EFFA>%dynmap% <#A79FC0>| BlueMap <#F2EFFA>%bluemap% <#A79FC0>| DiscordSRV <#F2EFFA>%discordsrv%"
 admin_debug_runtime: "<#A79FC0> Entorno: <#F2EFFA>%folia% <#A79FC0>| API: <#F2EFFA>%api% <#A79FC0>| memoria: <#F2EFFA>%memory% <#A79FC0>| hilos: <#F2EFFA>%threads%"
 admin_debug_type: "<#A79FC0> tipo <#F2EFFA>%type%<#A79FC0>: <#FDE68A>%count%"
-effect_no_economy: "%prefix%<#FB7185>Pagar efectos requiere Vault / PlayerPoints — pregunta a la administración."
-effect_not_enough: "%prefix%<#FB7185>No alcanza para comprar: se necesita <#FDE68A>%price% %unit%<#FB7185>."
 effect_cost_money: "monedas"
 effect_cost_points: "puntos"
 home_warmup: "%prefix%<#FDE68A>Teletransporte a %id% en <#FDE68A>%seconds% s <#A79FC0>— no te muevas ni recibas daño."

@@ -14,6 +14,7 @@ public class DynmapIntegration {
     private final QweProtectStones plugin;
 
     private Object markerSet;
+    private Object markerApi;
     private Method createAreaMarker;
     private Method deleteMarker;
     private Method findAreaMarker;
@@ -39,6 +40,7 @@ public class DynmapIntegration {
 
         try {
             Object markerApi = dynmap.getClass().getMethod("getMarkerAPI").invoke(dynmap);
+            this.markerApi = markerApi;
             if (markerApi == null) {
                 plugin.getLogger().warning("Dynmap найден, но MarkerAPI недоступен — интеграция отключена.");
                 return;
@@ -102,9 +104,41 @@ public class DynmapIntegration {
     public void redrawAll() {
         if (!active) return;
 
+        java.util.Set<String> alive = new java.util.HashSet<>();
         for (Region region : plugin.getRegionManager().getAllRegions()) {
+            alive.add(markerId(region));
             update(region);
         }
+        removeStaleMarkers(alive);
+    }
+
+    // метки регионов, которых больше не существует
+    private void removeStaleMarkers(java.util.Set<String> alive) {
+        if (markerSet == null) return;
+        try {
+            Method getAreaMarkers = markerSet.getClass().getMethod("getAreaMarkers");
+            Object[] markers = (Object[]) getAreaMarkers.invoke(markerSet);
+            for (Object marker : markers) {
+                String id = (String) marker.getClass().getMethod("getMarkerID").invoke(marker);
+                if (id != null && id.startsWith("qps_") && !alive.contains(id)) {
+                    deleteMarker.invoke(marker);
+                }
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().log(Level.FINE, "Не удалось почистить старые метки Dynmap", e);
+        }
+    }
+
+    public void disable() {
+        if (!active || markerApi == null) return;
+        try {
+            // слой целиком: иначе метки переживают нас на карте
+            markerApi.getClass().getMethod("removeMarkerSet", String.class)
+                    .invoke(markerApi, "qweprotectstones.regions");
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Не удалось снять слой Dynmap", e);
+        }
+        active = false;
     }
 
     public void update(Region region) {

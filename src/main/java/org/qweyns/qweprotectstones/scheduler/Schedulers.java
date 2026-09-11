@@ -28,6 +28,8 @@ public interface Schedulers {
 
     void runAtEntityLater(Entity entity, Runnable action, long delayTicks);
 
+    Task runAtEntityTimer(Entity entity, Runnable action, long delayTicks, long periodTicks);
+
     void cancelAll();
 
     boolean isFolia();

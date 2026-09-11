@@ -72,6 +72,11 @@ public final class ColorUtil {
                 .replaceAll("\u00a7.", "");
     }
 
+    /** Экранирует MiniMessage-разметку в чужом тексте (например, выводе PlaceholderAPI). */
+    public static String escapeMini(String text) {
+        return text == null ? null : MiniMessage.miniMessage().escapeText(text);
+    }
+
     public static String formatLegacyString(String text) {
         if (text == null || text.isBlank()) return "";
         return SECTION_SERIALIZER.serialize(formatComponent(text));

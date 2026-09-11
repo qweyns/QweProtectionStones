@@ -45,41 +45,59 @@ public class MenuActions {
     public void execute(Player player, List<String> commands, Region region) {
         if (commands == null || commands.isEmpty()) return;
 
+        // списанное в цепочке возвращается, если дальше что-то не удалось
+        Payments taken = new Payments();
         for (String raw : commands) {
             String cmd = placeholders.apply(player, raw, region, null);
             try {
-
-                if (!run(player, cmd, region)) return;
+                if (!run(player, cmd, region, taken)) {
+                    refund(player, taken, cmd);
+                    return;
+                }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Ошибка выполнения действия меню: " + cmd, e);
+                refund(player, taken, cmd);
+                return;
             }
         }
     }
 
-    private boolean run(Player player, String cmd, Region region) {
+    private boolean run(Player player, String cmd, Region region, Payments taken) {
         if (cmd.startsWith(TAKE_MONEY)) {
-            return takePayment(player, plugin.getVaultHook().isEnabled(),
-                    plugin.getVaultHook().takeMoney(player, parseDouble(cmd.substring(TAKE_MONEY.length()))));
+            Double amount = parseAmount(cmd.substring(TAKE_MONEY.length()));
+            if (amount == null) return false;
+            if (amount <= 0) return true;
+
+            if (!plugin.getVaultHook().takeMoney(player, amount)) return paymentFailed(player, plugin.getVaultHook().isEnabled());
+            taken.money += amount;
+            return true;
         }
         if (cmd.startsWith(TAKE_POINTS)) {
-            return takePayment(player, plugin.getPlayerPointsHook().isEnabled(),
-                    plugin.getPlayerPointsHook().takePoints(player, (int) parseDouble(cmd.substring(TAKE_POINTS.length()))));
+            Double amount = parseAmount(cmd.substring(TAKE_POINTS.length()));
+            if (amount == null) return false;
+            if (amount <= 0) return true;
+
+            int cost = (int) Math.ceil(amount);
+            if (!plugin.getPlayerPointsHook().takePoints(player, cost)) return paymentFailed(player, plugin.getPlayerPointsHook().isEnabled());
+            taken.points += cost;
+            return true;
         }
         if (cmd.startsWith(TAKE_EXP)) {
-            int cost = (int) parseDouble(cmd.substring(TAKE_EXP.length()));
-            if (player.getLevel() < cost) return false;
+            Double amount = parseAmount(cmd.substring(TAKE_EXP.length()));
+            if (amount == null) return false;
+            if (amount <= 0) return true;
 
+            int cost = (int) Math.ceil(amount);
+            if (player.getLevel() < cost) return paymentFailed(player, true);
             player.setLevel(player.getLevel() - cost);
+            taken.exp += cost;
             return true;
         }
 
-        runSimple(player, cmd, region);
-        return true;
+        return runSimple(player, cmd, region);
     }
 
-    private boolean takePayment(Player player, boolean hookEnabled, boolean success) {
-        if (success) return true;
-
+    private boolean paymentFailed(Player player, boolean hookEnabled) {
         if (!hookEnabled) {
             plugin.getLogger().warning("Меню требует оплату, но нужный экономический плагин не подключён — покупка отменена.");
         }
@@ -87,12 +105,50 @@ public class MenuActions {
         return false;
     }
 
-    private void runSimple(Player player, String cmd, Region region) {
+    /** null = сумма не разбирается; ноль и меньше ничего не списывают. */
+    private Double parseAmount(String raw) {
+        try {
+            double value = Double.parseDouble(raw.trim());
+            if (value < 0) {
+                plugin.getLogger().warning("Отрицательная сумма в действии меню: " + raw);
+                return null;
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("Некорректное число в действии меню: " + raw);
+            return null;
+        }
+    }
+
+    /** Сколько списали в текущей цепочке — для возврата при сбое дальше по списку. */
+    private static final class Payments {
+        double money;
+        int points;
+        int exp;
+
+        boolean any() {
+            return money > 0 || points > 0 || exp > 0;
+        }
+    }
+
+    private void refund(Player player, Payments taken, String failedCmd) {
+        if (!taken.any()) return;
+
+        if (taken.money > 0) plugin.getVaultHook().giveMoney(player, taken.money);
+        if (taken.points > 0) plugin.getPlayerPointsHook().givePoints(player, taken.points);
+        if (taken.exp > 0) player.giveExpLevels(taken.exp);
+        plugin.getLogger().warning("Действие меню не удалось ('" + failedCmd + "') — списанное возвращено: "
+                + taken.money + " денег, " + taken.points + " очков, " + taken.exp + " уровней опыта.");
+    }
+
+    private boolean runSimple(Player player, String cmd, Region region) {
         if (cmd.startsWith(CLOSE)) {
-            player.closeInventory();
+            // закрытие изнутри клика рассинхронизирует клиент — следующим тиком
+            plugin.getSchedulers().runAtEntity(player, player::closeInventory);
         } else if (cmd.startsWith(OPEN) || cmd.startsWith(REFRESH)) {
             String targetMenu = cmd.startsWith(REFRESH) ? null : cmd.substring(OPEN.length()).trim();
-            plugin.getSchedulers().runNextTick(() -> reopenOrRefresh(player, region, targetMenu));
+            // на Folia инвентарь открывает только поток-владелец игрока
+            plugin.getSchedulers().runAtEntity(player, () -> reopenOrRefresh(player, region, targetMenu));
         } else if (cmd.startsWith(MESSAGE)) {
             player.sendMessage(ColorUtil.formatComponent(cmd.substring(MESSAGE.length())));
         } else if (cmd.startsWith(PLAYER)) {
@@ -107,25 +163,27 @@ public class MenuActions {
             out.writeUTF(cmd.substring(CONNECT.length()).trim());
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
         } else if (cmd.startsWith(ADD_EFFECT)) {
-            addEffect(player, region, cmd.substring(ADD_EFFECT.length()).trim());
+            return addEffect(player, region, cmd.substring(ADD_EFFECT.length()).trim());
         } else {
             for (String legacy : ADD_EFFECT_LEGACY) {
                 if (!cmd.startsWith(legacy)) continue;
 
-                addEffect(player, region, cmd.substring(legacy.length()).trim());
-                break;
+                return addEffect(player, region, cmd.substring(legacy.length()).trim());
             }
         }
+        return true;
     }
 
     private void reopenOrRefresh(Player player, Region region, String targetMenu) {
         Inventory topInv = player.getOpenInventory().getTopInventory();
-        if (topInv.getHolder() instanceof MenuHolder holder
-                && (targetMenu == null || holder.menuName.equals(targetMenu))) {
+        // игрок успел закрыть меню — заново не открываем
+        if (!(topInv.getHolder() instanceof MenuHolder holder)) return;
+
+        if (targetMenu == null || holder.menuName.equals(targetMenu)) {
             plugin.getMenuManager().render(player, holder, true);
             return;
         }
-        if (targetMenu != null) plugin.getMenuManager().openMenu(player, targetMenu, region);
+        plugin.getMenuManager().openMenu(player, targetMenu, region);
     }
 
     private void playSound(Player player, String soundName) {
@@ -137,25 +195,18 @@ public class MenuActions {
         sound.playTo(player);
     }
 
-    private double parseDouble(String raw) {
-        try {
-            return Double.parseDouble(raw.trim());
-        } catch (NumberFormatException e) {
-            plugin.getLogger().warning("Некорректное число в действии меню: " + raw);
-            return 0;
-        }
-    }
-
-    private void addEffect(Player player, Region region, String argument) {
-        if (region == null || argument.isEmpty()) return;
+    // цену задаёт само меню ([takemoney] и т.п. выше по списку) —
+    // здесь только проверки и выдача, дважды не списываем
+    private boolean addEffect(Player player, Region region, String argument) {
+        if (region == null || argument.isEmpty()) return false;
 
         String[] parts = argument.split(":");
         String effectName = parts[0].trim();
-        if (effectName.isEmpty()) return;
+        if (effectName.isEmpty()) return false;
 
         if (!requirements.isEffectAllowed(region, effectName)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("effect_not_allowed", "%effect%", effectName));
-            return;
+            return false;
         }
 
         int amplifier = 0;
@@ -168,7 +219,7 @@ public class MenuActions {
         }
 
         // чужие плагины могут наложить вето
-        if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return;
+        if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return false;
 
         // имя эффекта до списания, за опечатку в конфиге не платят
 
@@ -176,28 +227,13 @@ public class MenuActions {
         if (!builtin && plugin.getEffectManager().potionType(effectName) == null) {
             plugin.getLogger().warning("Магазин эффектов: неизвестный эффект '" + effectName + "' (проверьте menus/effects.yml)");
             player.sendMessage(plugin.getLanguageManager().getMessage("effect_unknown", "%effect%", effectName));
-            return;
-        }
-
-        var purchase = plugin.getEffectPurchaseManager();
-        switch (purchase.charge(player, effectName, amplifier)) {
-            case NO_ECONOMY -> {
-                player.sendMessage(plugin.getLanguageManager().getMessage("effect_no_economy"));
-                return;
-            }
-            case NOT_ENOUGH -> {
-                player.sendMessage(plugin.getLanguageManager().getMessage("effect_not_enough",
-                        "%price%", org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager.format(
-                                purchase.price(effectName, amplifier)),
-                        "%unit%", purchase.costTypeName()));
-                return;
-            }
-            default -> {  }
+            return false;
         }
 
         plugin.getEffectManager().addCustomEffect(region, effectName, amplifier);
         player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought",
                 "%effect%", describeEffect(effectName, amplifier)));
+        return true;
     }
 
     private String describeEffect(String effectName, int amplifier) {
