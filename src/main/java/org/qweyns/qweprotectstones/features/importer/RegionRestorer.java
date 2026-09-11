@@ -108,8 +108,7 @@ public class RegionRestorer {
             region.restoreStats(
                     intOf(attacks.get("count"), 0),
                     longOf(attacks.get("last_at"), 0L),
-                    string(attacks.get("last_by")),
-                    0);
+                    string(attacks.get("last_by")));
         }
 
         if (data.get("members") instanceof List<?> members) {

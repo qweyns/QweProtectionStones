@@ -83,7 +83,6 @@ public class PAPIExpansion extends PlaceholderExpansion {
                     .getRawMessage(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm");
             case "standing_attacks" -> String.valueOf(region.getAttackCount());
             case "standing_last_attacker" -> region.getLastAttackerName();
-            case "standing_unseen_attacks" -> String.valueOf(region.getUnseenAttacks());
             default -> null;
         };
     }

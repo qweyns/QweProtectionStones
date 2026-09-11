@@ -34,6 +34,8 @@ public record RegionType(
         boolean spawnEggAllowed,
         boolean hologramEnabled,
         boolean returnBlockOnRemove,
+        // Ставится ли блок-ядро как обычный блок при зажатом SHIFT.
+        boolean sneakPlacesPlainBlock,
 
         // Ниже — переопределения глобальных настроек. Отрицательное значение
         // или пустая строка означают «взять общее значение из config.yml».

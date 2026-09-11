@@ -331,13 +331,6 @@ findspot_none: "%prefix%<#E74C3C>Sin sitio libre en %distance% bloques."
 region_cooldown: "%prefix%<#E74C3C>Espera <#F1C40F>%seconds% <#E74C3C>s antes de crear otra parcela."
 siege_active: "<#E74C3C>bajo asedio"
 siege_calm: "<#2ECC71>tranquilo"
-raid_summary_header:
-  - "%prefix%<#E67E22>Mientras no estabas, atacaron tus parcelas:"
-
-raid_summary_line:
-  - "<#E74C3C> ⚔ <#F1C40F>%id% <#7F8C8D>| ataques: <#E74C3C>%attacks% <#7F8C8D>| resistencia: <#E67E22>%durability%<#7F8C8D>/<#E67E22>%max% <#7F8C8D>| <#95A5A6>%attacker%  <dark_gray>[</dark_gray><click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Haz clic para teletransportarte'><#3498DB> TP </#3498DB></hover></click><dark_gray>]</dark_gray>"
-
-# --- Администрирование: новое ---
 admin_never: "nunca"
 admin_info_attacks: "%prefix%<#7F8C8D>Ataques: <#F1C40F>%count% <#7F8C8D>| último: <#F0F0F0>%last% <#7F8C8D>| por: <#F1C40F>%by% <#7F8C8D>| ahora: %siege%"
 admin_export_started: "%prefix%<#F1C40F>Exportando parcelas a JSON..."

@@ -107,7 +107,6 @@ import:
 #   standing_trust          — ваш уровень доступа (или «нет»)
 #   standing_attacks        — сколько всего атак пережил приват
 #   standing_last_attacker  — кто атаковал последним
-#   standing_unseen_attacks — атаки, о которых владелец ещё не видел сводки
 #   standing_penalty        — множитель штрафа починки (0 — штрафа нет)
 #   standing_siege          — идёт ли осада прямо сейчас
 placeholders:

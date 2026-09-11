@@ -126,11 +126,6 @@ public class ConfigManager {
     // Общие настройки
     // ------------------------------------------------------------------
 
-    /** Ставить блок-ядро с зажатым Shift как обычный блок, без создания привата. */
-    public boolean isSneakPlacesPlainBlock() {
-        return config.getBoolean("settings.sneak_places_plain_block", true);
-    }
-
     public Material getUpgradeItem() {
         String raw = config.getString("settings.upgrade_item", "NETHERITE_INGOT");
         Material mat = raw == null ? null : Material.matchMaterial(raw);

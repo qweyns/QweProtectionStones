@@ -106,6 +106,7 @@ public class RegionTypeRegistry {
                 readBoolean(section, defaults, "spawn-egg-use", false),
                 readBoolean(section, defaults, "hologram", true),
                 readBoolean(section, defaults, "return_block_on_remove", true),
+                readBoolean(section, defaults, "sneak_places_plain_block", true),
 
                 readInt(section, defaults, "damage_cooldown_ticks", -1),
                 readInt(section, defaults, "explosion_damage_radius", -1),

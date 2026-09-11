@@ -73,13 +73,17 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
         }
 
         plugin.getRegionLifecycleListener().cleanupVisuals(region);
-        returnCoreBlock(player, region);
+        returnCoreBlock(region);
 
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
-    /** Убираем блок-ядро из мира и возвращаем его владельцу. */
-    private void returnCoreBlock(Player player, Region region) {
+    /**
+     * Убираем блок-ядро из мира; предмет выпадает на его месте — как при
+     * поломке. Политика тегов и вида единая (RegionItems.returnCore), чтобы
+     * «покупные» ядра не превращались в обычные блоки.
+     */
+    private void returnCoreBlock(Region region) {
         Location core = region.getCoreLocation();
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (core == null || type == null) return;
@@ -89,7 +93,7 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
         }
         if (!type.returnBlockOnRemove()) return;
 
-        var leftovers = player.getInventory().addItem(new org.bukkit.inventory.ItemStack(type.material()));
-        leftovers.values().forEach(item -> core.getWorld().dropItemNaturally(core, item));
+        core.getWorld().dropItemNaturally(core,
+                org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region));
     }
 }

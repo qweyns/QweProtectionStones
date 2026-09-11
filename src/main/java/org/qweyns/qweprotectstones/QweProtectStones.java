@@ -199,7 +199,6 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(new EntityProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.BorderProtectionListener(this), this);
-        pm.registerEvents(new org.qweyns.qweprotectstones.listeners.RaidSummaryListener(this), this);
 
         this.actionLogger = new RegionActionLogger(this);
         this.previewListener = new RegionPreviewListener(this);

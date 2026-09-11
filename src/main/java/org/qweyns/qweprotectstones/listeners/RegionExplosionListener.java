@@ -151,10 +151,6 @@ public class RegionExplosionListener implements Listener {
                 : region.getOwnerName();
 
         region.recordAttack(attackerNameNear(core));
-        // Владельца не было в сети — атака попадёт в сводку при его входе.
-        if (region.getOwnerId() == null || Bukkit.getPlayer(region.getOwnerId()) == null) {
-            region.markUnseenAttack();
-        }
         plugin.getNotificationManager().sendAttackAlert(region, owner, core);
         plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
         alertNeighbours(region, core);

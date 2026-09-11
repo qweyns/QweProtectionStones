@@ -6,6 +6,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.qweyns.qweprotectstones.QweProtectStones;
+import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionType;
 
 import java.util.ArrayList;
@@ -82,6 +83,21 @@ public final class RegionItems {
 
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * Предмет-ядро, возвращаемый при удалении привата (поломка блока или
+     * /ps delete): PDC-теги прочности — по настройке, ограниченные типы
+     * (restrict-obtaining) — с тегом и в полном оформлении, чтобы покупка
+     * не превращалась в обычный блок.
+     */
+    public static ItemStack returnCore(QweProtectStones plugin, RegionType type, Region region) {
+        boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
+        Integer durability = region != null
+                && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
+                && tags
+                ? region.getDurability() : null;
+        return core(plugin, type, 1, durability, tags || type.restrictObtaining(), type.restrictObtaining());
     }
 
     /** Тип из PDC-тега предмета или null. Материал проверяет вызывающий. */

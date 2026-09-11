@@ -59,8 +59,9 @@ public class RegionLifecycleListener implements Listener {
 
         Player player = event.getPlayer();
 
-        // Shift позволяет поставить блок как обычную декорацию, без создания привата.
-        if (player.isSneaking() && plugin.getConfigManager().isSneakPlacesPlainBlock()) {
+        // Shift позволяет поставить блок как обычную декорацию, без создания
+        // привата (sneak_places_plain_block у типа в regions.yml).
+        if (player.isSneaking() && type.sneakPlacesPlainBlock()) {
             player.sendMessage(plugin.getLanguageManager().getMessage("region_placed_as_block"));
             return;
         }
@@ -152,37 +153,23 @@ public class RegionLifecycleListener implements Listener {
         } else if (type != null && player.getGameMode() != GameMode.CREATIVE) {
             // Блок возвращаем сами, чтобы он не потерялся из-за настроек дропа.
             event.setDropItems(false);
-            giveOrDrop(player, block.getLocation(), type, region);
+            dropCore(block.getLocation(), type, region);
         }
 
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
     /**
-     * Возврат блока ядра. Если включено {@code settings.return-durability},
-     * в предмет записывается PDC-тег с текущей прочностью привата — поставив
-     * ядро заново, владелец не потеряет прокачку.
+     * Сломанное ядро выпадает на пол, а не появляется в инвентаре — как
+     * обычный блок Minecraft. Теги и внешний вид предмета — по единой
+     * политике возврата (см. {@link org.qweyns.qweprotectstones.utils.RegionItems#returnCore}).
      */
-    private void giveOrDrop(Player player, Location location, RegionType type, Region region) {
-        boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
-        // Ограниченный тип помечаем тегом всегда: без тега возвращённый блок
-        // больше не создал бы приват — игрок потерял бы покупку.
-        boolean tagType = tags || type.restrictObtaining();
-        Integer durability = region != null
-                && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
-                && tags
-                ? region.getDurability() : null;
-        // Обычный тип возвращается как обычный блок (только невидимые теги
-        // прочности), ограниченный — в полном оформлении, как выдали.
-        boolean styled = type.restrictObtaining();
+    private void dropCore(Location location, RegionType type, Region region) {
+        org.bukkit.World world = location.getWorld();
+        if (world == null) return;
 
-        ItemStack stack = org.qweyns.qweprotectstones.utils.RegionItems.core(
-                plugin, type, 1, durability, tagType, styled);
-
-        var leftovers = player.getInventory().addItem(stack);
-
-        // Инвентарь полон — кладём под ноги, а не выбрасываем в пустоту.
-        leftovers.values().forEach(item -> location.getWorld().dropItemNaturally(location, item));
+        world.dropItemNaturally(location,
+                org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region));
     }
 
     /** Тип из PDC-тега предмета; null, если тега нет или материал не совпадает. */
