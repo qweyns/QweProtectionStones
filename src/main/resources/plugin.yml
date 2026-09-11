@@ -108,6 +108,3 @@ permissions:
   qweprotectstones.limit.unlimited:
     description: Снимает лимит на количество приватов всех типов
     default: false
-  qweprotectstones.region.huge:
-    description: Право на установку огромного привата
-    default: false

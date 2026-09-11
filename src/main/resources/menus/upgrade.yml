@@ -48,7 +48,7 @@
 #    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
-menu_title: "<bold><gradient:#E9D5FF:#DDD6FE:#FBCFE8>Прочность региона</gradient></bold>"
+menu_title: "<bold><gradient:#F8BA47:#FF9F41>Прочность региона</gradient></bold>"
 size: 27
 upgrade_slots:
   - 12
@@ -59,7 +59,7 @@ upgrade_slots:
 
 upgrade_item_template:
   material: NETHERITE_INGOT
-  display_name: "<bold><gradient:#86EFAC:#34D399>Улучшить до %level% ед.</gradient></bold>"
+  display_name: "<bold><gradient:#C4B5FD:#8B5CF6>Улучшить до %level% ед.</gradient></bold>"
   lore:
     - "<#F2EFFA>▪ Увеличивает защиту вашего"
     - "<#F2EFFA>  привата от взрывов."
@@ -89,7 +89,7 @@ items:
   back_btn:
     slot: 22
     material: ARROW
-    display_name: "<bold><#FB7185>Назад</bold>"
+    display_name: "<bold><#C4B5FD>Назад</bold>"
     click_commands:
       - "[openguimenu] main"
       - "[sound] UI_BUTTON_CLICK"

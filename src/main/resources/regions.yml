@@ -269,12 +269,12 @@ default_region:
 region_types:
 
   DIAMOND_BLOCK:
-    display_name: <#DDD6FE>Маленький приват
+    display_name: <#67E8F9>Маленький приват
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F2EFFA>Владелец: <#DDD6FE>%owner%  '
-    - '  <#F2EFFA>Размер: <#DDD6FE>%size%  '
+    - '  <#F2EFFA>Владелец: <#67E8F9>%owner%  '
+    - '  <#F2EFFA>Размер: <#67E8F9>%size%  '
     - ''
     radius: 8
     radius_y: 32
@@ -296,12 +296,12 @@ region_types:
       lightning: true
 
   DEEPSLATE_EMERALD_ORE:
-    display_name: <#C4B5FD>Средний приват
+    display_name: <#6EE7B7>Средний приват
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F2EFFA>Владелец: <#C4B5FD>%owner%  '
-    - '  <#F2EFFA>Прочность: <#C4B5FD>[ %durability% / %max_durability% ]  '
+    - '  <#F2EFFA>Владелец: <#6EE7B7>%owner%  '
+    - '  <#F2EFFA>Прочность: <#6EE7B7>[ %durability% / %max_durability% ]  '
     - ''
     radius: 16
     radius_y: 48
@@ -326,13 +326,13 @@ region_types:
       lightning: true
 
   ANCIENT_DEBRIS:
-    display_name: <gradient:#A78BFA:#C4B5FD:#F9A8D4>Большой приват</gradient>
+    display_name: <gradient:#F8BA47:#FF9F41>Большой приват</gradient>
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F2EFFA>Владелец: <gradient:#A78BFA:#C4B5FD:#F9A8D4>%owner%</gradient>  '
-    - '  <#F2EFFA>Прочность: <gradient:#A78BFA:#C4B5FD:#F9A8D4>[ %durability% / %max_durability% ]</gradient>  '
-    - '  <#F2EFFA>Участников: <gradient:#A78BFA:#C4B5FD:#F9A8D4>%members%</gradient>  '
+    - '  <#F2EFFA>Владелец: <gradient:#F8BA47:#FF9F41>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#F8BA47:#FF9F41>%members%</gradient>  '
     - ''
     radius: 32
     radius_y: 64
@@ -357,13 +357,13 @@ region_types:
       scale: 1.1
 
   RED_MUSHROOM_BLOCK:
-    display_name: <gradient:#8B5CF6:#A78BFA:#F472B6>Огромный приват</gradient>
+    display_name: <gradient:#F84747:#DD4141>Огромный приват</gradient>
     hologram_lines:
     - '  %type%  '
     - ''
-    - '  <#F2EFFA>Владелец: <gradient:#8B5CF6:#A78BFA:#F472B6>%owner%</gradient>  '
-    - '  <#F2EFFA>Прочность: <gradient:#8B5CF6:#A78BFA:#F472B6>[ %durability% / %max_durability% ]</gradient>  '
-    - '  <#F2EFFA>Участников: <gradient:#8B5CF6:#A78BFA:#F472B6>%members%</gradient>  '
+    - '  <#F2EFFA>Владелец: <gradient:#F84747:#DD4141>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#F84747:#DD4141>%members%</gradient>  '
     - ''
     radius: 48
     radius_y: 96
@@ -372,7 +372,16 @@ region_types:
     max_durability: 48
     max_per_player: 1
     min_distance_to_others: 32
-    place_permission: qweprotectstones.region.huge
+    # Покупной приват: создаётся только предметом с тегом — выдача /qps give
+    # или магазин сервера. Добытый блок гриба остаётся обычным блоком.
+    restrict-obtaining: true
+    item:
+      name: "<gradient:#F84747:#DD4141>Огромный приват</gradient>"
+      lore:
+        - "<#F2EFFA>Территория 97×97, высота 192"
+        - "<#F2EFFA>Прочность: 8 (прокачка до 48)"
+        - "<#A79FC0>Продаётся в магазине сервера"
+      glow: true
     spawn-egg-use: true
     explosions:
       TNT: true

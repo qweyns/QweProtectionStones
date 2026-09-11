@@ -48,7 +48,7 @@
 #    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
-menu_title: "<bold><gradient:#8B5CF6:#A78BFA:#F472B6>Магазин эффектов</gradient></bold>"
+menu_title: "<bold><gradient:#7DD3FC:#E0F2FE>Магазин эффектов</gradient></bold>"
 size: 45
 update_interval: 10
 
@@ -83,7 +83,7 @@ items:
     slot: 11
     priority: 2
     material: EXPERIENCE_BOTTLE
-    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>✨ Бустер опыта</gradient></bold>"
+    display_name: "<bold><gradient:#86EFAC:#5EEAD4>✨ Бустер опыта</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Дает x2 опыта."
       - ""
@@ -151,7 +151,7 @@ items:
     slot: 13
     priority: 2
     material: BELL
-    display_name: "<bold><gradient:#FDBA74:#FB7185>🚨 Радары вторжения</gradient></bold>"
+    display_name: "<bold><gradient:#FDE68A:#F59E0B>🚨 Радары вторжения</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Сообщит, если зайдет чужак."
       - ""
@@ -215,7 +215,7 @@ items:
     slot: 15
     priority: 2
     material: GOLDEN_PICKAXE
-    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>⛏ Спешка II</gradient></bold>"
+    display_name: "<bold><gradient:#FCD34D:#F59E0B>⛏ Спешка II</gradient></bold>"
     hide_attributes: true
     lore:
       - "<#F2EFFA>▪ Позволяет мгновенно копать."
@@ -281,7 +281,7 @@ items:
     slot: 19
     priority: 2
     material: POTION
-    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>⚡ Скорость II</gradient></bold>"
+    display_name: "<bold><gradient:#93C5FD:#67E8F9>⚡ Скорость II</gradient></bold>"
     hide_potion_effects: true
     lore:
       - "<#F2EFFA>▪ Скорость передвижения по базе."
@@ -346,7 +346,7 @@ items:
     slot: 21
     priority: 2
     material: BLAZE_POWDER
-    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>⚔ Сила II</gradient></bold>"
+    display_name: "<bold><gradient:#FDBA74:#FB7185>⚔ Сила II</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Огромный урон по чужакам."
       - ""
@@ -474,7 +474,7 @@ items:
     slot: 25
     priority: 2
     material: GOLDEN_APPLE
-    display_name: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>❤ Прилив здоровья II</gradient></bold>"
+    display_name: "<bold><gradient:#FDE68A:#FB7185>❤ Прилив здоровья II</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ +4 дополнительных сердца."
       - ""
@@ -543,7 +543,7 @@ items:
     slot: 29
     priority: 2
     material: COBWEB
-    display_name: "<bold><gradient:#A79FC0:#8E86A8>🕸 Замедление II (На чужаков)</gradient></bold>"
+    display_name: "<bold><gradient:#CBD5E1:#94A3B8>🕸 Замедление II (На чужаков)</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Замедляет всех незваных гостей."
       - ""
@@ -609,7 +609,7 @@ items:
     slot: 33
     priority: 2
     material: WITHER_ROSE
-    display_name: "<bold><gradient:#8B5CF6:#A78BFA:#F43F5E>☠ Иссушение (Смертельная ловушка)</gradient></bold>"
+    display_name: "<bold><gradient:#6D28D9:#F43F5E>☠ Иссушение (Смертельная ловушка)</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Иссушает тех, кого нет в привате."
       - ""
@@ -656,7 +656,7 @@ items:
     slot: 40
     priority: 1
     material: ARROW
-    display_name: "<bold><#FB7185>Назад</bold>"
+    display_name: "<bold><#C4B5FD>Назад</bold>"
     view_requirement:
       requirements:
         d:

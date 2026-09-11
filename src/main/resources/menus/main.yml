@@ -48,7 +48,7 @@ items:
   upgrade_btn:
     slot: 11
     material: ANCIENT_DEBRIS
-    display_name: "<bold><gradient:#E9D5FF:#DDD6FE:#FBCFE8>Улучшить прочность</gradient></bold>"
+    display_name: "<bold><gradient:#F8BA47:#FF9F41>Улучшить прочность</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Нажмите, чтобы перейти к"
       - "<#F2EFFA>  укреплению защиты привата."
@@ -61,7 +61,7 @@ items:
   effects_btn:
     slot: 15
     material: BEACON
-    display_name: "<bold><gradient:#8B5CF6:#A78BFA:#F472B6>Магазин эффектов</gradient></bold>"
+    display_name: "<bold><gradient:#7DD3FC:#E0F2FE>Магазин эффектов</gradient></bold>"
     lore:
       - "<#F2EFFA>▪ Покупка постоянных баффов,"
       - "<#F2EFFA>  уведомлений и бустеров."
