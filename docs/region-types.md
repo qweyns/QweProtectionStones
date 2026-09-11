@@ -63,8 +63,14 @@ item:
   lore: []     # описание, построчно
   glow: false  # свечение, как у зачарованного
 recipe:
-  pattern: ["AAA", "ABA", "AAA"]   # схема верстака, пробел — пусто
-  ingredients: { A: DIAMOND, B: NETHER_STAR }
+  # схема верстака, пробел — пусто
+  pattern:
+    - "AAA"
+    - "ABA"
+    - "AAA"
+  ingredients:
+    A: DIAMOND
+    B: NETHER_STAR
   result_amount: 1
 ```
 
@@ -99,7 +105,11 @@ explosions:                 # каким видам взрывов можно в
 ## Эффекты
 
 ```yaml
-allowed_effects: [SPEED, SLOW, EXP_BOOST, ...]  # пусто — меню эффектов недоступно
+# пусто — меню эффектов недоступно
+allowed_effects:
+  - SPEED
+  - SLOW
+  - EXP_BOOST
 ```
 
 Псевдоэффекты: `ALERTS` (уведомления о рейдах), `EXP_BOOST` (бустер опыта).
@@ -140,9 +150,14 @@ hologram_under_attack: true  # осадный набор строк во вре�
 hologram_provider: MODERN    # MODERN (FancyHolograms) | DECENT (DecentHolograms)
 hologram_offset: 1.1         # высота первой строки над ядром
 hologram_display_range: 16   # с какого расстояния видно
-hologram_lines: ["%type%", "Владелец: %owner%", ...]
-hologram_lines_under_attack: ["%type%", "⚔ ПОД АТАКОЙ", ...]
-hologram_settings: { ... }   # см. Голограммы
+hologram_lines:
+  - "%type%"
+  - "Владелец: %owner%"
+  - "Прочность: [ %durability% / %max_durability% ]"
+hologram_lines_under_attack:
+  - "%type%"
+  - "⚔ ПОД АТАКОЙ"
+# hologram_settings — все настройки отображения, см. страницу «Голограммы»
 ```
 
 Все настройки — на странице [Голограммы](holograms.md).
@@ -150,9 +165,21 @@ hologram_settings: { ... }   # см. Голограммы
 ## Звук и молния на события
 
 ```yaml
-create:   { sound: ENTITY_PLAYER_LEVELUP, volume: 1.0, pitch: 1.0, lightning: false }
-damage:   { sound: ENTITY_GENERIC_EXPLODE, volume: 1.0, pitch: 0.5, lightning: false }
-remove:   { sound: BLOCK_BEACON_DEACTIVATE, volume: 1.0, pitch: 0.5, lightning: true }
+create:
+  sound: ENTITY_PLAYER_LEVELUP
+  volume: 1.0
+  pitch: 1.0
+  lightning: false
+damage:
+  sound: ENTITY_GENERIC_EXPLODE
+  volume: 1.0
+  pitch: 0.5
+  lightning: false
+remove:
+  sound: BLOCK_BEACON_DEACTIVATE
+  volume: 1.0
+  pitch: 0.5
+  lightning: true
 ```
 
 `lightning: true` — чисто визуальный эффект молнии.

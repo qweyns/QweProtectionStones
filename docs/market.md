@@ -56,7 +56,12 @@ resize:
   move:
     enable: true
     max-distance: 64         # от текущего ядра за один перенос
-    replaceable: [AIR, WATER, SHORT_GRASS, SNOW]  # куда можно ставить ядро
+    # блоки, на которые можно поставить ядро при переносе
+    replaceable:
+      - AIR
+      - WATER
+      - SHORT_GRASS
+      - SNOW
     required-trust: "owner"
 ```
 

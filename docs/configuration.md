@@ -87,8 +87,12 @@ database:
 
 ```yaml
 region-messages:
-  enter: { enabled: true, channel: "CHAT" }   # CHAT | ACTIONBAR | NONE
-  leave: { enabled: true, channel: "CHAT" }
+  enter:
+    enabled: true
+    channel: "CHAT"   # CHAT | ACTIONBAR | NONE
+  leave:
+    enabled: true
+    channel: "CHAT"
 ```
 
 Флаг привата `greeting` (`/ps flag greeting`) выключает оба сообщения
@@ -144,7 +148,9 @@ trust:
 
 ```yaml
 flags:
-  locked: [pvp, entry]
+  locked:
+    - pvp
+    - entry
 ```
 
 ## visuals.yml

@@ -17,7 +17,7 @@ effect_targets:
   SPEED: MEMBERS
   SLOW: ENEMIES
   WITHER: ENEMIES
-  ...
+  # ...и остальные эффекты
 ```
 
 ## Какие эффекты доступны

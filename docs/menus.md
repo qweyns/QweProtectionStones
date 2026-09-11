@@ -17,17 +17,19 @@ menu_title: "<bold>Управление регионом</bold>"
 size: 27                  # кратно 9
 items:
   upgrade_btn:            # имя — любое, оно только для вас
-    slot: 11              # slots: [11, 12, 13] — сразу несколько
+    slot: 11              # один слот; slots списком — сразу несколько
     priority: 100         # порядок отрисовки при конфликте за слот
     material: ANCIENT_DEBRIS   # %region_material% = блок-ядро привата
     display_name: "<bold>Улучшить прочность</bold>"
     lore:
       - "<#BDC3C7>Штраф от атак: <#F1C40F>%penalty%"
     amount: 1
-    enchantments: ["unbreaking:1"]
-    view_requirement: ...   # условия, при которых предмет ВИДЕН
-    click_requirement: ...  # условия клика (не прошёл — deny_commands)
-    click_commands: [...]
+    enchantments:
+      - "unbreaking:1"
+    # view_requirement — условия, при которых предмет ВИДЕН
+    # click_requirement — условия клика (не прошёл — deny_commands)
+    click_commands:
+      - "[sound] UI_BUTTON_CLICK"
 ```
 
 Тексты — MiniMessage: `<bold>`, `<#RRGGBB>`, `<gradient:#A:#B>`.
