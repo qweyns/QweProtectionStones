@@ -96,11 +96,11 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
         String levelName = plugin.getLanguageManager().getRawMessage("trust_" + level.key());
         player.sendMessage(plugin.getLanguageManager().getMessage("invite_sent",
                 "%player%", target.getName(), "%level%", levelName));
-        target.sendMessage(plugin.getLanguageManager().getMessage("invite_received",
+        plugin.getLanguageManager().sendList(target, "invite_received",
                 "%player%", player.getName(),
                 "%level%", levelName,
                 "%command%", plugin.getConfigManager().getCommandName(),
-                "%seconds%", String.valueOf(plugin.getInviteManager().expireSecondsForMessage())));
+                "%seconds%", String.valueOf(plugin.getInviteManager().expireSecondsForMessage()));
 
         // Приглашение легко пропустить в потоке чата — сопровождаем звуком.
         plugin.getTunables().inviteReceived().playTo(target);

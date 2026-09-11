@@ -51,6 +51,7 @@ public class ListSubCommand extends AbstractRegionSubCommand {
         return plugin.getLanguageManager().getMessage(owner ? "list_line_own" : "list_line_shared",
                 "%id%", region.getShortId(),
                 "%type%", type != null ? type.displayName() : region.getTypeId(),
+                "%command%", plugin.getConfigManager().getCommandName(),
                 "%world%", region.getWorldName(),
                 "%x%", String.valueOf(region.getCoreX()),
                 "%y%", String.valueOf(region.getCoreY()),

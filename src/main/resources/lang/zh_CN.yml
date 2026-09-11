@@ -66,8 +66,8 @@ flag_value_off: "<#E74C3C>关"
 # --- Список и телепорт ---
 list_header: "<#7F8C8D>=== <#3498DB>你的领地 <#7F8C8D>=== <#95A5A6>(拥有：<#F1C40F>%count%<#95A5A6>)"
 list_empty: "<#95A5A6>你还没有领地。"
-list_line_own: "<#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%"
-list_line_shared: "<#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>主人 <#F0F0F0>%owner%"
+list_line_own: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>点击传送到该领地'><#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%</hover></click>"
+list_line_shared: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>点击传送到该领地'><#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>主人 <#F0F0F0>%owner%</hover></click>"
 home_specify: "%prefix%<#F1C40F>你有多块领地 — 请指定 ID：/ps home <id>"
 home_teleported: "%prefix%<#2ECC71>已传送到领地 <#F1C40F>%id%<#2ECC71>。"
 
@@ -76,7 +76,9 @@ transfer_usage: "%prefix%<#F1C40F>/ps transfer <玩家>"
 transfer_already_owner: "%prefix%<#E74C3C>该玩家已是领地主人。"
 transfer_done: "%prefix%<#2ECC71>领地已转让给 <#F1C40F>%player%<#2ECC71>，你仍是管理。"
 transfer_received: "%prefix%<#2ECC71><#F1C40F>%player% <#2ECC71>把领地转让给了你！"
-delete_confirm: "%prefix%<#E74C3C>请在 <#F1C40F>%seconds% <#E74C3C>秒内重复命令以删除领地。"
+delete_confirm:
+  - "%prefix%<#E74C3C>删除领地 <#F1C40F>%id% <#E74C3C>不可逆！<#F0F0F0>请在 <#F1C40F>%seconds% <#F0F0F0>秒内确认："
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#E74C3C>点击永久删除该领地'><#E74C3C> ✖ 删除领地 </#E74C3C></hover></click><dark_gray>]</dark_gray>"
 delete_cancelled: "%prefix%<#E74C3C>删除已取消。"
 
 # --- Подсветка и авто-добавление ---
@@ -247,8 +249,10 @@ admin_restore_done: "%prefix%<#2ECC71>恢复完成：还原 <#F1C40F>%restored%<
 admin_restore_failed: "%prefix%<#E74C3C>恢复失败：%error%"
 
 # --- Справка ---
-help_header: "<#7F8C8D>=== <#3498DB>领地命令 <#7F8C8D>==="
-help_line: "<#3498DB> /%command% %sub% <#7F8C8D>— <#F0F0F0>%description%"
+help_header:
+  - "<#7F8C8D>=== <#3498DB>领地命令</#3498DB> <#7F8C8D>==="
+  - "<#7F8C8D>点击命令即可填入聊天栏。"
+help_line: "<click:suggest_command:'/%command% %sub% '><hover:show_text:'<#7F8C8D>点击填入命令'><#3498DB> /%command% %sub%</hover></click> <#7F8C8D>— <#F0F0F0>%description%"
 help_info: "领地信息"
 help_menu_main: "主菜单"
 help_menu_upgrade: "耐久升级"
@@ -277,7 +281,9 @@ invite_self: "%prefix%<#E74C3C>不能邀请自己。"
 invite_already_member: "%prefix%<#F1C40F>%player% <#E74C3C>已有权限。"
 invite_already_sent: "%prefix%<#E74C3C>已向 <#F1C40F>%player% <#E74C3C>发送过邀请。"
 invite_sent: "%prefix%<#2ECC71>已邀请 <#F1C40F>%player%<#2ECC71>（等级 <#F1C40F>%level%<#2ECC71>）。"
-invite_received: "%prefix%<#F1C40F>%player% <#2ECC71>邀请你加入领地（<#F1C40F>%level%<#2ECC71>）。<#F0F0F0>/%command% accept <#7F8C8D>或 <#F0F0F0>/%command% deny <#7F8C8D>（%seconds% 秒）"
+invite_received:
+  - "%prefix%<#F1C40F>%player% <#2ECC71>邀请你加入领地（<#F1C40F>%level%<#7F8C8D>）"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% accept'><hover:show_text:'<#2ECC71>点击接受'><#2ECC71> ✔ 接受 </#2ECC71></hover></click><dark_gray>]</dark_gray><#7F8C8D>  <dark_gray>[</dark_gray><click:run_command:'/%command% deny'><hover:show_text:'<#E74C3C>点击拒绝'><#E74C3C> ✘ 拒绝 </#E74C3C></hover></click><dark_gray>]</dark_gray><#7F8C8D>（<#F1C40F>%seconds%<#7F8C8D> 秒）"
 invite_none: "%prefix%<#E74C3C>你没有待处理的邀请。"
 invite_expired: "%prefix%<#E74C3C>该邀请已失效。"
 invite_accepted: "%prefix%<#2ECC71>你已加入 <#F1C40F>%owner% <#2ECC71>的领地（<#F1C40F>%level%<#2ECC71>）。"

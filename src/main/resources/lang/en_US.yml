@@ -66,8 +66,8 @@ flag_value_off: "<#E74C3C>off"
 # --- Список и телепорт ---
 list_header: "<#7F8C8D>=== <#3498DB>Your regions <#7F8C8D>=== <#95A5A6>(owned: <#F1C40F>%count%<#95A5A6>)"
 list_empty: "<#95A5A6>You have no regions yet."
-list_line_own: "<#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%"
-list_line_shared: "<#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>owner <#F0F0F0>%owner%"
+list_line_own: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Click to teleport to the region'><#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%</hover></click>"
+list_line_shared: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Click to teleport to the region'><#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>owner <#F0F0F0>%owner%</hover></click>"
 home_specify: "%prefix%<#F1C40F>You have several regions — specify an ID: /ps home <id>"
 home_teleported: "%prefix%<#2ECC71>Teleported to region <#F1C40F>%id%<#2ECC71>."
 
@@ -76,7 +76,9 @@ transfer_usage: "%prefix%<#F1C40F>/ps transfer <player>"
 transfer_already_owner: "%prefix%<#E74C3C>That player already owns this region."
 transfer_done: "%prefix%<#2ECC71>Region transferred to <#F1C40F>%player%<#2ECC71>. You remain a manager."
 transfer_received: "%prefix%<#2ECC71><#F1C40F>%player% <#2ECC71>transferred a region to you!"
-delete_confirm: "%prefix%<#E74C3C>Repeat the command within <#F1C40F>%seconds% <#E74C3C>seconds to delete the region."
+delete_confirm:
+  - "%prefix%<#E74C3C>Deleting region <#F1C40F>%id% <#E74C3C>is irreversible! <#F0F0F0>Confirm within <#F1C40F>%seconds% <#F0F0F0>sec:"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#E74C3C>Click to delete the region permanently'><#E74C3C> ✖ Delete region </#E74C3C></hover></click><dark_gray>]</dark_gray>"
 delete_cancelled: "%prefix%<#E74C3C>Deletion cancelled."
 
 # --- Подсветка и авто-добавление ---
@@ -247,8 +249,10 @@ admin_restore_done: "%prefix%<#2ECC71>Restore finished: recovered <#F1C40F>%rest
 admin_restore_failed: "%prefix%<#E74C3C>Restore failed: %error%"
 
 # --- Справка ---
-help_header: "<#7F8C8D>=== <#3498DB>Region commands <#7F8C8D>==="
-help_line: "<#3498DB> /%command% %sub% <#7F8C8D>— <#F0F0F0>%description%"
+help_header:
+  - "<#7F8C8D>=== <#3498DB>Region commands</#3498DB> <#7F8C8D>==="
+  - "<#7F8C8D>Click a command to fill it into the chat."
+help_line: "<click:suggest_command:'/%command% %sub% '><hover:show_text:'<#7F8C8D>Click to fill in the command'><#3498DB> /%command% %sub%</hover></click> <#7F8C8D>— <#F0F0F0>%description%"
 help_info: "region information"
 help_menu_main: "main menu"
 help_menu_upgrade: "durability upgrades"
@@ -277,7 +281,9 @@ invite_self: "%prefix%<#E74C3C>You cannot invite yourself."
 invite_already_member: "%prefix%<#F1C40F>%player% <#E74C3C>already has access."
 invite_already_sent: "%prefix%<#E74C3C>An invite for <#F1C40F>%player% <#E74C3C>is already pending."
 invite_sent: "%prefix%<#2ECC71>Invite sent to <#F1C40F>%player% <#2ECC71>(level <#F1C40F>%level%<#2ECC71>)."
-invite_received: "%prefix%<#F1C40F>%player% <#2ECC71>invites you to their region (<#F1C40F>%level%<#2ECC71>). <#F0F0F0>/%command% accept <#7F8C8D>or <#F0F0F0>/%command% deny <#7F8C8D>(%seconds%s)"
+invite_received:
+  - "%prefix%<#F1C40F>%player% <#2ECC71>invites you to their region <#7F8C8D>(<#F1C40F>%level%<#7F8C8D>)"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% accept'><hover:show_text:'<#2ECC71>Click to accept'><#2ECC71> ✔ Accept </#2ECC71></hover></click><dark_gray>]</dark_gray><#7F8C8D>  <dark_gray>[</dark_gray><click:run_command:'/%command% deny'><hover:show_text:'<#E74C3C>Click to deny'><#E74C3C> ✘ Deny </#E74C3C></hover></click><dark_gray>]</dark_gray><#7F8C8D>  (<#F1C40F>%seconds%<#7F8C8D>s)"
 invite_none: "%prefix%<#E74C3C>You have no pending invites."
 invite_expired: "%prefix%<#E74C3C>That invite is no longer valid."
 invite_accepted: "%prefix%<#2ECC71>You joined <#F1C40F>%owner%<#2ECC71>'s region (<#F1C40F>%level%<#2ECC71>)."

@@ -153,7 +153,7 @@ public class RegionCommand extends Command {
     }
 
     private void sendHelp(CommandSender sender, String label) {
-        sender.sendMessage(plugin.getLanguageManager().getMessage("help_header"));
+        plugin.getLanguageManager().sendList(sender, "help_header");
 
         for (SubCommand sub : ordered) {
             if (sub.permission() != null && !sender.hasPermission(sub.permission())) continue;

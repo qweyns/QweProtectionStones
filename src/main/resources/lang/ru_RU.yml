@@ -66,8 +66,8 @@ flag_value_off: "<#E74C3C>выкл"
 # --- Список и телепорт ---
 list_header: "<#7F8C8D>=== <#3498DB>Ваши приваты <#7F8C8D>=== <#95A5A6>(своих: <#F1C40F>%count%<#95A5A6>)"
 list_empty: "<#95A5A6>У вас пока нет приватов."
-list_line_own: "<#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%"
-list_line_shared: "<#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>владелец <#F0F0F0>%owner%"
+list_line_own: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Нажмите — телепорт к привату'><#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%</hover></click>"
+list_line_shared: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Нажмите — телепорт к привату'><#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>владелец <#F0F0F0>%owner%</hover></click>"
 home_specify: "%prefix%<#F1C40F>У вас несколько приватов — укажите ID: /ps home <id>"
 home_teleported: "%prefix%<#2ECC71>Вы перемещены к привату <#F1C40F>%id%<#2ECC71>."
 
@@ -76,7 +76,9 @@ transfer_usage: "%prefix%<#F1C40F>/ps transfer <ник>"
 transfer_already_owner: "%prefix%<#E74C3C>Этот игрок уже владелец привата."
 transfer_done: "%prefix%<#2ECC71>Приват передан игроку <#F1C40F>%player%<#2ECC71>. Вы остались управляющим."
 transfer_received: "%prefix%<#2ECC71>Игрок <#F1C40F>%player% <#2ECC71>передал вам приват!"
-delete_confirm: "%prefix%<#E74C3C>Повторите команду в течение <#F1C40F>%seconds% <#E74C3C>секунд, чтобы удалить приват."
+delete_confirm:
+  - "%prefix%<#E74C3C>Удаление привата <#F1C40F>%id% <#E74C3C>необратимо! <#F0F0F0>Подтвердите в течение <#F1C40F>%seconds% <#F0F0F0>сек:"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#E74C3C>Нажмите, чтобы удалить приват навсегда'><#E74C3C> ✖ Удалить приват </#E74C3C></hover></click><dark_gray>]</dark_gray>"
 delete_cancelled: "%prefix%<#E74C3C>Удаление отменено."
 
 # --- Подсветка и авто-добавление ---
@@ -247,8 +249,10 @@ admin_restore_done: "%prefix%<#2ECC71>Восстановление заверш�
 admin_restore_failed: "%prefix%<#E74C3C>Восстановление не удалось: %error%"
 
 # --- Справка ---
-help_header: "<#7F8C8D>=== <#3498DB>Команды привата <#7F8C8D>==="
-help_line: "<#3498DB> /%command% %sub% <#7F8C8D>— <#F0F0F0>%description%"
+help_header:
+  - "<#7F8C8D>=== <#3498DB>Команды привата</#3498DB> <#7F8C8D>==="
+  - "<#7F8C8D>Кликните по команде, чтобы подставить её в чат."
+help_line: "<click:suggest_command:'/%command% %sub% '><hover:show_text:'<#7F8C8D>Нажмите, чтобы подставить команду'><#3498DB> /%command% %sub%</hover></click> <#7F8C8D>— <#F0F0F0>%description%"
 help_info: "информация о привате"
 help_menu_main: "главное меню"
 help_menu_upgrade: "прокачка прочности"
@@ -277,7 +281,9 @@ invite_self: "%prefix%<#E74C3C>Себя приглашать не нужно."
 invite_already_member: "%prefix%<#F1C40F>%player% <#E74C3C>уже имеет доступ."
 invite_already_sent: "%prefix%<#E74C3C>Приглашение для <#F1C40F>%player% <#E74C3C>уже отправлено."
 invite_sent: "%prefix%<#2ECC71>Приглашение отправлено игроку <#F1C40F>%player% <#2ECC71>(уровень <#F1C40F>%level%<#2ECC71>)."
-invite_received: "%prefix%<#F1C40F>%player% <#2ECC71>приглашает вас в приват (<#F1C40F>%level%<#2ECC71>). <#F0F0F0>/%command% accept <#7F8C8D>или <#F0F0F0>/%command% deny <#7F8C8D>(%seconds% сек.)"
+invite_received:
+  - "%prefix%<#F1C40F>%player% <#2ECC71>приглашает вас в приват <#7F8C8D>(<#F1C40F>%level%<#7F8C8D>)"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% accept'><hover:show_text:'<#2ECC71>Нажмите, чтобы принять'><#2ECC71> ✔ Принять </#2ECC71></hover></click><dark_gray>]</dark_gray><#7F8C8D>  <dark_gray>[</dark_gray><click:run_command:'/%command% deny'><hover:show_text:'<#E74C3C>Нажмите, чтобы отклонить'><#E74C3C> ✘ Отклонить </#E74C3C></hover></click><dark_gray>]</dark_gray><#7F8C8D>  (<#F1C40F>%seconds%<#7F8C8D> сек.)"
 invite_none: "%prefix%<#E74C3C>У вас нет активных приглашений."
 invite_expired: "%prefix%<#E74C3C>Приглашение больше не действует."
 invite_accepted: "%prefix%<#2ECC71>Вы приняты в приват игрока <#F1C40F>%owner% <#2ECC71>(<#F1C40F>%level%<#2ECC71>)."

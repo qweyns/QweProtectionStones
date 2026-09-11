@@ -6,11 +6,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 
+import org.bukkit.command.CommandSender;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -77,6 +80,39 @@ public class LanguageManager {
     public Component getMessage(String path, String... replacements) {
         String raw = resolve(path, replacements);
         return raw.isEmpty() ? Component.empty() : ColorUtil.formatComponent(raw);
+    }
+
+    /**
+     * Многострочное сообщение: в lang-файле значение задаётся списком строк
+     * (каждая — отдельная строка чата, пустая строка — отступ), а не одной
+     * строкой с переводами \n. Одиночная строка тоже принимается — так
+     * старые конфиги продолжают работать.
+     *
+     * <p>МиниMessage-теги кликабельности ({@code <click:...>}, {@code <hover:...>})
+     * работают в каждой строке — кнопки описываются прямо в переводе.</p>
+     */
+    public List<Component> getMessageList(String path, String... replacements) {
+        List<String> raw = langConfig.getStringList(path);
+        if (raw.isEmpty()) {
+            String single = resolve(path, replacements);
+            return single.isEmpty() ? List.of() : List.of(ColorUtil.formatComponent(single));
+        }
+
+        String prefix = langConfig.getString("prefix", "");
+        List<Component> lines = new ArrayList<>(raw.size());
+        for (String line : raw) {
+            // Пустая строка в списке — это осознанный отступ между блоками.
+            String text = line == null ? "" : line.replace("%prefix%", prefix);
+            lines.add(ColorUtil.formatComponent(applyReplacements(text, replacements)));
+        }
+        return lines;
+    }
+
+    /** Отправляет многострочное сообщение (см. {@link #getMessageList}). */
+    public void sendList(CommandSender sender, String path, String... replacements) {
+        for (Component line : getMessageList(path, replacements)) {
+            sender.sendMessage(line);
+        }
     }
 
     public String getRawMessage(String path, String... replacements) {

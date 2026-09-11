@@ -66,8 +66,8 @@ flag_value_off: "<#E74C3C>no"
 # --- Список и телепорт ---
 list_header: "<#7F8C8D>=== <#3498DB>Tus parcelas <#7F8C8D>=== <#95A5A6>(propias: <#F1C40F>%count%<#95A5A6>)"
 list_empty: "<#95A5A6>Aún no tienes parcelas."
-list_line_own: "<#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%"
-list_line_shared: "<#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>dueño <#F0F0F0>%owner%"
+list_line_own: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Haz clic para teletransportarte a la parcela'><#2ECC71> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#F0F0F0>%world% %x%/%y%/%z% <#7F8C8D>| <#E67E22>%durability%/%max%</hover></click>"
+list_line_shared: "<click:run_command:'/%command% home %id%'><hover:show_text:'<#3498DB>Haz clic para teletransportarte a la parcela'><#3498DB> ▪ <#F1C40F>%id% <#7F8C8D>| %type% <#7F8C8D>| <#95A5A6>dueño <#F0F0F0>%owner%</hover></click>"
 home_specify: "%prefix%<#F1C40F>Tienes varias parcelas — indica un ID: /ps home <id>"
 home_teleported: "%prefix%<#2ECC71>Teletransportado a la parcela <#F1C40F>%id%<#2ECC71>."
 
@@ -76,7 +76,9 @@ transfer_usage: "%prefix%<#F1C40F>/ps transfer <jugador>"
 transfer_already_owner: "%prefix%<#E74C3C>Ese jugador ya es el dueño."
 transfer_done: "%prefix%<#2ECC71>Parcela transferida a <#F1C40F>%player%<#2ECC71>. Sigues como encargado."
 transfer_received: "%prefix%<#2ECC71>¡<#F1C40F>%player% <#2ECC71>te transfirió una parcela!"
-delete_confirm: "%prefix%<#E74C3C>Repite el comando en <#F1C40F>%seconds% <#E74C3C>segundos para eliminarla."
+delete_confirm:
+  - "%prefix%<#E74C3C>¡Eliminar la parcela <#F1C40F>%id% <#E74C3C>es irreversible! <#F0F0F0>Confirma en <#F1C40F>%seconds% <#F0F0F0>seg:"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#E74C3C>Haz clic para eliminar la parcela para siempre'><#E74C3C> ✖ Eliminar parcela </#E74C3C></hover></click><dark_gray>]</dark_gray>"
 delete_cancelled: "%prefix%<#E74C3C>Eliminación cancelada."
 
 # --- Подсветка и авто-добавление ---
@@ -247,8 +249,10 @@ admin_restore_done: "%prefix%<#2ECC71>Restauración terminada: recuperadas <#F1C
 admin_restore_failed: "%prefix%<#E74C3C>Restauración fallida: %error%"
 
 # --- Справка ---
-help_header: "<#7F8C8D>=== <#3498DB>Comandos <#7F8C8D>==="
-help_line: "<#3498DB> /%command% %sub% <#7F8C8D>— <#F0F0F0>%description%"
+help_header:
+  - "<#7F8C8D>=== <#3498DB>Comandos</#3498DB> <#7F8C8D>==="
+  - "<#7F8C8D>Haz clic en un comando para insertarlo en el chat."
+help_line: "<click:suggest_command:'/%command% %sub% '><hover:show_text:'<#7F8C8D>Haz clic para insertar el comando'><#3498DB> /%command% %sub%</hover></click> <#7F8C8D>— <#F0F0F0>%description%"
 help_info: "información de la parcela"
 help_menu_main: "menú principal"
 help_menu_upgrade: "mejoras de durabilidad"
@@ -277,7 +281,9 @@ invite_self: "%prefix%<#E74C3C>No puedes invitarte a ti mismo."
 invite_already_member: "%prefix%<#F1C40F>%player% <#E74C3C>ya tiene acceso."
 invite_already_sent: "%prefix%<#E74C3C>Ya hay una invitación pendiente para <#F1C40F>%player%<#E74C3C>."
 invite_sent: "%prefix%<#2ECC71>Invitación enviada a <#F1C40F>%player% <#2ECC71>(nivel <#F1C40F>%level%<#2ECC71>)."
-invite_received: "%prefix%<#F1C40F>%player% <#2ECC71>te invita a su parcela (<#F1C40F>%level%<#2ECC71>). <#F0F0F0>/%command% accept <#7F8C8D>o <#F0F0F0>/%command% deny <#7F8C8D>(%seconds%s)"
+invite_received:
+  - "%prefix%<#F1C40F>%player% <#2ECC71>te invita a su parcela <#7F8C8D>(<#F1C40F>%level%<#7F8C8D>)"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% accept'><hover:show_text:'<#2ECC71>Haz clic para aceptar'><#2ECC71> ✔ Aceptar </#2ECC71></hover></click><dark_gray>]</dark_gray><#7F8C8D>  <dark_gray>[</dark_gray><click:run_command:'/%command% deny'><hover:show_text:'<#E74C3C>Haz clic para rechazar'><#E74C3C> ✘ Rechazar </#E74C3C></hover></click><dark_gray>]</dark_gray><#7F8C8D>  (<#F1C40F>%seconds%<#7F8C8D>s)"
 invite_none: "%prefix%<#E74C3C>No tienes invitaciones pendientes."
 invite_expired: "%prefix%<#E74C3C>Esa invitación ya no es válida."
 invite_accepted: "%prefix%<#2ECC71>Te uniste a la parcela de <#F1C40F>%owner% <#2ECC71>(<#F1C40F>%level%<#2ECC71>)."

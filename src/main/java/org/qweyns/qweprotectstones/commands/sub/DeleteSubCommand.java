@@ -57,8 +57,10 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
 
         if (!confirmed) {
             pending.put(player.getUniqueId(), new PendingDelete(region.getId(), System.currentTimeMillis()));
-            player.sendMessage(plugin.getLanguageManager().getMessage("delete_confirm",
-                    "%seconds%", String.valueOf(plugin.getTunables().deleteConfirmMs() / 1000)));
+            plugin.getLanguageManager().sendList(player, "delete_confirm",
+                    "%id%", region.getShortId(),
+                    "%seconds%", String.valueOf(plugin.getTunables().deleteConfirmMs() / 1000),
+                    "%command%", plugin.getConfigManager().getCommandName());
             plugin.getVisualManager().showBoundary(region, "remove");
             return;
         }
