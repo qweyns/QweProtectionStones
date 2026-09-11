@@ -63,9 +63,10 @@ public class DHProvider implements IHologramProvider {
     }
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {
+        // Голограмма целиком состоит из hologram_lines (или _under_attack):
+        // display_name не подставляется — заголовок, если нужен, настраивается
+        // в конфиге вручную. Плейсхолдеры работают в каждой строке.
         List<String> lines = new ArrayList<>();
-        lines.add(ColorUtil.formatLegacyString(config.getRegionDisplayName(typeId)));
-
         for (String line : config.getHologramLines(typeId, plugin.isUnderSiege(region))) {
             lines.add(ColorUtil.formatLegacyString(HologramText.apply(plugin, line, region)));
         }

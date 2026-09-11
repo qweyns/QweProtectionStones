@@ -182,10 +182,6 @@ public class ConfigManager {
     // Оформление конкретного типа привата (regions.yml, с откатом на default_region)
     // ------------------------------------------------------------------
 
-    public String getRegionDisplayName(String typeId) {
-        return regions().getString(typeId, "display_name", "&7Приват");
-    }
-
     /**
      * Строки голограммы. Во время осады показываются
      * {@code hologram_lines_under_attack}, если они заданы, — так «под атакой»
