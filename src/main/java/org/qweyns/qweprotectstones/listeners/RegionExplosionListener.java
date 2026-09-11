@@ -163,6 +163,10 @@ public class RegionExplosionListener implements Listener {
 
     /** Кто ближе всех к взрыву — тот и записывается нападавшим. */
     private String attackerNameNear(Location core) {
+        // Мир мог выгрузиться между поджиганием ТНТ и взрывом — тогда искать
+        // нападавшего некому (и core.getWorld() стал бы null).
+        if (core == null || core.getWorld() == null) return "";
+
         double radius = plugin.getConfigManager().getExplosionDamageRadius() + 16.0;
         double bestDistance = radius * radius;
         String best = "";

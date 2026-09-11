@@ -155,7 +155,15 @@ public class MenuManager implements Listener {
 
         int interval = menuCfg.getInt("update_interval", 0);
         if (interval > 0) {
-            holder.updateTask = plugin.getSchedulers().runTimer(() -> render(player, holder, false), interval, interval);
+            holder.updateTask = plugin.getSchedulers().runTimer(() -> {
+                // Страховка от утечки: если игрок отключился, а InventoryCloseEvent
+                // по какой-то причине не сработал, задача снимает себя сама.
+                if (!player.isOnline()) {
+                    holder.cancelTasks();
+                    return;
+                }
+                render(player, holder, false);
+            }, interval, interval);
         }
 
         if (menuCfg.contains("animations.default")) {
@@ -163,7 +171,14 @@ public class MenuManager implements Listener {
             holder.animator = animator;
             // Задачу обязательно сохраняем в holder: без этого она тикала бы
             // вечно, даже после закрытия меню, — по задаче на каждое открытие.
-            holder.animatorTask = plugin.getSchedulers().runTimer(animator::run, 1L, 1L);
+            // Плюс та же страховка от отключившегося игрока, что и у updateTask.
+            holder.animatorTask = plugin.getSchedulers().runTimer(() -> {
+                if (!player.isOnline()) {
+                    holder.cancelTasks();
+                    return;
+                }
+                animator.run();
+            }, 1L, 1L);
         }
 
         player.openInventory(inv);

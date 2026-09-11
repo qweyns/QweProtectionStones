@@ -263,6 +263,8 @@ public class RegionManager {
         }
 
         plugin.getRegionStorage().delete(region.getId());
+        // Штраф больше не имеет смысла: привата нет, а UUID нового никогда не совпадёт.
+        plugin.getPenaltyManager().removeRegion(region.getId());
         return true;
     }
 
