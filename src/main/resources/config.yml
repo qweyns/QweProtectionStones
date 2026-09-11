@@ -44,9 +44,6 @@ settings:
   core-item-tags: true
   # Возвращать при поломке ядра накопленную прочность (в PDC предмета).
   return-durability: true
-  # Пауза (в секундах) между повторными сообщениями «нельзя» одному игроку.
-  deny-message-cooldown: 30
-
   # Язык сообщений: ru_RU, en_US, es_ES, zh_CN (файлы в /lang/).
   language: "ru_RU"
 

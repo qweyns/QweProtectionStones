@@ -64,6 +64,7 @@ flag_reset: "%prefix%<#2ECC71>Флаг <#F1C40F>%flag% <#2ECC71>сброшен �
 flag_unknown: "%prefix%<#E74C3C>Неизвестный флаг: <#F1C40F>%flag%"
 flag_not_editable: "%prefix%<#E74C3C>Флаг <#F1C40F>%flag% <#E74C3C>меняет только администрация."
 flag_bad_value: "%prefix%<#E74C3C>Ожидалось true, false или reset, а не <#F1C40F>%value%<#E74C3C>."
+flag_change_cancelled: "%prefix%<#E74C3C>Изменение флага отменено другим плагином."
 flag_value_on: "<#2ECC71>вкл"
 flag_value_off: "<#E74C3C>выкл"
 

@@ -25,21 +25,23 @@ public class ProtectionService {
     public static final String ADMIN_PERMISSION = "qweprotectstones.admin";
 
     private final QweProtectStones plugin;
-    private Cache<UUID, Long> denyMessageCooldowns = newCooldown(30);
+    private Cache<UUID, Long> denyMessageCooldowns = CacheBuilder.newBuilder()
+            .expireAfterWrite(60, TimeUnit.SECONDS).build();
 
     public ProtectionService(QweProtectStones plugin) {
         this.plugin = plugin;
     }
 
-    /** Пауза между повторными «нельзя» одному игроку — settings.deny-message-cooldown. */
+    /**
+     * Пересобирает кулдаун «нельзя» — интервал берётся из
+     * timings.deny_message_cooldown_ms (Tunables). Запись в кэше нужна
+     * только пока идёт интервал, поэтому живёт вдвое дольше него.
+     */
     public void reloadDenyCooldown() {
-        int seconds = Math.max(1, plugin.getConfigManager().getConfig()
-                .getInt("settings.deny-message-cooldown", 30));
-        denyMessageCooldowns = newCooldown(seconds);
-    }
-
-    private static Cache<UUID, Long> newCooldown(int seconds) {
-        return CacheBuilder.newBuilder().expireAfterWrite(seconds, TimeUnit.SECONDS).build();
+        denyMessageCooldowns = CacheBuilder.newBuilder()
+                .expireAfterWrite(Math.max(1, plugin.getTunables().denyMessageCooldownMs() * 2),
+                        TimeUnit.MILLISECONDS)
+                .build();
     }
 
     // ------------------------------------------------------------------
@@ -106,15 +108,6 @@ public class ProtectionService {
         return region != null && has(region, player, requiredFor(Tunables.TrustAction.MANAGE));
     }
 
-    /** Может ли игрок менять флаги: уровень настраивается отдельно от прочего управления. */
-    public boolean canEditFlags(Player player, Region region) {
-        return region != null && has(region, player, plugin.getTunables().flagEditLevel());
-    }
-
-    /** Может ли игрок выдавать и отзывать доступ другим. */
-    public boolean canEditMembers(Player player, Region region) {
-        return region != null && has(region, player, plugin.getTunables().memberEditLevel());
-    }
 
     // ------------------------------------------------------------------
     // Флаги

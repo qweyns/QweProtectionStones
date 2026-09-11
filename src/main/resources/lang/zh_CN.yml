@@ -64,6 +64,7 @@ flag_reset: "%prefix%<#2ECC71>标记 <#F1C40F>%flag% <#2ECC71>已重置为默认
 flag_unknown: "%prefix%<#E74C3C>未知标记：<#F1C40F>%flag%"
 flag_not_editable: "%prefix%<#E74C3C>标记 <#F1C40F>%flag% <#E74C3C>仅管理员可改。"
 flag_bad_value: "%prefix%<#E74C3C>应为 true、false 或 reset，而不是 <#F1C40F>%value%<#E74C3C>。"
+flag_change_cancelled: "%prefix%<#E74C3C>Flag 更改已被其他插件取消。"
 flag_value_on: "<#2ECC71>开"
 flag_value_off: "<#E74C3C>关"
 

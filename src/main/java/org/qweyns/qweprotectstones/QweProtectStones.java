@@ -292,8 +292,6 @@ public final class QweProtectStones extends JavaPlugin {
 
     public Schedulers getSchedulers() { return schedulers; }
 
-    /** Крафты блоков-ядер из секций recipe в regions.yml. */
-    public org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager getCoreRecipeManager() { return coreRecipeManager; }
     public ConfigManager getConfigManager() { return configManager; }
 
     /** Настройки типов приватов из regions.yml. */
@@ -346,7 +344,6 @@ public final class QweProtectStones extends JavaPlugin {
     }
 
     public RegionLifecycleListener getRegionLifecycleListener() { return regionLifecycleListener; }
-    public RegionMovementListener getRegionMovementListener() { return regionMovementListener; }
 
     public VaultHook getVaultHook() { return vaultHook; }
     public PlayerPointsHook getPlayerPointsHook() { return playerPointsHook; }

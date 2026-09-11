@@ -100,10 +100,4 @@ public final class RegionItems {
         return core(plugin, type, 1, durability, tags || type.restrictObtaining(), type.restrictObtaining());
     }
 
-    /** Тип из PDC-тега предмета или null. Материал проверяет вызывающий. */
-    public static String taggedTypeId(QweProtectStones plugin, ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return null;
-        return item.getItemMeta().getPersistentDataContainer()
-                .get(typeKey(plugin), PersistentDataType.STRING);
-    }
 }

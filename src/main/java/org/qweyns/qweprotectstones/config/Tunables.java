@@ -54,6 +54,19 @@ public final class Tunables {
     // --- частицы ---
     private ParticleSetting particles;
 
+    // --- защита: горячие ключи, читаемые на каждое событие (кэш, а не YAML) ---
+    private boolean hoppersEnabled;
+    private boolean hoppersBlockOutflow;
+    private boolean hoppersBlockInflow;
+    private boolean borderFrostWalker;
+    private boolean borderMobTrails;
+    private boolean borderBonemeal;
+    private boolean borderFishing;
+    private boolean regionEnterEnabled;
+    private boolean regionLeaveEnabled;
+    private String regionEnterChannel;
+    private String regionLeaveChannel;
+
     // --- доступ ---
     private Map<TrustAction, TrustLevel> trustRequirements;
     private Set<RegionFlag> lockedFlags;
@@ -91,9 +104,16 @@ public final class Tunables {
         reload();
     }
 
-    /** Перечитывает значения. Вызывается при старте и из {@code /qps reload}. */
+    /**
+     * Перечитывает значения. Вызывается при старте и из {@code /qps reload}.
+     *
+     * <p>Важно: читается слитая конфигурация ConfigManager'а (все 6 файлов),
+     * а не {@code plugin.getConfig()} — тот видит только config.yml, и после
+     * разделения настроек звуки, частицы, окно осады и locked-флаги
+     * молча брались бы из дефолтов.</p>
+     */
     public void reload() {
-        FileConfiguration cfg = plugin.getConfig();
+        FileConfiguration cfg = plugin.getConfigManager().getConfig();
 
         menuClickCooldownMs = positive(cfg.getLong("timings.menu_click_cooldown_ms", 300L), 300L);
         deleteConfirmMs = positive(cfg.getLong("timings.delete_confirm_seconds", 30L), 30L) * 1000L;
@@ -196,6 +216,20 @@ public final class Tunables {
         trustEditLevel = TrustLevel.parse(cfg.getString("trust.member_edit_level")).orElse(TrustLevel.MANAGER);
 
         Set<RegionFlag> locked = EnumSet.noneOf(RegionFlag.class);
+        // Воронки и трюки через границу: InventoryMoveItemEvent срабатывает
+        // сотни раз в секунду — ключи читаются здесь один раз, не из YAML.
+        hoppersEnabled = cfg.getBoolean("protection.hoppers.enable", true);
+        hoppersBlockOutflow = cfg.getBoolean("protection.hoppers.block-outflow", true);
+        hoppersBlockInflow = cfg.getBoolean("protection.hoppers.block-inflow", false);
+        borderFrostWalker = cfg.getBoolean("protection.border.frost-walker", true);
+        borderMobTrails = cfg.getBoolean("protection.border.mob-trails", true);
+        borderBonemeal = cfg.getBoolean("protection.border.bonemeal", true);
+        borderFishing = cfg.getBoolean("protection.border.fishing", true);
+        regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
+        regionLeaveEnabled = cfg.getBoolean("region-messages.leave.enabled", true);
+        regionEnterChannel = cfg.getString("region-messages.enter.channel", "CHAT").trim().toUpperCase(Locale.ROOT);
+        regionLeaveChannel = cfg.getString("region-messages.leave.channel", "CHAT").trim().toUpperCase(Locale.ROOT);
+
         List<String> rawLocked = cfg.getStringList("flags.locked");
         for (String raw : rawLocked) {
             RegionFlag flag = RegionFlag.parse(raw).orElse(null);
@@ -237,6 +271,23 @@ public final class Tunables {
     public SoundSetting raidAttack() { return raidAttack; }
     public SoundSetting raidDestroyed() { return raidDestroyed; }
     public SoundSetting raidNearby() { return raidNearby; }
+
+    // --- горячие ключи защиты (см. reload) ---
+
+    public boolean hoppersEnabled() { return hoppersEnabled; }
+    public boolean hoppersBlockOutflow() { return hoppersBlockOutflow; }
+    public boolean hoppersBlockInflow() { return hoppersBlockInflow; }
+    public boolean borderFrostWalker() { return borderFrostWalker; }
+    public boolean borderMobTrails() { return borderMobTrails; }
+    public boolean borderBonemeal() { return borderBonemeal; }
+    public boolean borderFishing() { return borderFishing; }
+    public boolean regionEnterEnabled() { return regionEnterEnabled; }
+    public boolean regionLeaveEnabled() { return regionLeaveEnabled; }
+
+    /** Канал сообщения о входе: CHAT, ACTIONBAR или NONE (прочее — как NONE). */
+    public String regionEnterChannel() { return regionEnterChannel; }
+
+    public String regionLeaveChannel() { return regionLeaveChannel; }
     public SoundSetting intruderAlert() { return intruderAlert; }
     public SoundSetting inviteReceived() { return inviteReceived; }
 
@@ -247,13 +298,9 @@ public final class Tunables {
         return trustRequirements.getOrDefault(action, action.fallback());
     }
 
-    /** Может ли игрок вообще менять этот флаг, или он закрыт админом. */
+        /** Может ли игрок вообще менять этот флаг, или он закрыт админом. */
     public boolean isFlagLocked(RegionFlag flag) {
         return lockedFlags.contains(flag);
-    }
-
-    public Set<RegionFlag> lockedFlags() {
-        return lockedFlags;
     }
 
     public TrustLevel flagEditLevel() { return flagEditLevel; }

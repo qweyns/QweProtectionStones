@@ -46,9 +46,6 @@ public class InviteManager {
         return true;
     }
 
-    public Invite peek(Player target) {
-        return pending.getIfPresent(target.getUniqueId());
-    }
 
     /** Забирает приглашение — повторно принять его уже нельзя. */
     public Invite consume(Player target) {

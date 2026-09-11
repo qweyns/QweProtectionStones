@@ -96,10 +96,10 @@ public class RegionMovementListener implements Listener {
 
         Region previous = previousId == null ? null : plugin.getRegionManager().getById(previousId);
         if (previous != null && protection.flag(previous, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(previous, previous.getFarewell(), false, "region_leave"), "leave");
+            sendTransition(player, transitionText(previous, previous.getFarewell(), false, "region_leave"), false);
         }
         if (to != null && protection.flag(to, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(to, to.getGreeting(), true, "region_enter"), "enter");
+            sendTransition(player, transitionText(to, to.getGreeting(), true, "region_enter"), true);
         }
     }
 
@@ -109,14 +109,23 @@ public class RegionMovementListener implements Listener {
      * или NONE (не показывать). Отдельный мастер-выключатель для
      * входа и выхода — enabled.
      */
-    private void sendTransition(Player player, Component message, String kind) {
-        var cfg = plugin.getConfigManager().getConfig();
-        if (!cfg.getBoolean("region-messages." + kind + ".enabled", true)) return;
-
-        switch (cfg.getString("region-messages." + kind + ".channel", "CHAT").toUpperCase(java.util.Locale.ROOT)) {
-            case "CHAT" -> player.sendMessage(message);
-            case "ACTIONBAR" -> player.sendActionBar(message);
-            default -> { /* NONE и опечатки — сообщение выключено */ }
+    private void sendTransition(Player player, Component message, boolean entering) {
+        // Каналы закэшированы в Tunables — здесь только выбор ветки.
+        var tunables = plugin.getTunables();
+        if (entering) {
+            if (!tunables.regionEnterEnabled()) return;
+            switch (tunables.regionEnterChannel()) {
+                case "CHAT" -> player.sendMessage(message);
+                case "ACTIONBAR" -> player.sendActionBar(message);
+                default -> { /* NONE и опечатки — сообщение выключено */ }
+            }
+        } else {
+            if (!tunables.regionLeaveEnabled()) return;
+            switch (tunables.regionLeaveChannel()) {
+                case "CHAT" -> player.sendMessage(message);
+                case "ACTIONBAR" -> player.sendActionBar(message);
+                default -> { /* NONE и опечатки — сообщение выключено */ }
+            }
         }
     }
 

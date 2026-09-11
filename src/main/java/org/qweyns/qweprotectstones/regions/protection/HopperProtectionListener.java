@@ -32,13 +32,15 @@ public class HopperProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
-        if (!plugin.getConfigManager().getConfig().getBoolean("protection.hoppers.enable", true)) return;
+        // InventoryMoveItemEvent — самый частый ивент плагина: значения
+        // уже закэшированы в Tunables при загрузке конфига.
+        if (!plugin.getTunables().hoppersEnabled()) return;
 
         Inventory initiator = event.getInitiator();
         if (initiator == null) return;
 
         // Отбор из чужого привата: источник внутри, инициатор снаружи.
-        if (plugin.getConfigManager().getConfig().getBoolean("protection.hoppers.block-outflow", true)) {
+        if (plugin.getTunables().hoppersBlockOutflow()) {
             Region sourceRegion = regionOf(event.getSource());
             if (sourceRegion != null && !inside(initiator, sourceRegion)) {
                 event.setCancelled(true);
@@ -47,7 +49,7 @@ public class HopperProtectionListener implements Listener {
         }
 
         // Вклад в чужой приват: получатель внутри, инициатор снаружи.
-        if (plugin.getConfigManager().getConfig().getBoolean("protection.hoppers.block-inflow", false)) {
+        if (plugin.getTunables().hoppersBlockInflow()) {
             Region destRegion = regionOf(event.getDestination());
             if (destRegion != null && !inside(initiator, destRegion)) {
                 event.setCancelled(true);

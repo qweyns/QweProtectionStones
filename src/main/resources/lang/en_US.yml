@@ -64,6 +64,7 @@ flag_reset: "%prefix%<#2ECC71>Flag <#F1C40F>%flag% <#2ECC71>reset to default (%v
 flag_unknown: "%prefix%<#E74C3C>Unknown flag: <#F1C40F>%flag%"
 flag_not_editable: "%prefix%<#E74C3C>Flag <#F1C40F>%flag% <#E74C3C>is admin-only."
 flag_bad_value: "%prefix%<#E74C3C>Expected true, false or reset, not <#F1C40F>%value%<#E74C3C>."
+flag_change_cancelled: "%prefix%<#E74C3C>Flag change was cancelled by another plugin."
 flag_value_on: "<#2ECC71>on"
 flag_value_off: "<#E74C3C>off"
 

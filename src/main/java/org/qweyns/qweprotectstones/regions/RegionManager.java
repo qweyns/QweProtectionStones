@@ -139,10 +139,6 @@ public class RegionManager {
     }
 
     /** Приват, чьё ядро стоит именно в этой точке. */
-    public Region getRegionByCore(Location loc) {
-        Region region = getRegionAt(loc);
-        return region != null && region.isCore(loc) ? region : null;
-    }
 
     public List<Region> getRegionsOf(UUID ownerId) {
         Set<UUID> ids = regionsByOwner.get(ownerId);
@@ -177,9 +173,6 @@ public class RegionManager {
         return Collections.unmodifiableCollection(regions.values());
     }
 
-    public Set<Region> getRegionsInChunk(World world, int chunkX, int chunkZ) {
-        return world == null ? Set.of() : index.inChunk(world.getName(), chunkX, chunkZ);
-    }
 
     public int size() {
         return regions.size();

@@ -64,6 +64,7 @@ flag_reset: "%prefix%<#2ECC71>Bandera <#F1C40F>%flag% <#2ECC71>restablecida (%va
 flag_unknown: "%prefix%<#E74C3C>Bandera desconocida: <#F1C40F>%flag%"
 flag_not_editable: "%prefix%<#E74C3C>La bandera <#F1C40F>%flag% <#E74C3C>es solo para administradores."
 flag_bad_value: "%prefix%<#E74C3C>Se esperaba true, false o reset, no <#F1C40F>%value%<#E74C3C>."
+flag_change_cancelled: "%prefix%<#E74C3C>El cambio de flag fue cancelado por otro plugin."
 flag_value_on: "<#2ECC71>sí"
 flag_value_off: "<#E74C3C>no"
 

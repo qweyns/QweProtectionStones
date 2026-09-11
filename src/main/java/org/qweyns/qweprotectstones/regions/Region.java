@@ -161,8 +161,6 @@ public final class Region implements Bounded {
 
     public String getOwnerName() { return ownerName != null ? ownerName : ""; }
 
-    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
-
     /** Передача привата другому игроку: прежний владелец остаётся управляющим. */
     public void transferOwnership(UUID newOwnerId, String newOwnerName) {
         UUID previousOwner = this.ownerId;
@@ -210,10 +208,6 @@ public final class Region implements Bounded {
         boolean removed = members.remove(uuid) != null;
         if (removed) touch();
         return removed;
-    }
-
-    public void clearMembers() {
-        members.clear();
     }
 
     /**

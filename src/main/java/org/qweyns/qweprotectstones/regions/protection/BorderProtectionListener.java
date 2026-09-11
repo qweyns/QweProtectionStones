@@ -50,7 +50,7 @@ public class BorderProtectionListener implements Listener {
         if (region == null) return;
 
         if (event.getEntity() instanceof Player player) {
-            if (!enabled("frost-walker")) return;
+            if (!plugin.getTunables().borderFrostWalker()) return;
 
             // Ледоход — строительное действие: лёд остаётся в чужом привате.
             if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
@@ -63,7 +63,7 @@ public class BorderProtectionListener implements Listener {
         // Следы мобов (снег голема): подчиняются флагу MOB_GRIEFING.
         // Отдельный переключатель позволяет оставить прежнее поведение,
         // когда снег внутри привата решал только флаг ICE_AND_SNOW.
-        if (!enabled("mob-trails")) return;
+        if (!plugin.getTunables().borderMobTrails()) return;
         if (!protection.flag(region, RegionFlag.MOB_GRIEFING)) event.setCancelled(true);
     }
 
@@ -79,7 +79,7 @@ public class BorderProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockFertilize(BlockFertilizeEvent event) {
-        if (!enabled("bonemeal")) return;
+        if (!plugin.getTunables().borderBonemeal()) return;
 
         Player player = event.getPlayer();
         if (player == null) return; // диспенсер — не игрок, доверие проверить не к кому
@@ -110,7 +110,7 @@ public class BorderProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerFish(PlayerFishEvent event) {
-        if (!enabled("fishing")) return;
+        if (!plugin.getTunables().borderFishing()) return;
         if (event.getState() != PlayerFishEvent.State.CAUGHT_ENTITY) return;
 
         Entity caught = event.getCaught();
@@ -130,9 +130,5 @@ public class BorderProtectionListener implements Listener {
 
         protection.notifyDenied(fisher, region);
         event.setCancelled(true);
-    }
-
-    private boolean enabled(String feature) {
-        return plugin.getConfigManager().getConfig().getBoolean("protection.border." + feature, true);
     }
 }

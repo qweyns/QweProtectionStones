@@ -260,9 +260,6 @@ public class RegionTypeRegistry {
         return material == null ? null : byMaterial.get(material);
     }
 
-    public boolean isRegionBlock(Material material) {
-        return material != null && byMaterial.containsKey(material);
-    }
 
     public Collection<RegionType> all() {
         return byId.values();
