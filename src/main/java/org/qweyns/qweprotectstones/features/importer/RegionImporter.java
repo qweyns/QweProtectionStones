@@ -19,18 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
-/**
- * Импорт приватов из других плагинов: WorldGuard, ProtectionStones (его
- * регионы хранятся в WorldGuard), GriefPrevention.
- *
- * <p>Чужие файлы только читаются — ни один плагин не должен быть установлен.
- * Импортированным приватам назначается тип из {@code import.type-id}; блок-ядро
- * виртуальное: границы не обязаны быть симметричны вокруг него, поэтому
- * перенесённые территории сохраняют точные размеры.</p>
- */
 public class RegionImporter {
 
-    /** Итог одного прогона импорта. */
     public record Result(int imported, int skipped, int errors) {
     }
 
@@ -40,15 +30,6 @@ public class RegionImporter {
         this.plugin = plugin;
     }
 
-    // ------------------------------------------------------------------
-    // WorldGuard и ProtectionStones
-    // ------------------------------------------------------------------
-
-    /**
-     * Импорт из regions.yml WorldGuard. ProtectionStones создаёт обычные
-     * WG-регионы с id, начинающимся на {@code ps} — флаг {@code stonesOnly}
-     * отбирает только их.
-     */
     public Result importFromWorldGuard(boolean stonesOnly) {
         File folder = new File(dataFolder(stonesOnly
                 ? "import.protectionstones.data-folder"
@@ -96,7 +77,6 @@ public class RegionImporter {
         return new Result(imported, skipped, errors);
     }
 
-    /** Один cuboid-регион WG/PS → наш приват. */
     private boolean importCuboid(String worldName, Map<?, ?> data) {
         Object minRaw = data.get("min");
         Object maxRaw = data.get("max");
@@ -142,14 +122,6 @@ public class RegionImporter {
         return plugin.getRegionManager().importRegion(region);
     }
 
-    // ------------------------------------------------------------------
-    // GriefPrevention
-    // ------------------------------------------------------------------
-
-    /**
-     * Импорт из ClaimData GriefPrevention: каждый клейм — отдельный yml-файл.
-     * Субклеймы (Parent Claim ID ≥ 0) пропускаются: они внутри родительских.
-     */
     public Result importFromGriefPrevention() {
         File folder = new File(dataFolder("import.griefprevention.data-folder", "plugins/GriefPreventionData"));
         File claimsDir = new File(folder, "ClaimData");
@@ -165,7 +137,6 @@ public class RegionImporter {
                 Object raw = new Yaml().load(in);
                 if (!(raw instanceof Map<?, ?> data)) continue;
 
-                // Субклейм без собственного владельца не импортируем.
                 if (data.get("Parent Claim ID") instanceof Number parent && parent.longValue() >= 0) {
                     skipped++;
                     continue;
@@ -186,7 +157,6 @@ public class RegionImporter {
                     continue;
                 }
 
-                // Клеймы GP — всегда колонна от бедрока до неба.
                 RegionBounds bounds = new RegionBounds(min[0], world.getMinHeight(), min[2],
                         max[0], world.getMaxHeight() - 1, max[2]);
 
@@ -222,22 +192,12 @@ public class RegionImporter {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Общее
-    // ------------------------------------------------------------------
-
-    /** Собрать приват с виртуальным ядром в центре границ. */
     private Region buildRegion(String worldName, RegionBounds bounds, UUID ownerId, String ownerName) {
         return buildRegion(worldName, bounds, ownerId, ownerName, null);
     }
 
-    /**
-     * @param typeIdOverride тип привата, вычисленный при импорте (например,
-     *                       по материалу блока ProtectionStones); {@code null} —
-     *                       брать общий {@code import.type-id}
-     */
     private Region buildRegion(String worldName, RegionBounds bounds, UUID ownerId, String ownerName, String typeIdOverride) {
-        if (ownerId == null) return null; // административные регионы не переносим
+        if (ownerId == null) return null;
 
         RegionType type = null;
         if (typeIdOverride != null) {
@@ -248,7 +208,7 @@ public class RegionImporter {
 
         int coreX = bounds.centerX();
         int coreZ = bounds.centerZ();
-        // Виртуальное ядро — в центре объёма: оно нигде не ставится физически.
+        // ядро виртуальное, в центре объёма
         int coreY = (bounds.minY() + bounds.maxY()) / 2;
 
         Region region = new Region(UUID.randomUUID(), worldName, bounds,
@@ -272,16 +232,6 @@ public class RegionImporter {
         return raw;
     }
 
-    // ------------------------------------------------------------------
-    // ProtectionStones: тип блока и флаги
-    // ------------------------------------------------------------------
-
-    /**
-     * ProtectionStones помечает свои регионы WorldGuard флагом
-     * {@code ps-block-material} — по нему подбираем тип один в один
-     * (ключи типов в regions.yml совпадают с материалами). Настраивается
-     * {@code import.worldguard.type-by-material}.
-     */
     private String psMaterial(Map<?, ?> data) {
         if (!(data.get("flags") instanceof Map<?, ?> flags)) return null;
         Object material = flags.get("ps-block-material");
@@ -296,12 +246,6 @@ public class RegionImporter {
         return plugin.getRegionTypes().byId(raw) != null ? raw : null;
     }
 
-    /**
-     * Перенос логических флагов WorldGuard в наши. Соответствие имён —
-     * {@code import.worldguard.flag-mapping} в config.yml, значения по
-     * умолчанию — {@link WgFlags#DEFAULT_MAPPING}. Неизвестные и
-     * не-логические флаги пропускаются.
-     */
     private void applyWgFlags(Region region, Map<?, ?> data) {
         if (!(data.get("flags") instanceof Map<?, ?> flags)) return;
 
@@ -332,10 +276,6 @@ public class RegionImporter {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Парсинг
-    // ------------------------------------------------------------------
-
     private static int intOf(Object raw) {
         if (raw instanceof Number number) return number.intValue();
         try {
@@ -354,7 +294,6 @@ public class RegionImporter {
         }
     }
 
-    /** «world;x;y;z» → [x, y, z]. */
     private int[] parseGpLocation(String raw) {
         String[] parts = raw == null ? new String[0] : raw.split(";");
         if (parts.length < 4) return null;
@@ -368,7 +307,6 @@ public class RegionImporter {
         }
     }
 
-    /** Мир из «world;x;y;z». */
     private static String worldOf(String raw) {
         int cut = raw.indexOf(';');
         return cut > 0 ? raw.substring(0, cut) : raw;
@@ -380,7 +318,6 @@ public class RegionImporter {
         return player.getName() != null ? player.getName() : uuid.toString().substring(0, 8);
     }
 
-    /** Обновить карты после импорта. */
     public void refreshMaps() {
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().redrawAll();
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().updateAll();

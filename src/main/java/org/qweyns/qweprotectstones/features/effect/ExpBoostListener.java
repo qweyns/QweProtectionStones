@@ -11,7 +11,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 
-/** Эффект «Бустер опыта»: увеличивает опыт с мобов и блоков внутри привата. */
 public class ExpBoostListener implements Listener {
 
     private final QweProtectStones plugin;
@@ -25,8 +24,8 @@ public class ExpBoostListener implements Listener {
         Player killer = event.getEntity().getKiller();
         if (killer == null || event.getDroppedExp() <= 0) return;
 
-        // Считаем по месту смерти моба, а не по позиции игрока: иначе буст
-        // срабатывал при стрельбе снаружи и не работал внутри привата.
+        // считаем по месту смерти моба, не по позиции игрока
+
         if (!hasExpBoost(killer, event.getEntity().getLocation())) return;
         event.setDroppedExp(scale(event.getDroppedExp()));
     }

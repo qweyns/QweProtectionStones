@@ -8,14 +8,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 
-/**
- * Регистрация команд, имя которых задаётся в config.yml.
- *
- * <p>plugin.yml требует фиксированных имён, поэтому команда добавляется в
- * CommandMap сервера напрямую. Сам CommandMap достаём рефлексией: метод
- * {@code getCommandMap()} есть и у Paper, и у Spigot, но в разных версиях
- * API он объявлен по-разному, а рефлексия работает везде одинаково.</p>
- */
 public final class CommandRegistrar {
 
     private CommandRegistrar() {
@@ -25,8 +17,8 @@ public final class CommandRegistrar {
         CommandMap map = resolveCommandMap(plugin);
         if (map == null) return false;
 
-        // Префикс нужен, чтобы при конфликте имён у игроков остался доступ
-        // к нашей команде через /qweprotectstones:<имя>.
+        // при конфликте имён команда остаётся как /qweprotectstones:<имя>
+
         boolean registered = map.register("qweprotectstones", command);
         if (!registered) {
             plugin.getLogger().warning("Команда '" + command.getName()

@@ -15,21 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Приват. Заменяет собой и {@code PSRegion} из ProtectionStones, и старый
- * {@code RegionData}: и границы, и права, и игровые данные (прочность, эффекты)
- * теперь живут в одной сущности.
- *
- * <p>Объект изменяется из основного потока, а читается ещё и потоком записи в
- * базу, поэтому изменяемые поля объявлены volatile, а коллекции —
- * потокобезопасные.</p>
- */
 public final class Region implements Bounded {
 
     private final UUID id;
     private final String world;
-    // Границы и тип изменяемы (/ps expand, /ps move, админские setbounds/settype):
-    // при смене RegionManager пересобирает индекс чанков и сохраняет регион.
+    // при смене границ/типа индекс пересобирает RegionManager
+
     private volatile RegionBounds bounds;
     private volatile int coreX, coreY, coreZ;
     private volatile String typeId;
@@ -45,24 +36,16 @@ public final class Region implements Bounded {
     private volatile int durability;
     private volatile int maxDurability;
 
-    /** Забаненные в этом привате — жёстче, чем «нет доступа»: их вообще не пускают. */
     private final Map<UUID, String> bannedPlayers = new ConcurrentHashMap<>();
 
-    // Оформление, задаваемое самим владельцем. Пустая строка означает
-    // «использовать общий шаблон из lang-файла».
     private volatile String displayName = "";
     private volatile String greeting = "";
     private volatile String farewell = "";
 
-    // Статистика осад — по ней администрация разбирает конфликты.
     private volatile int attackCount;
     private volatile long lastAttackAt;
     private volatile String lastAttackerName = "";
 
-    /**
-     * Счётчик изменений. Меню перерисовывается только когда версия выросла,
-     * иначе 45 слотов пересобирались бы каждые полсекунды впустую.
-     */
     private final AtomicLong version = new AtomicLong();
 
     public Region(UUID id, String world, RegionBounds bounds, int coreX, int coreY, int coreZ,
@@ -82,13 +65,8 @@ public final class Region implements Bounded {
         this.createdAt = createdAt;
     }
 
-    // ------------------------------------------------------------------
-    // Идентификация и геометрия
-    // ------------------------------------------------------------------
-
     public UUID getId() { return id; }
 
-    /** Короткий идентификатор для чата и голограмм. */
     public String getShortId() { return id.toString().substring(0, 8); }
 
     public String getWorldName() { return world; }
@@ -97,22 +75,12 @@ public final class Region implements Bounded {
 
     public RegionBounds getBounds() { return bounds; }
 
-    /**
-     * Новые границы. Вызывать только через {@link RegionManager#updateBounds}:
-     * он проверяет пересечения и пересобирает чанковый индекс.
-     */
     public void setBounds(RegionBounds bounds) { this.bounds = Objects.requireNonNull(bounds, "bounds"); }
 
     public String getTypeId() { return typeId; }
 
-    /** Смена типа региона (админская команда): влияет на блок ядра и границы. */
     public void setTypeId(String typeId) { this.typeId = Objects.requireNonNull(typeId, "typeId"); }
 
-    /**
-     * Новое положение ядра (/ps move). Вызывать только через
-     * {@link RegionManager#moveRegion}: он переставляет блок ядра в мире,
-     * пересобирает границы и чанковый индекс.
-     */
     public void setCore(int coreX, int coreY, int coreZ) {
         this.coreX = coreX;
         this.coreY = coreY;
@@ -125,13 +93,11 @@ public final class Region implements Bounded {
     public int getCoreY() { return coreY; }
     public int getCoreZ() { return coreZ; }
 
-    /** Локация блока-ядра. {@code null}, если мир не загружен. */
     public Location getCoreLocation() {
         World bukkitWorld = getWorld();
         return bukkitWorld == null ? null : new Location(bukkitWorld, coreX, coreY, coreZ);
     }
 
-    /** Центр привата на уровне ядра — точка для телепорта домой. */
     public Location getHomeLocation() {
         World bukkitWorld = getWorld();
         if (bukkitWorld == null) return null;
@@ -153,15 +119,10 @@ public final class Region implements Bounded {
                 && bounds.contains(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
-    // ------------------------------------------------------------------
-    // Владелец и участники
-    // ------------------------------------------------------------------
-
     public UUID getOwnerId() { return ownerId; }
 
     public String getOwnerName() { return ownerName != null ? ownerName : ""; }
 
-    /** Передача привата другому игроку: прежний владелец остаётся управляющим. */
     public void transferOwnership(UUID newOwnerId, String newOwnerName) {
         UUID previousOwner = this.ownerId;
         String previousName = this.ownerName;
@@ -192,14 +153,13 @@ public final class Region implements Bounded {
     }
 
     public void setMember(UUID uuid, String name, TrustLevel trust) {
-        if (isOwner(uuid)) return; // владельцу уровень доступа не выдаётся
+        if (isOwner(uuid)) return;
         touch();
         members.compute(uuid, (key, existing) -> existing == null
                 ? new RegionMember(uuid, name, trust, System.currentTimeMillis())
                 : new RegionMember(uuid, name != null ? name : existing.name(), trust, existing.addedAt()));
     }
 
-    /** Используется при загрузке из базы, чтобы не перезаписывать дату добавления. */
     public void restoreMember(RegionMember member) {
         if (member != null && !isOwner(member.uuid())) members.put(member.uuid(), member);
     }
@@ -210,10 +170,6 @@ public final class Region implements Bounded {
         return removed;
     }
 
-    /**
-     * Уровень доступа игрока внутри привата без учёта админских прав —
-     * их проверяет {@code ProtectionService}.
-     */
     public TrustLevel getTrust(UUID uuid) {
         if (uuid == null) return null;
         if (isOwner(uuid)) return TrustLevel.OWNER;
@@ -231,11 +187,6 @@ public final class Region implements Bounded {
         return player != null && hasTrust(player.getUniqueId(), required);
     }
 
-    // ------------------------------------------------------------------
-    // Флаги
-    // ------------------------------------------------------------------
-
-    /** Только явные переопределения; значения по умолчанию берутся из типа привата. */
     public Map<RegionFlag, Boolean> getFlagOverrides() {
         return flagOverrides;
     }
@@ -254,10 +205,6 @@ public final class Region implements Bounded {
         touch();
     }
 
-    // ------------------------------------------------------------------
-    // Игровые данные
-    // ------------------------------------------------------------------
-
     public int getDurability() { return durability; }
 
     public void setDurability(int durability) {
@@ -267,7 +214,6 @@ public final class Region implements Bounded {
 
     public int getMaxDurability() { return maxDurability; }
 
-    /** Максимум мог измениться в config.yml — тогда текущее значение подрезается. */
     public void setMaxDurability(int maxDurability) {
         this.maxDurability = Math.max(1, maxDurability);
         this.durability = clampDurability(this.durability);
@@ -277,7 +223,6 @@ public final class Region implements Bounded {
         return Math.max(0, Math.min(value, maxDurability));
     }
 
-    /** Живой потокобезопасный список записей вида {@code SPEED:1}. */
     public List<String> getEffects() { return effects; }
 
     public boolean hasEffect(String effectName) {
@@ -289,11 +234,6 @@ public final class Region implements Bounded {
         return false;
     }
 
-    // ------------------------------------------------------------------
-    // Баны
-    // ------------------------------------------------------------------
-
-    /** Забаненный игрок не получает доступ, даже если ему выдан уровень доверия. */
     public boolean isBanned(UUID uuid) {
         return uuid != null && bannedPlayers.containsKey(uuid);
     }
@@ -302,7 +242,6 @@ public final class Region implements Bounded {
         return bannedPlayers;
     }
 
-    /** Бан снимает и выданный доступ: иначе после разбана права вернулись бы молча. */
     public void ban(UUID uuid, String name) {
         if (uuid == null || isOwner(uuid)) return;
 
@@ -321,16 +260,10 @@ public final class Region implements Bounded {
         if (uuid != null && !isOwner(uuid)) bannedPlayers.put(uuid, name == null ? "" : name);
     }
 
-    // ------------------------------------------------------------------
-    // Оформление
-    // ------------------------------------------------------------------
-
-    /** Название привата или пустая строка, если владелец его не задавал. */
     public String getDisplayName() { return displayName; }
 
     public boolean hasDisplayName() { return !displayName.isEmpty(); }
 
-    /** Название, годное для показа: своё, а если его нет — ник владельца. */
     public String getLabel() {
         return RegionText.label(displayName, getOwnerName(), getShortId());
     }
@@ -340,7 +273,6 @@ public final class Region implements Bounded {
         touch();
     }
 
-    /** Текст при входе на территорию; пустой — показывать стандартный. */
     public String getGreeting() { return greeting; }
 
     public void setGreeting(String value) {
@@ -348,7 +280,6 @@ public final class Region implements Bounded {
         touch();
     }
 
-    /** Текст при выходе с территории. */
     public String getFarewell() { return farewell; }
 
     public void setFarewell(String value) {
@@ -356,16 +287,11 @@ public final class Region implements Bounded {
         touch();
     }
 
-    /** Восстановление из базы — без роста версии, меню перерисовывать не нужно. */
     public void restoreDecoration(String displayName, String greeting, String farewell) {
         this.displayName = RegionText.normalize(displayName);
         this.greeting = RegionText.normalize(greeting);
         this.farewell = RegionText.normalize(farewell);
     }
-
-    // ------------------------------------------------------------------
-    // Статистика осад
-    // ------------------------------------------------------------------
 
     public int getAttackCount() { return attackCount; }
 
@@ -373,7 +299,6 @@ public final class Region implements Bounded {
 
     public String getLastAttackerName() { return lastAttackerName == null ? "" : lastAttackerName; }
 
-    /** Отмечает атаку: счётчик, время и последний нападавший. */
     public void recordAttack(String attackerName) {
         attackCount++;
         lastAttackAt = System.currentTimeMillis();
@@ -381,23 +306,16 @@ public final class Region implements Bounded {
         touch();
     }
 
-    /** Восстановление из базы — без изменения времени последней атаки. */
     public void restoreStats(int attackCount, long lastAttackAt, String lastAttackerName) {
         this.attackCount = Math.max(0, attackCount);
         this.lastAttackAt = lastAttackAt;
         this.lastAttackerName = lastAttackerName == null ? "" : lastAttackerName;
     }
 
-    /** Идёт ли осада прямо сейчас: атака была не дольше указанного времени назад. */
     public boolean isUnderSiege(long windowMillis) {
         return lastAttackAt > 0 && System.currentTimeMillis() - lastAttackAt <= windowMillis;
     }
 
-    // ------------------------------------------------------------------
-    // Версия
-    // ------------------------------------------------------------------
-
-    /** Растёт при каждом изменении — по ней меню понимает, нужна ли перерисовка. */
     public long getVersion() { return version.get(); }
 
     public void touch() { version.incrementAndGet(); }

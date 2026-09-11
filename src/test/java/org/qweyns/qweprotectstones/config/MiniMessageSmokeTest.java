@@ -14,14 +14,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-/**
- * Страховка оформления: каждая строка ресурсов (локализации, меню, конфиги
- * типов) должна разбираться MiniMessage без ошибок. Ловит незакрытые теги,
- * битые аргументы градиентов и кликов — до того, как их увидит игрок.
- *
- * <p>Ресурсы лежат в test-classpath (target/classes), поэтому тест читает
- * их напрямую, без запуска сервера.</p>
- */
 class MiniMessageSmokeTest {
 
     private static final String[] FILES = {
@@ -36,7 +28,7 @@ class MiniMessageSmokeTest {
         Yaml yaml = new Yaml();
         for (String name : FILES) {
             try (InputStream in = MiniMessageSmokeTest.class.getResourceAsStream("/" + name)) {
-                if (in == null) continue; // файла нет — его и не проверяем
+                if (in == null) continue;
                 Map<String, Object> root = yaml.load(new InputStreamReader(in, StandardCharsets.UTF_8));
                 collect(root, all);
             }

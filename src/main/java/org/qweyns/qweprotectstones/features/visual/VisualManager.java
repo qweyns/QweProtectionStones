@@ -24,7 +24,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Частицы границ, подсветка и всплывающие цифры урона. */
 public class VisualManager {
 
     private final QweProtectStones plugin;
@@ -38,10 +37,6 @@ public class VisualManager {
         this.plugin = plugin;
     }
 
-    // ------------------------------------------------------------------
-    // Звук и молния
-    // ------------------------------------------------------------------
-
     public void playEffect(Location loc, String typeId, String action) {
         World world = loc == null ? null : loc.getWorld();
         if (world == null) return;
@@ -49,12 +44,10 @@ public class VisualManager {
         String path = plugin.getConfigManager().getEffectPath(typeId, action);
         if (path == null) return;
 
-        // Секции create/damage/remove живут в regions.yml вместе с остальными
-        // настройками типа привата.
         FileConfiguration cfg = plugin.getRegionConfig().raw();
         String soundName = cfg.getString(path + ".sound");
         if (soundName != null && !soundName.isBlank()) {
-            // Громкость и высота лежат отдельными ключами — собираем их в одну настройку.
+
             SoundSetting sound = SoundSetting.parse(soundName
                             + ":" + cfg.getDouble(path + ".volume", 1.0)
                             + ":" + cfg.getDouble(path + ".pitch", 1.0),
@@ -68,11 +61,6 @@ public class VisualManager {
         if (cfg.getBoolean(path + ".lightning", false)) world.strikeLightningEffect(loc);
     }
 
-    // ------------------------------------------------------------------
-    // Подсветка границ
-    // ------------------------------------------------------------------
-
-    /** @return новое состояние подсветки */
     public boolean toggleGlow(Player player, Region region) {
         UUID uuid = player.getUniqueId();
 
@@ -115,11 +103,6 @@ public class VisualManager {
         });
     }
 
-    /**
-     * Кратковременный показ каркаса.
-     *
-     * @param animationType create, remove, info или glow
-     */
     public void showBoundary(Region region, String animationType) {
         if (region == null || !activeBoundaries.add(region.getId())) return;
 
@@ -155,7 +138,6 @@ public class VisualManager {
         }, 0L, period);
     }
 
-    /** Тип привата может задать свой цвет каркаса — тогда он важнее общего. */
     private Color borderColorOf(Region region, String animationType, FileConfiguration cfg) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (type != null && type.hasBorderColor()) return ColorUtil.parseParticleColor(type.borderColor());
@@ -172,15 +154,10 @@ public class VisualManager {
         };
     }
 
-    /**
-     * Точки рёбер параллелепипеда. Шаг растёт вместе с размером привата, а общее
-     * число точек ограничено — иначе большой приват выдаст десятки тысяч частиц за тик.
-     */
     private List<Location> buildWireframe(Region region) {
         return wireframeOf(region.getWorld(), region.getBounds(), region.getCoreY());
     }
 
-    /** Точки рёбер вокруг области на уровне глаз — общая часть подсветки и предпросмотра. */
     private List<Location> wireframeOf(World world, RegionBounds bounds, int aroundY) {
         List<Location> points = new ArrayList<>();
         if (world == null) return points;
@@ -193,8 +170,8 @@ public class VisualManager {
         double maxX = bounds.maxX() + 1.0;
         double maxZ = bounds.maxZ() + 1.0;
 
-        // Приваты высокие (обычно от бедрока до неба), поэтому по вертикали
-        // рисуем не всю высоту, а видимый участок вокруг ядра.
+        // по вертикали рисуем участок вокруг ядра, не всю высоту
+
         double minY = Math.max(bounds.minY(), aroundY - 8);
         double maxY = Math.min(bounds.maxY() + 1.0, aroundY + 9);
 
@@ -223,10 +200,6 @@ public class VisualManager {
         return points;
     }
 
-    // ------------------------------------------------------------------
-    // Индикатор урона
-    // ------------------------------------------------------------------
-
     public void spawnDamageIndicator(Location loc, int damage) {
         if (!plugin.getConfigManager().isDamageIndicatorEnabled()) return;
 
@@ -252,7 +225,6 @@ public class VisualManager {
         }, 35L);
     }
 
-    /** Гасит все подсветки при выключении плагина. */
     public void shutdown() {
         glowingTasks.values().forEach(data -> data.task().cancel());
         glowingTasks.clear();

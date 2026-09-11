@@ -9,13 +9,6 @@ import org.qweyns.qweprotectstones.regions.RegionBounds;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 
-/**
- * Отрисовка границ приватов на Dynmap.
- *
- * <p>API Dynmap вызывается рефлексией: подключать его как зависимость ради
- * необязательной интеграции — значит требовать jar при сборке. Если Dynmap нет
- * или его API изменилось, интеграция просто выключается.</p>
- */
 public class DynmapIntegration {
 
     private final QweProtectStones plugin;
@@ -99,14 +92,13 @@ public class DynmapIntegration {
                 try {
                     return findMethod(iface, name, params);
                 } catch (NoSuchMethodException ignored) {
-                    // пробуем следующий интерфейс
+
                 }
             }
             throw e;
         }
     }
 
-    /** Полная перерисовка — на запуске и после /qps reload. */
     public void redrawAll() {
         if (!active) return;
 
@@ -173,8 +165,8 @@ public class DynmapIntegration {
     }
 
     private String description(Region region) {
-        // Dynmap рендерит подсказку как HTML: экранируем всё, включая
-        // название, которое задаёт владелец привата.
+        // dynmap рендерит описание как HTML, экранируем всё
+
         return "<b>" + MapText.escapeHtml(label(region)) + "</b><br/>"
                 + MapText.line(plugin, "map_marker_line_type", "%type%", region.getTypeId()) + "<br/>"
                 + MapText.line(plugin, "map_marker_line_durability",

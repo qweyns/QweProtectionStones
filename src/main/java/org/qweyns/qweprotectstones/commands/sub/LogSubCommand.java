@@ -10,9 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-/** Журнал действий доверенных игроков внутри привата. */
 public class LogSubCommand extends AbstractRegionSubCommand {
-
 
     public LogSubCommand(QweProtectStones plugin) {
         super(plugin);
@@ -35,7 +33,7 @@ public class LogSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        // Журнал показывает, кто из своих нашалил, — это дело управляющего.
+
         Region region = regionWithTrust(player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.MANAGE));
         if (region == null) return;
 
@@ -49,7 +47,7 @@ public class LogSubCommand extends AbstractRegionSubCommand {
             try {
                 limit = Math.max(1, Math.min(plugin.getTunables().logMaxPageSize(), Integer.parseInt(args[0])));
             } catch (NumberFormatException ignored) {
-                // Некорректное число — просто берём значение по умолчанию.
+
             }
         }
 
@@ -77,8 +75,7 @@ public class LogSubCommand extends AbstractRegionSubCommand {
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
         if (args.length != 1) return List.of();
-        // Аргумент — сколько строк показать: подсказываем стандартный
-        // и максимальный размер страницы из config.yml (limits).
+
         return filter(List.of(String.valueOf(plugin.getTunables().logPageSize()),
                 String.valueOf(plugin.getTunables().logMaxPageSize())), args[0]);
     }

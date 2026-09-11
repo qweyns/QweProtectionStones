@@ -5,25 +5,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.qweyns.qweprotectstones.QweProtectStones;
 
-/**
- * Оплата покупки эффектов ({@code /ps menu effects}).
- *
- * <p>Тип и размер платы задаются в секции {@code effects.purchase} config.yml:
- * деньги (Vault), очки (PlayerPoints) или предметы. Для отдельных эффектов цена
- * переопределяется в {@code effects.purchase.per-effect.<ЭФФЕКТ>}. По умолчанию
- * покупка бесплатна (cost-type: none) — как раньше.</p>
- */
 public class EffectPurchaseManager {
 
-    /** Результат попытки оплаты. */
     public enum ChargeResult {
-        /** Плачено, эффект можно выдавать. */
+
         SUCCESS,
-        /** Покупка бесплатна (cost-type: none или цена 0). */
+
         FREE,
-        /** Выбранный способ оплаты недоступен (нет Vault / PlayerPoints). */
+
         NO_ECONOMY,
-        /** Не хватило денег/очков/предметов. */
+
         NOT_ENOUGH
     }
 
@@ -33,7 +24,6 @@ public class EffectPurchaseManager {
         this.plugin = plugin;
     }
 
-    /** Итоговая цена: переопределение по эффекту или базовая, с учётом уровня. */
     public double price(String effectName, int amplifier) {
         double base = plugin.getConfigManager().getConfig()
                 .getDouble("effects.purchase.per-effect." + effectName.toUpperCase(), -1.0);
@@ -42,7 +32,6 @@ public class EffectPurchaseManager {
         }
         if (base <= 0) return 0;
 
-        // Усиленный эффект стоит дороже: цена умножается на количество уровней.
         if (plugin.getConfigManager().getConfig().getBoolean("effects.purchase.scale-with-amplifier", false)
                 && amplifier > 0) {
             base = base * (amplifier + 1);
@@ -50,16 +39,11 @@ public class EffectPurchaseManager {
         return base;
     }
 
-    /** Строка цены для сообщений: «100» или «100.50». */
     public static String format(double value) {
         if (value == Math.floor(value) && !Double.isInfinite(value)) return String.valueOf((long) value);
         return String.format(java.util.Locale.ROOT, "%.2f", value);
     }
 
-    /**
-     * Списывает плату. Никаких сообщений игроку — вызывающий код объясняет
-     * отказ своими словами.
-     */
     public ChargeResult charge(Player player, String effectName, int amplifier) {
         double price = price(effectName, amplifier);
         if (price <= 0) return ChargeResult.FREE;
@@ -92,7 +76,6 @@ public class EffectPurchaseManager {
         }
     }
 
-    /** Название способа оплаты для сообщений (заполняется командой/меню). */
     public String costTypeName() {
         return switch (costType()) {
             case "money" -> plugin.getLanguageManager().rawTemplate("effect_cost_money");
@@ -132,8 +115,8 @@ public class EffectPurchaseManager {
             if (take >= item.getAmount()) {
                 player.getInventory().setItem(i, null);
             } else {
-                // Массив из getStorageContents() может быть копией — пишем
-                // через setItem, а не мутируем элемент массива.
+                // getStorageContents() может вернуть копию, пишем через setItem
+
                 ItemStack reduced = item.clone();
                 reduced.setAmount(item.getAmount() - take);
                 player.getInventory().setItem(i, reduced);

@@ -6,10 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Геометрия {@link RegionBounds}: включительные границы, подрезка по высоте
- * мира, пересечения и размеры.
- */
 class RegionBoundsTest {
 
     @Test
@@ -26,7 +22,7 @@ class RegionBoundsTest {
 
     @Test
     void aroundClampsToWorldHeight() {
-        // Ядро на y=64, радиус больше мира — вертикаль подрезается.
+
         RegionBounds bounds = RegionBounds.around(0, 64, 0, 16, 512, 16, -64, 319);
 
         assertEquals(-64, bounds.minY());
@@ -65,7 +61,7 @@ class RegionBoundsTest {
 
     @Test
     void touchingBoundsIntersect() {
-        // Границы включительные: блок maxX=5 и блок minX=5 — это один блок.
+
         RegionBounds first = new RegionBounds(0, 0, 0, 5, 5, 5);
         RegionBounds touching = new RegionBounds(5, 5, 5, 10, 10, 10);
         RegionBounds adjacent = new RegionBounds(6, 0, 0, 10, 10, 10);
@@ -118,7 +114,7 @@ class RegionBoundsTest {
 
     @Test
     void chunkCoordinatesUseArithmeticShift() {
-        // Отрицательные координаты: блок -1 лежит в чанке -1.
+
         RegionBounds bounds = new RegionBounds(-17, 0, -17, 32, 10, 32);
 
         assertEquals(-2, bounds.chunkMinX());

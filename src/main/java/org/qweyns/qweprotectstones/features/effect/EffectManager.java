@@ -26,14 +26,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-/** Постоянные эффекты внутри привата и оповещения о чужаках. */
 public class EffectManager implements Listener {
 
     private static final String ALERTS = "ALERTS";
     private static final String EXP_BOOST = "EXP_BOOST";
 
     private final QweProtectStones plugin;
-    // На Folia события приходят из потоков разных регионов — карты должны быть потокобезопасными.
+    // Folia: события из разных потоков, карты потокобезопасные
     private final Map<UUID, UUID> currentRegions = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastMoveCheck = new ConcurrentHashMap<>();
 
@@ -49,13 +48,6 @@ public class EffectManager implements Listener {
         plugin.getSchedulers().runTimer(this::refreshAll, period, period);
     }
 
-    /**
-     * Обновление эффектов у всех онлайн-игроков.
-     *
-     * <p>Сам обход списка безопасен из любого потока, а вот трогать игрока на
-     * Folia можно только в его регионе — поэтому работа уходит в планировщик
-     * сущности. На Paper это выполняется тут же, без лишнего переключения.</p>
-     */
     private void refreshAll() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             plugin.getSchedulers().runAtEntity(player, () -> {
@@ -147,7 +139,7 @@ public class EffectManager implements Listener {
 
         int duration = plugin.getTunables().effectDurationTicks();
 
-        // Не перебиваем более сильный или свежий эффект от зелья/другого плагина.
+        // чужой более сильный эффект не перебиваем
         PotionEffect active = player.getPotionEffect(type);
         if (active != null) {
             if (active.getAmplifier() > amplifier) return;
@@ -157,7 +149,6 @@ public class EffectManager implements Listener {
         player.addPotionEffect(new PotionEffect(type, duration, amplifier, true, false, true));
     }
 
-    /** Битая запись вида «SPEED:abc» раньше валила весь цикл наложения эффектов. */
     private int parseAmplifier(String[] parts, Region region, String raw) {
         if (parts.length < 2) return 0;
         try {
@@ -169,10 +160,6 @@ public class EffectManager implements Listener {
         }
     }
 
-    /**
-     * Поиск зельного эффекта по ключу реестра: {@code speed}, {@code fire_resistance},
-     * {@code minecraft:speed}. Заменяет устаревший {@code PotionEffectType.getByName}.
-     */
     public static PotionEffectType potionType(String name) {
         if (name == null || name.isBlank()) return null;
         NamespacedKey key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));

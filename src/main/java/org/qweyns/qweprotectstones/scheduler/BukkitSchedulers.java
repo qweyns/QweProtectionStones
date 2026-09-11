@@ -6,7 +6,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-/** Обычный планировщик Paper/Spigot: один главный поток. */
 final class BukkitSchedulers implements Schedulers {
 
     private final Plugin plugin;
@@ -47,7 +46,7 @@ final class BukkitSchedulers implements Schedulers {
 
     @Override
     public void runAtLocation(Location location, Runnable action) {
-        // На Paper весь мир обслуживает один поток — региона выбирать не из чего.
+        // на Paper весь мир в одном потоке
         if (Bukkit.isPrimaryThread()) action.run();
         else Bukkit.getScheduler().runTask(plugin, action);
     }

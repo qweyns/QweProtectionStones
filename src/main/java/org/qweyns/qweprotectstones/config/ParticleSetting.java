@@ -9,18 +9,6 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Чем и как густо рисуются границы приватов.
- *
- * <p>Раньше это был жёстко зашитый {@code DUST} размера 1.5 с шагом, который
- * нельзя было тронуть. Теперь тип частицы, её размер, плотность сетки и потолок
- * точек берутся из конфига — на слабом сервере плотность можно занизить.</p>
- *
- * @param particle  тип частицы; цвет учитывается только у {@code DUST}
- * @param size      размер частицы (для {@code DUST})
- * @param density   множитель шага сетки: {@code 0.5} — вдвое плотнее, {@code 2.0} — вдвое реже
- * @param maxPoints потолок числа точек на один каркас
- */
 public record ParticleSetting(Particle particle, float size, double density, int maxPoints) {
 
     public static final ParticleSetting DEFAULT = new ParticleSetting(Particle.DUST, 1.5f, 1.0, 2_000);
@@ -36,17 +24,10 @@ public record ParticleSetting(Particle particle, float size, double density, int
         return Math.max(min, Math.min(max, value));
     }
 
-    /** Цвет умеет показывать только DUST — для остальных частиц он игнорируется. */
     public boolean supportsColor() {
         return particle == Particle.DUST;
     }
 
-    /**
-     * Разбирает секцию конфига.
-     *
-     * @param type    имя частицы; неизвестное значение откатывается к {@code DUST}
-     * @param onBadType вызывается с именем частицы, если она не распознана
-     */
     public static ParticleSetting of(String type, double size, double density, int maxPoints,
                                      java.util.function.Consumer<String> onBadType) {
         Particle particle = Particle.DUST;
@@ -60,7 +41,6 @@ public record ParticleSetting(Particle particle, float size, double density, int
         return new ParticleSetting(particle, (float) size, density, maxPoints);
     }
 
-    /** Шаг сетки с учётом плотности: длинные рёбра прорежаются сильнее. */
     public double step(double length) {
         double base;
         if (length > 128) base = 8.0;
@@ -71,7 +51,6 @@ public record ParticleSetting(Particle particle, float size, double density, int
         return Math.max(0.25, base * density);
     }
 
-    /** Показать точки одному игроку — предпросмотр и личная подсветка. */
     public void spawnFor(Player player, List<Location> points, Color color) {
         Object data = supportsColor() ? new Particle.DustOptions(color, size) : null;
         for (Location point : points) {
@@ -79,7 +58,6 @@ public record ParticleSetting(Particle particle, float size, double density, int
         }
     }
 
-    /** Показать точки всем в мире — общая подсветка границ. */
     public void spawnIn(World world, List<Location> points, Color color) {
         Object data = supportsColor() ? new Particle.DustOptions(color, size) : null;
         for (Location point : points) {

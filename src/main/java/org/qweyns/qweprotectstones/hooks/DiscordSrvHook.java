@@ -5,13 +5,6 @@ import org.bukkit.Bukkit;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 
-/**
- * Отправка уведомлений через DiscordSRV.
- *
- * <p>API вызывается рефлексией: DiscordSRV — необязательная зависимость,
- * jar при сборке не нужен. Совместимо с {@code github.scarsz.discordsrv.DiscordSRV}
- * (актуальные версии для 1.21).</p>
- */
 public class DiscordSrvHook {
 
     private final org.qweyns.qweprotectstones.QweProtectStones plugin;
@@ -40,9 +33,6 @@ public class DiscordSrvHook {
         return active;
     }
 
-    /**
-     * @param channelName имя канала из config DiscordSRV; пусто — главный канал
-     */
     public void sendMessage(String message, String channelName) {
         if (!active || message == null || message.isBlank()) return;
 
@@ -55,7 +45,6 @@ public class DiscordSrvHook {
             }
             if (channel == null) return;
 
-            // TextChannel#sendMessage(CharSequence).queue() — JDA сам всё отправит.
             Object action = channel.getClass().getMethod("sendMessage", CharSequence.class).invoke(channel, message);
             Method queue = action.getClass().getMethod("queue");
             queue.invoke(action);

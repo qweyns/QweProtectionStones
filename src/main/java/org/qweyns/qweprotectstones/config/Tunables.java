@@ -13,20 +13,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Все числовые пороги, тайминги, звуки и правила доступа — в одном месте.
- *
- * <p>Раньше это были два десятка {@code private static final} в разных классах:
- * поменять кулдаун клика или длительность эффекта можно было только пересборкой.
- * Теперь значения читаются из config.yml один раз при старте и при
- * {@code /qps reload}, а в горячем пути остаётся чтение поля — обращения к
- * {@code FileConfiguration} на каждое событие больше нет.</p>
- */
 public final class Tunables {
 
     private final QweProtectStones plugin;
 
-    // --- тайминги и лимиты ---
     private long menuClickCooldownMs;
     private long deleteConfirmMs;
     private long denyMessageCooldownMs;
@@ -42,7 +32,6 @@ public final class Tunables {
     private long animationPeriodTicks;
     private long siegeWindowMs;
 
-    // --- звуки ---
     private SoundSetting menuDenied;
     private SoundSetting menuSuccess;
     private SoundSetting raidAttack;
@@ -51,14 +40,11 @@ public final class Tunables {
     private SoundSetting intruderAlert;
     private SoundSetting inviteReceived;
 
-    // --- частицы ---
     private ParticleSetting particles;
 
-    // --- справка (/ps help и /qps help) ---
     private int helpPageSize;
     private int adminHelpPageSize;
 
-    // --- защита: горячие ключи, читаемые на каждое событие (кэш, а не YAML) ---
     private boolean hoppersEnabled;
     private boolean hoppersBlockOutflow;
     private boolean hoppersBlockInflow;
@@ -71,23 +57,21 @@ public final class Tunables {
     private String regionEnterChannel;
     private String regionLeaveChannel;
 
-    // --- доступ ---
     private Map<TrustAction, TrustLevel> trustRequirements;
     private Set<RegionFlag> lockedFlags;
     private TrustLevel flagEditLevel;
     private TrustLevel trustEditLevel;
 
-    /** Действия, для которых требуемый уровень доверия задаётся в конфиге. */
     public enum TrustAction {
-        /** Двери, кнопки, рычаги, кровати. */
+
         INTERACT("interact", TrustLevel.ACCESS),
-        /** Сундуки, бочки, печи, воронки. */
+
         CONTAINER("container", TrustLevel.CONTAINER),
-        /** Ставить и ломать блоки. */
+
         BUILD("build", TrustLevel.BUILD),
-        /** Бить и использовать сущности: рамки, стойки, вагонетки. */
+
         ENTITY("entity", TrustLevel.BUILD),
-        /** Флаги, приглашения, покупка улучшений. */
+
         MANAGE("manage", TrustLevel.MANAGER);
 
         private final String key;
@@ -108,14 +92,6 @@ public final class Tunables {
         reload();
     }
 
-    /**
-     * Перечитывает значения. Вызывается при старте и из {@code /qps reload}.
-     *
-     * <p>Важно: читается слитая конфигурация ConfigManager'а (все 6 файлов),
-     * а не {@code plugin.getConfig()} — тот видит только config.yml, и после
-     * разделения настроек звуки, частицы, окно осады и locked-флаги
-     * молча брались бы из дефолтов.</p>
-     */
     public void reload() {
         FileConfiguration cfg = plugin.getConfigManager().getConfig();
 
@@ -127,7 +103,7 @@ public final class Tunables {
         effectDurationTicks = (int) positive(cfg.getLong("timings.effect_duration_ticks", 60L), 60L);
         dbFlushTicks = positive(cfg.getLong("timings.db_flush_ticks", 60L), 60L);
         animationPeriodTicks = positive(cfg.getLong("timings.animation_period_ticks", 10L), 10L);
-        // Окно осады живёт в siege.yml (переехало из timings).
+
         siegeWindowMs = positive(cfg.getLong("siege.window_seconds", 300L), 300L) * 1000L;
 
         maxAutoAddFriends = (int) bounded(cfg.getLong("limits.autoadd_friends", 50L), 1, 500);
@@ -136,8 +112,8 @@ public final class Tunables {
         logMaxPageSize = (int) bounded(cfg.getLong("limits.log_max_page_size", 50L), logPageSize, 500);
         findSpotMaxRings = (int) bounded(cfg.getLong("limits.findspot_rings", 24L), 1, 200);
 
-        // Эффект должен жить дольше периода обновления, иначе между тиками
-        // задачи он успевает истечь и игрок видит мигание.
+        // эффект живёт дольше периода обновления, иначе мигает
+
         if (effectDurationTicks <= effectRefreshTicks) {
             effectDurationTicks = effectRefreshTicks + 20;
         }
@@ -148,11 +124,6 @@ public final class Tunables {
         validateEffectTargets(cfg);
     }
 
-    /**
-     * Опечатка вроде {@code SPEED: MEMBER} раньше просто выключала эффект:
-     * значение не совпадало ни с MEMBERS, ни с ENEMIES, и никто не получал ничего.
-     * Теперь это видно в логе при старте.
-     */
     private void validateEffectTargets(FileConfiguration cfg) {
         ConfigurationSection section = cfg.getConfigurationSection("effect_targets");
         if (section == null) return;
@@ -184,7 +155,7 @@ public final class Tunables {
 
         SoundSetting parsed = SoundSetting.parse(raw, null);
         if (parsed == null) {
-            // null означает «строка есть, но звук не распознан» либо «ключа нет».
+
             if (raw != null && !raw.isBlank()) {
                 plugin.getLogger().warning("sounds." + key + ": неизвестный звук '" + raw
                         + "', использую " + defaultValue);
@@ -220,12 +191,12 @@ public final class Tunables {
         trustEditLevel = TrustLevel.parse(cfg.getString("trust.member_edit_level")).orElse(TrustLevel.MANAGER);
 
         Set<RegionFlag> locked = EnumSet.noneOf(RegionFlag.class);
-        // Справка постраничная: сколько команд на страницу.
+
         helpPageSize = Math.max(1, cfg.getInt("help.page-size", 8));
         adminHelpPageSize = Math.max(1, cfg.getInt("help.admin-page-size", 10));
 
-        // Воронки и трюки через границу: InventoryMoveItemEvent срабатывает
-        // сотни раз в секунду — ключи читаются здесь один раз, не из YAML.
+        // InventoryMoveItemEvent жарит сотни раз в секунду, ключи читаем один раз
+
         hoppersEnabled = cfg.getBoolean("protection.hoppers.enable", true);
         hoppersBlockOutflow = cfg.getBoolean("protection.hoppers.block-outflow", true);
         hoppersBlockInflow = cfg.getBoolean("protection.hoppers.block-inflow", false);
@@ -255,10 +226,6 @@ public final class Tunables {
         return Math.max(min, Math.min(max, value));
     }
 
-    // ------------------------------------------------------------------
-    // Доступ
-    // ------------------------------------------------------------------
-
     public long menuClickCooldownMs() { return menuClickCooldownMs; }
     public long deleteConfirmMs() { return deleteConfirmMs; }
     public long denyMessageCooldownMs() { return denyMessageCooldownMs; }
@@ -280,11 +247,8 @@ public final class Tunables {
     public SoundSetting raidDestroyed() { return raidDestroyed; }
     public SoundSetting raidNearby() { return raidNearby; }
 
-    // --- справка ---
     public int helpPageSize() { return helpPageSize; }
     public int adminHelpPageSize() { return adminHelpPageSize; }
-
-    // --- горячие ключи защиты (см. reload) ---
 
     public boolean hoppersEnabled() { return hoppersEnabled; }
     public boolean hoppersBlockOutflow() { return hoppersBlockOutflow; }
@@ -296,7 +260,6 @@ public final class Tunables {
     public boolean regionEnterEnabled() { return regionEnterEnabled; }
     public boolean regionLeaveEnabled() { return regionLeaveEnabled; }
 
-    /** Канал сообщения о входе: CHAT, ACTIONBAR или NONE (прочее — как NONE). */
     public String regionEnterChannel() { return regionEnterChannel; }
 
     public String regionLeaveChannel() { return regionLeaveChannel; }
@@ -305,12 +268,10 @@ public final class Tunables {
 
     public ParticleSetting particles() { return particles; }
 
-    /** Какой уровень доверия нужен для действия — с учётом настроек сервера. */
     public TrustLevel required(TrustAction action) {
         return trustRequirements.getOrDefault(action, action.fallback());
     }
 
-        /** Может ли игрок вообще менять этот флаг, или он закрыт админом. */
     public boolean isFlagLocked(RegionFlag flag) {
         return lockedFlags.contains(flag);
     }

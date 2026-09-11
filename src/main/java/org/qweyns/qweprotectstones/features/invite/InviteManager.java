@@ -10,15 +10,8 @@ import org.qweyns.qweprotectstones.regions.TrustLevel;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Приглашения в приват.
- *
- * <p>Раньше доступ выдавался молча: игрок узнавал об этом случайно, а отказаться
- * не мог вовсе. Теперь приглашение нужно принять, и у него есть срок годности.</p>
- */
 public class InviteManager {
 
-    /** Приглашение: кто позвал, куда и на каких правах. */
     public record Invite(UUID regionId, UUID inviterId, String inviterName, TrustLevel level) {
     }
 
@@ -37,7 +30,6 @@ public class InviteManager {
         return seconds > 0 ? seconds : 120L;
     }
 
-    /** @return false, если у игрока уже висит приглашение в этот же приват */
     public boolean invite(Player inviter, Player target, Region region, TrustLevel level) {
         Invite existing = pending.getIfPresent(target.getUniqueId());
         if (existing != null && existing.regionId().equals(region.getId())) return false;
@@ -46,8 +38,6 @@ public class InviteManager {
         return true;
     }
 
-
-    /** Забирает приглашение — повторно принять его уже нельзя. */
     public Invite consume(Player target) {
         Invite invite = pending.getIfPresent(target.getUniqueId());
         if (invite != null) pending.invalidate(target.getUniqueId());

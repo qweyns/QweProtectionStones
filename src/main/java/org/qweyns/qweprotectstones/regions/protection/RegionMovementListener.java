@@ -19,18 +19,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Вход и выход из привата: приветствия, флаг ENTRY и запрет телепорта внутрь.
- *
- * <p>Обработчик движения вызывается тысячи раз в секунду, поэтому вся работа
- * идёт только при реальной смене блока, а состояние игрока кэшируется.</p>
- */
 public class RegionMovementListener implements Listener {
 
     private final QweProtectStones plugin;
     private final ProtectionService protection;
 
-    /** Последний известный приват игрока — чтобы не дёргать индекс на каждый тик. */
     private final Map<UUID, UUID> currentRegion = new ConcurrentHashMap<>();
 
     public RegionMovementListener(QweProtectStones plugin) {
@@ -46,7 +39,7 @@ public class RegionMovementListener implements Listener {
         Region to = protection.regionAt(event.getTo());
 
         if (to != null && !canEnter(player, to)) {
-            // Не пускаем внутрь: возвращаем игрока на прежнюю позицию.
+
             event.setCancelled(true);
             player.sendActionBar(plugin.getLanguageManager().getMessage("region_entry_denied", "%owner%", to.getOwnerName()));
             return;
@@ -76,14 +69,13 @@ public class RegionMovementListener implements Listener {
     }
 
     private boolean canEnter(Player player, Region region) {
-        // Бан не обходится ни флагом ENTRY, ни публичным доступом.
+
         if (protection.isBanned(region, player)) return false;
         if (protection.has(region, player, protection.requiredFor(Tunables.TrustAction.INTERACT))) return true;
 
         return protection.flag(region, RegionFlag.ENTRY);
     }
 
-    /** Сообщения о входе и выходе показываем только при реальной смене привата. */
     private void handleTransition(Player player, Region to) {
         UUID playerId = player.getUniqueId();
         UUID previousId = currentRegion.get(playerId);
@@ -103,36 +95,26 @@ public class RegionMovementListener implements Listener {
         }
     }
 
-    /**
-     * Куда писать сообщение о входе или выходе — секция region-messages
-     * в config.yml: CHAT (в чат), ACTIONBAR (полоска над хотбаром)
-     * или NONE (не показывать). Отдельный мастер-выключатель для
-     * входа и выхода — enabled.
-     */
     private void sendTransition(Player player, Component message, boolean entering) {
-        // Каналы закэшированы в Tunables — здесь только выбор ветки.
+
         var tunables = plugin.getTunables();
         if (entering) {
             if (!tunables.regionEnterEnabled()) return;
             switch (tunables.regionEnterChannel()) {
                 case "CHAT" -> player.sendMessage(message);
                 case "ACTIONBAR" -> player.sendActionBar(message);
-                default -> { /* NONE и опечатки — сообщение выключено */ }
+                default -> {  }
             }
         } else {
             if (!tunables.regionLeaveEnabled()) return;
             switch (tunables.regionLeaveChannel()) {
                 case "CHAT" -> player.sendMessage(message);
                 case "ACTIONBAR" -> player.sendActionBar(message);
-                default -> { /* NONE и опечатки — сообщение выключено */ }
+                default -> {  }
             }
         }
     }
 
-    /**
-     * Порядок такой: текст владельца, затем текст типа привата из regions.yml,
-     * и только потом общий шаблон из lang-файла. Плейсхолдеры работают везде.
-     */
     private Component transitionText(Region region, String custom, boolean entering, String fallbackKey) {
         String text = custom;
         if (text.isEmpty()) {
@@ -142,7 +124,6 @@ public class RegionMovementListener implements Listener {
         return renderTransition(region, text, fallbackKey);
     }
 
-    /** Название типа привата (display_name) для плейсхолдера %type%. */
     private String typeName(Region region) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         return type != null ? type.displayName() : region.getTypeId();

@@ -8,7 +8,6 @@ import org.qweyns.qweprotectstones.regions.TrustLevel;
 
 import java.util.List;
 
-/** Постоянная подсветка границ привата частицами. */
 public class GlowSubCommand extends AbstractRegionSubCommand {
 
     public GlowSubCommand(QweProtectStones plugin) {

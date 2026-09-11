@@ -19,7 +19,6 @@ import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.util.List;
 
-/** Клик по блоку-ядру: открытие меню привата или свои команды из конфига. */
 public class RegionInteractListener implements Listener {
 
     private final QweProtectStones plugin;
@@ -41,8 +40,8 @@ public class RegionInteractListener implements Listener {
         Player player = event.getPlayer();
         boolean trusted = plugin.getProtectionService().has(region, player, TrustLevel.ACCESS);
 
-        // Яйцо призыва: если тип это разрешает, пропускаем ванильное поведение
-        // и меню не открываем — иначе получалось бы и то, и другое сразу.
+        // яйцо призыва: либо ваниль, либо меню, не оба сразу
+
         ItemStack item = event.getItem();
         if (item != null && item.getType().name().endsWith("_SPAWN_EGG")) {
             RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
@@ -57,7 +56,6 @@ public class RegionInteractListener implements Listener {
 
         event.setCancelled(true);
 
-        // Shift по ядру ничего не открывает — так удобнее ставить блоки рядом.
         if (player.isSneaking()) return;
 
         String action = plugin.getConfigManager().getConfig().getString("settings.custom_menus.main.action", "MENU");

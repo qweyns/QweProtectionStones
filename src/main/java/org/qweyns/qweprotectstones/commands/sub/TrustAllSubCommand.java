@@ -14,12 +14,6 @@ import java.util.Locale;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 
-/**
- * Выдача или снятие доступа сразу во всех приватах игрока.
- *
- * <p>Обходить десяток приватов ради одного друга — худшее, что можно предложить
- * владельцу большой сети баз.</p>
- */
 public class TrustAllSubCommand extends AbstractRegionSubCommand {
 
     private final boolean granting;

@@ -14,14 +14,6 @@ import org.qweyns.qweprotectstones.storage.dao.RegionLogEntry;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Журнал действий в привате. Отвечает на главный вопрос владельца: «кто из
- * своих это сломал».
- *
- * <p>Пишутся только действия доверенных игроков — постороннего защита и так не
- * пропустит, а действия самого владельца засоряли бы журнал. Записи копятся в
- * очереди и уходят в базу пачкой вместе с обычным сохранением.</p>
- */
 public class RegionActionLogger implements Listener {
 
     private final QweProtectStones plugin;
@@ -38,7 +30,6 @@ public class RegionActionLogger implements Listener {
         return plugin.getConfigManager().getConfig().getBoolean("settings.action_log.log_containers", true);
     }
 
-    /** Запускает периодическую очистку старых записей. */
     public void startPruning() {
         if (!isEnabled()) return;
 
@@ -67,7 +58,7 @@ public class RegionActionLogger implements Listener {
         if (!(event.getPlayer() instanceof Player player)) return;
 
         Location location = event.getInventory().getLocation();
-        if (location == null) return; // рюкзаки и виртуальные меню игнорируем
+        if (location == null) return;
 
         record(player, location, "open", event.getInventory().getType().name());
     }
@@ -76,7 +67,7 @@ public class RegionActionLogger implements Listener {
         if (!isEnabled()) return;
 
         Region region = plugin.getRegionManager().getRegionAt(location);
-        // Владельца не пишем: журнал нужен, чтобы разбираться с доверенными.
+        // владельца не пишем, журнал про доверенных
         if (region == null || region.isOwner(player.getUniqueId())) return;
 
         plugin.getRegionStorage().log(RegionLogEntry.of(region.getId(), player.getName(), action,

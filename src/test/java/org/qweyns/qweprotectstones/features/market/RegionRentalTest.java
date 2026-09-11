@@ -7,9 +7,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Тесты логики аренды: когда объявление считается занятым.
- */
 class RegionRentalTest {
 
     private static RegionRental rental(UUID tenantId, long rentedUntil) {

@@ -6,13 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Тип привата: блок-ядро и всё, что от него зависит — размер территории,
- * прочность, флаги по умолчанию, лимиты и права на установку.
- *
- * <p>Собирается один раз при загрузке конфига, дальше только читается,
- * поэтому все коллекции неизменяемые.</p>
- */
 public record RegionType(
         String id,
         Material material,
@@ -34,11 +27,9 @@ public record RegionType(
         boolean spawnEggAllowed,
         boolean hologramEnabled,
         boolean returnBlockOnRemove,
-        // Ставится ли блок-ядро как обычный блок при зажатом SHIFT.
+
         boolean sneakPlacesPlainBlock,
 
-        // Ниже — переопределения глобальных настроек. Отрицательное значение
-        // или пустая строка означают «взять общее значение из config.yml».
         int damageCooldownTicks,
         int explosionDamageRadius,
         boolean raidImmune,
@@ -51,14 +42,12 @@ public record RegionType(
         String farewell,
         boolean fullHeight,
 
-        // Ограничено ли получение: true — приват создаёт только предмет,
-        // выданный командой /qps give или скрафченный по recipe.
         boolean restrictObtaining,
-        // Внешний вид предмета-ядра, когда его создаёт плагин.
+
         String itemName,
         List<String> itemLore,
         boolean itemGlow,
-        // Собственный крафт; null — блок получается как обычный.
+
         CoreRecipe recipe
 ) {
 
@@ -82,13 +71,11 @@ public record RegionType(
         maxDurability = Math.max(startDurability, maxDurability);
     }
 
-    /** Значение флага для этого типа: переопределение из конфига или значение по умолчанию. */
     public boolean flagDefault(RegionFlag flag) {
         Boolean configured = defaultFlags.get(flag);
         return configured != null ? configured : flag.defaultValue();
     }
 
-    /** Наносит ли этот вид взрыва урон ядру. */
     public boolean explosionDamages(String explosionType) {
         return explosionRules.getOrDefault(explosionType, Boolean.FALSE);
     }
@@ -103,7 +90,6 @@ public record RegionType(
         return allowedEffects.stream().anyMatch(allowed -> allowed.equalsIgnoreCase(effectName));
     }
 
-    /** Есть ли у типа своё значение вместо глобального. */
     public boolean overridesDamageCooldown() { return damageCooldownTicks >= 0; }
 
     public boolean overridesExplosionRadius() { return explosionDamageRadius >= 0; }
@@ -116,10 +102,8 @@ public record RegionType(
 
     public boolean hasBorderColor() { return !borderColor.isBlank(); }
 
-    /** Меню, которое открывает клик по ядру; пусто — выбрать по наличию прокачки. */
     public boolean hasMenu() { return !menuName.isBlank(); }
 
-    /** Размер стороны территории в блоках — для сообщений игроку. */
     public int widthX() { return radiusX * 2 + 1; }
 
     public int widthZ() { return radiusZ * 2 + 1; }

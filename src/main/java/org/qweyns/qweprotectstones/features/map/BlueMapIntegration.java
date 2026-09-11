@@ -14,25 +14,14 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
-/**
- * Отрисовка границ приватов на BlueMap.
- *
- * <p>API BlueMap вызывается рефлексией — по тому же принципу, что и интеграция
- * с Dynmap: необязательная зависимость не должна требовать jar при сборке.
- * Если BlueMap нет или его API изменился, интеграция тихо выключается.</p>
- *
- * <p>Совместимо с BlueMapAPI v2.x: {@code BlueMapAPI.getWorld} →
- * {@code BlueMapWorld.getMaps} → {@code BlueMapMap.getMarkerSets} →
- * {@code MarkerSet.getMarkers} + {@code ShapeMarker}.</p>
- */
 public class BlueMapIntegration {
 
     private final QweProtectStones plugin;
 
     private boolean active;
 
-    // Держим ссылки на подписки BlueMap: enable() вызывается и из /qps reload,
-    // и без этого каждый прогон добавлял бы новый consumer в BlueMapAPI.
+    // держим подписки, иначе каждый reload плодит consumer'ов
+
     private Consumer<Object> enableListener;
     private Runnable disableListener;
 
@@ -59,7 +48,6 @@ public class BlueMapIntegration {
         return active;
     }
 
-    /** Подключение: вызывается при старте плагина и при /qps reload. Идемпотентно. */
     public void enable() {
         if (!plugin.getConfigManager().getConfig().getBoolean("map.bluemap.enable", true)) {
             disable();
@@ -73,7 +61,7 @@ public class BlueMapIntegration {
 
             if (!prepareMethods()) return;
 
-            // BlueMap может загрузиться позже нас — подписываемся на оба варианта.
+            // BlueMap может грузиться позже, подписываемся на оба случая
             Method getInstance = apiClass.getMethod("getInstance");
             @SuppressWarnings("unchecked")
             Optional<Object> existing = (Optional<Object>) getInstance.invoke(null);
@@ -82,8 +70,6 @@ public class BlueMapIntegration {
                 return;
             }
 
-            // Подписка должна быть ровно одна: регистрируем при первом вызове
-            // и снимаем в disable().
             if (enableListener == null) {
                 enableListener = this::attach;
                 disableListener = this::detach;
@@ -104,18 +90,17 @@ public class BlueMapIntegration {
     private Method unregister;
 
     public void disable() {
-        // Снимаем подписки, иначе перезагрузка плагина оставляла бы «зомби»-consumer'ов.
+
         if (unregister != null && enableListener != null) {
             try {
                 unregister.invoke(null, enableListener);
             } catch (Throwable ignored) {
-                // BlueMap уже выгрузился — ничего снимать не нужно.
+
             }
         }
         detach();
     }
 
-    /** Ищем рефлексивные ссылки на нужные методы и конструкторы. */
     private boolean prepareMethods() {
         try {
             Class<?> markerSetClass = Class.forName("de.bluecolored.bluemap.api.markers.MarkerSet");
@@ -158,13 +143,11 @@ public class BlueMapIntegration {
         this.api = null;
     }
 
-    /** Полная перерисовка: /qps reload и подключение BlueMap. */
     public void updateAll() {
         if (!active) return;
         for (Region region : plugin.getRegionManager().getAllRegions()) update(region);
     }
 
-    /** Перерисовать один приват на всех картах его мира. */
     public void update(Region region) {
         if (!active || api == null || region == null) return;
         try {
@@ -178,13 +161,12 @@ public class BlueMapIntegration {
                 draw(map, region);
             }
         } catch (Throwable t) {
-            // Одна ошибка не должна ломать сервер: глушим интеграцию и пишем в лог.
+
             active = false;
             plugin.getLogger().log(Level.WARNING, "BlueMap: не удалось обновить маркер привата " + region.getShortId(), t);
         }
     }
 
-    /** Убрать маркер привата со всех карт (мир мог уже выгрузиться — ищем везде). */
     public void remove(Region region) {
         if (!active || api == null || region == null) return;
         try {
@@ -218,8 +200,8 @@ public class BlueMapIntegration {
             markerSets.put(setId(), set);
         }
 
-        // Внимание: у MarkerSet маркеры (getMarkers), у BlueMapMap — наборы
-        // (getMarkerSets); это разные методы, путать нельзя.
+        // у MarkerSet — getMarkers, у BlueMapMap — getMarkerSets, не путать
+
         Object markersRaw = markerSetGetMarkers.invoke(set);
         if (!(markersRaw instanceof Map)) return;
         @SuppressWarnings("unchecked")
@@ -229,7 +211,6 @@ public class BlueMapIntegration {
         String label = label(region);
         String detail = detail(region);
 
-        // Границы блоков: прямоугольник от угла до угла, высота — верхняя грань.
         Object shape = createRect.invoke(null,
                 (double) bounds.minX(), (double) bounds.minZ(),
                 (double) bounds.maxX() + 1, (double) bounds.maxZ() + 1);
@@ -279,7 +260,6 @@ public class BlueMapIntegration {
         return MapText.escapeHtml(name) + " [" + region.getShortId() + "]";
     }
 
-    /** Всплывающая подсказка маркера (BlueMap рендерит этот HTML). */
     private String detail(Region region) {
         RegionBounds b = region.getBounds();
         return "<div style=\"font-family:sans-serif;line-height:1.4\">"
@@ -294,7 +274,6 @@ public class BlueMapIntegration {
                 + "</div>";
     }
 
-    /** "#RRGGBB" → [r, g, b]; при неудаче — дефолтный голубой. */
     private int[] parseColor(String css) {
         if (css != null && css.matches("(?i)^#[0-9a-f]{6}$")) {
             return new int[]{

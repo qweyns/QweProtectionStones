@@ -11,12 +11,6 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Поиск ближайшего места, где приват выбранного типа встанет без наложений.
- *
- * <p>Иначе игрок ищет свободный участок перебором: ставит блок, получает отказ,
- * отходит, повторяет.</p>
- */
 public class FindSpotSubCommand extends AbstractRegionSubCommand {
 
     public FindSpotSubCommand(QweProtectStones plugin) {
@@ -67,11 +61,6 @@ public class FindSpotSubCommand extends AbstractRegionSubCommand {
                 "%type%", type.displayName()));
     }
 
-    /**
-     * Идём кольцами вокруг игрока: чем дальше кольцо, тем больше точек проверяем.
-     * Кандидаты берём с шагом в ширину привата, чтобы не проверять заведомо
-     * пересекающиеся позиции.
-     */
     private Location search(World world, Location from, RegionType type) {
         int step = stepFor(type);
         int y = from.getBlockY();
@@ -102,7 +91,6 @@ public class FindSpotSubCommand extends AbstractRegionSubCommand {
         return Math.max(1, Math.max(type.widthX(), type.widthZ()));
     }
 
-    /** Координаты клеток кольца вокруг центра (без внутренней части). */
     private List<int[]> ringOffsets(int ring) {
         List<int[]> offsets = new ArrayList<>();
         for (int dx = -ring; dx <= ring; dx++) {
@@ -116,7 +104,6 @@ public class FindSpotSubCommand extends AbstractRegionSubCommand {
     private RegionType resolveType(Player player, String[] args) {
         if (args.length > 0) return plugin.getRegionTypes().byId(args[0].toUpperCase(java.util.Locale.ROOT));
 
-        // Без аргумента берём тип блока в руке — обычно игрок как раз его и держит.
         RegionType inHand = plugin.getRegionTypes().byMaterial(player.getInventory().getItemInMainHand().getType());
         if (inHand != null) return inHand;
 

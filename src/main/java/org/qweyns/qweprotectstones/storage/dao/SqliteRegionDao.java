@@ -9,14 +9,12 @@ import java.sql.Statement;
 
 public class SqliteRegionDao extends AbstractSqlRegionDao {
 
-    /** Путь к базе, когда плагина нет (юнит-тесты). */
     private File testDbFile;
 
     public SqliteRegionDao(QweProtectStones plugin) {
         super(plugin);
     }
 
-    /** Вариант для интеграционных тестов: файл базы задаётся явно, плагина нет. */
     public SqliteRegionDao(File testDbFile) {
         super(null);
         this.testDbFile = testDbFile;
@@ -40,7 +38,7 @@ public class SqliteRegionDao extends AbstractSqlRegionDao {
         config.setJdbcUrl("jdbc:sqlite:" + dbFile.getAbsolutePath());
         config.setDriverClassName("org.sqlite.JDBC");
 
-        // SQLite не умеет параллельную запись: пул больше единицы даёт SQLITE_BUSY.
+        // sqlite не умеет параллельную запись, пул всегда 1
         config.setMaximumPoolSize(1);
         config.addDataSourceProperty("journal_mode", "WAL");
         config.addDataSourceProperty("synchronous", "NORMAL");

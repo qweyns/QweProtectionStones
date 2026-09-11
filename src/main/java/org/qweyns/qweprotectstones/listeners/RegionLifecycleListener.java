@@ -17,10 +17,6 @@ import org.qweyns.qweprotectstones.regions.RegionManager;
 import org.qweyns.qweprotectstones.regions.RegionType;
 import org.qweyns.qweprotectstones.regions.event.RegionDeleteEvent;
 
-/**
- * Рождение и смерть привата: установка блока-ядра создаёт приват, разрушение
- * ядра владельцем — удаляет. Заменяет собой PSCreateEvent/PSRemoveEvent.
- */
 public class RegionLifecycleListener implements Listener {
 
     private final QweProtectStones plugin;
@@ -34,39 +30,26 @@ public class RegionLifecycleListener implements Listener {
         plugin.getHologramManager().restoreHolograms();
     }
 
-    // ------------------------------------------------------------------
-    // Создание
-    // ------------------------------------------------------------------
-
-    /**
-     * Приоритет HIGH: даём другим плагинам защиты сначала отменить установку,
-     * и только потом создаём приват.
-     */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Block block = event.getBlockPlaced();
 
-        // Предмет с PDC-тегом типа (выдан /qps give или возвращён при поломке)
-        // создаёт приват именного типа, даже если по материалу он не опознан.
         RegionType tagged = taggedType(event.getItemInHand(), block);
         RegionType type = tagged != null ? tagged : plugin.getRegionTypes().byMaterial(block.getType());
         if (type == null) return;
 
-        // Ограниченный тип (restrict-obtaining: true) работает только
-        // предметом с тегом: добытый в мире блок того же материала
-        // остаётся обычным блоком, без создания привата.
+        // restrict-obtaining: без тега блок остаётся просто блоком
+
         if (type.restrictObtaining() && tagged == null) return;
 
         Player player = event.getPlayer();
 
-        // Shift позволяет поставить блок как обычную декорацию, без создания
-        // привата (sneak_places_plain_block у типа в regions.yml).
         if (player.isSneaking() && type.sneakPlacesPlainBlock()) {
             player.sendMessage(plugin.getLanguageManager().getMessage("region_placed_as_block"));
             return;
         }
 
-        // Ограничение частоты: иначе стаком блоков создаётся десяток приватов за секунду.
+        // рейт-лимит, стаком блоков плодятся приваты
         long wait = plugin.getRateLimiter().secondsRemaining(player);
         if (wait > 0) {
             event.setCancelled(true);
@@ -85,8 +68,8 @@ public class RegionLifecycleListener implements Listener {
         Location coreLocation = block.getLocation();
         plugin.getRateLimiter().markCreated(player);
 
-        // Прочность, сохранённая в предмете (перенос ядра на новое место),
-        // переносится на новый приват — с ограничением по максимуму типа.
+        // прочность из PDC предмета переносится, с потолком по типу
+
         int carriedDurability = taggedDurability(event.getItemInHand());
         if (carriedDurability > 0) {
             region.setDurability(Math.min(carriedDurability, region.getMaxDurability()));
@@ -115,14 +98,10 @@ public class RegionLifecycleListener implements Listener {
                     "%limit%", String.valueOf(result.limit())));
             case NO_PERMISSION -> player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
             case WORLD_DISABLED -> player.sendMessage(plugin.getLanguageManager().getMessage("region_world_disabled"));
-            case CANCELLED -> { /* другой плагин уже объяснил игроку причину */ }
-            default -> { /* успех сюда не попадает */ }
+            case CANCELLED -> {  }
+            default -> {  }
         }
     }
-
-    // ------------------------------------------------------------------
-    // Удаление
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -132,9 +111,8 @@ public class RegionLifecycleListener implements Listener {
 
         Player player = event.getPlayer();
 
-        // Ядро сносит только владелец: даже управляющий не должен удалять чужой приват.
-        // Владельцу дополнительно нужно право qweprotectstones.destroy — так можно
-        // продавать «приваты без удаления» или запретить снос ядра совсем.
+        // право destroy отдельно, можно продать приват без сноса
+
         boolean allowed = (region.isOwner(player.getUniqueId())
                 && player.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".destroy"))
                 || plugin.getProtectionService().bypasses(player);
@@ -159,7 +137,7 @@ public class RegionLifecycleListener implements Listener {
         if (type != null && !type.returnBlockOnRemove()) {
             event.setDropItems(false);
         } else if (type != null && player.getGameMode() != GameMode.CREATIVE) {
-            // Блок возвращаем сами, чтобы он не потерялся из-за настроек дропа.
+
             event.setDropItems(false);
             dropCore(block.getLocation(), type, region);
         }
@@ -167,11 +145,6 @@ public class RegionLifecycleListener implements Listener {
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
-    /**
-     * Сломанное ядро выпадает на пол, а не появляется в инвентаре — как
-     * обычный блок Minecraft. Теги и внешний вид предмета — по единой
-     * политике возврата (см. {@link org.qweyns.qweprotectstones.utils.RegionItems#returnCore}).
-     */
     private void dropCore(Location location, RegionType type, Region region) {
         org.bukkit.World world = location.getWorld();
         if (world == null) return;
@@ -180,18 +153,16 @@ public class RegionLifecycleListener implements Listener {
                 org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region));
     }
 
-    /** Тип из PDC-тега предмета; null, если тега нет или материал не совпадает. */
     private RegionType taggedType(ItemStack item, Block block) {
         String typeId = readTag(item, typeKey());
         if (typeId == null) return null;
 
         RegionType type = plugin.getRegionTypes().byId(typeId.toLowerCase(java.util.Locale.ROOT));
-        // Тег валиден только для совпадающего материала: иначе чужой предмет
-        // превращал бы любой блок в чужой тип привата.
+        // тег валиден только для своего материала
+
         return type != null && type.material() == block.getType() ? type : null;
     }
 
-    /** Прочность из PDC-тега предмета или 0. */
     private int taggedDurability(ItemStack item) {
         Integer value = getIntTag(item, durabilityKey());
         return value != null ? value : 0;
@@ -215,7 +186,6 @@ public class RegionLifecycleListener implements Listener {
         return org.qweyns.qweprotectstones.utils.RegionItems.durabilityKey(plugin);
     }
 
-    /** Общая уборка после удаления привата любым способом. */
     public void cleanupVisuals(Region region) {
         plugin.getHologramManager().removeHologram(region.getId());
         plugin.getVisualManager().showBoundary(region, "remove");

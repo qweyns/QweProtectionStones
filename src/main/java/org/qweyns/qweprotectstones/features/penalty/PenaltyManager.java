@@ -7,10 +7,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Штраф за недавнюю атаку: пока он висит, починка привата стоит дороже.
- * Срок берётся из settings.explosion_penalty_time (в секундах).
- */
 public class PenaltyManager {
 
     private final QweProtectStones plugin;
@@ -23,7 +19,6 @@ public class PenaltyManager {
         rebuild();
     }
 
-    /** Пересоздаёт кэш после смены настройки, сохраняя уже выданные штрафы. */
     public void rebuild() {
         long seconds = plugin.getConfigManager().getExplosionPenaltySeconds();
         if (activePenalties != null && seconds == durationSeconds) return;
@@ -50,7 +45,6 @@ public class PenaltyManager {
         if (regionId != null) activePenalties.invalidate(regionId);
     }
 
-    /** Сколько приватов сейчас под штрафом прочности — для /qps stats. */
     public int activeCount() {
         return activePenalties == null ? 0 : activePenalties.asMap().size();
     }

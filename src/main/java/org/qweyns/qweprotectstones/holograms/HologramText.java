@@ -4,7 +4,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionType;
 
-/** Подстановка данных привата в строки голограммы. */
 final class HologramText {
 
     private HologramText() {
@@ -16,8 +15,7 @@ final class HologramText {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
 
         return line.replace("%player%", region.getOwnerName())
-                // Название типа (display_name из regions.yml): чтобы не
-                // вписывать его дважды — и в display_name, и в строки голограммы.
+
                 .replace("%type%", type == null ? region.getTypeId() : type.displayName())
                 .replace("%owner%", region.getOwnerName())
                 .replace("%name%", region.getLabel())

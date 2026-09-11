@@ -10,11 +10,6 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Тесты разбора выгрузки JSON: формат распознаётся, мусор отклоняется.
- * Полный цикл с реестром приватов требует сервера — здесь проверяем часть,
- * которая работает без него.
- */
 class RegionRestorerTest {
 
     @TempDir
@@ -28,7 +23,7 @@ class RegionRestorerTest {
 
     @Test
     void emptyExportRestoresNothing() throws IOException {
-        // plugin не нужен: регионы отсутствуют, до реестра дело не доходит.
+
         RegionRestorer restorer = new RegionRestorer(null);
         RegionRestorer.Result result = restorer.restore(file(
                 "{\n  \"exported_at\": \"2026-01-01_00-00-00\",\n  \"regions\": []\n}\n"));

@@ -28,15 +28,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Административная команда с фиксированным именем плагина (/qweprotectstones).
- * Отделена от игровой /ps: у игроков и у администрации разные задачи, разные
- * права и разный автокомплит.
- *
- * <p>Права на действия настраиваются: база — {@code admin.permission-prefix},
- * право действия — {@code <префикс>.<действие>}; если
- * {@code admin.require-per-action} равно true, общего права уже недостаточно.</p>
- */
 public class AdminCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ACTIONS = List.of(
@@ -45,14 +36,12 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust",
             "import", "restore", "backup", "debug", "help");
 
-    /** Действия, которым вторым аргументом идёт id привата (или ничего — тогда приват, где стоит админ). */
     private static final Set<String> REGION_ACTIONS = Set.of(
             "info", "delete", "setdurability", "setmax", "settype", "setbounds", "tp",
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust");
 
     private final QweProtectStones plugin;
 
-    /** Момент регистрации команды ≈ момент запуска плагина: для аптайма в /qps debug. */
     private final long enabledAt = System.currentTimeMillis();
 
     public AdminCommand(QweProtectStones plugin) {
@@ -113,15 +102,10 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    /** Право конкретного действия: <префикс>.<действие>. */
     private String permissionNode(String action) {
         return plugin.getConfigManager().getAdminPermissionPrefix() + "." + action;
     }
 
-    /**
-     * Пускает, если есть право действия; либо есть общее право и конфиг не требует
-     * отдельные права на каждое действие.
-     */
     private boolean allowed(CommandSender sender, String action) {
         if (sender.hasPermission(permissionNode(action))) return true;
         return sender.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix())
@@ -136,7 +120,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%player_command%", plugin.getConfigManager().getCommandName()));
     }
 
-    /** Номер страницы справки из аргументов; мусор трактуется как первая. */
     private static int parseHelpPage(String[] args) {
         if (args.length < 2) return 1;
         try {
@@ -146,10 +129,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    /**
-     * Постраничная справка по административным командам. Фильтруется по
-     * правам действий (require-per-action), оформление — в lang-файле.
-     */
     private void sendHelp(CommandSender sender, String label, int requestedPage) {
         var lm = plugin.getLanguageManager();
 
@@ -176,8 +155,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         if (total > 1) {
-            // Кнопки берутся raw-строкой: подстановки в footer выполняются
-            // до разбора MiniMessage, поэтому <click> внутри кнопок работает.
+            // кнопки сырой строкой, подстановки идут до MM-разбора
+
             String prev = page > 1
                     ? lm.rawTemplate("help_button_prev", "%command%", label, "%page%", String.valueOf(page - 1))
                     : "";
@@ -226,7 +205,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%members%", String.valueOf(region.getMemberCount()),
                 "%durability%", region.getDurability() + "/" + region.getMaxDurability()));
 
-        // Статистика осад: сколько раз атаковали, когда и кто последним.
         String lastAttack = region.getLastAttackAt() == 0
                 ? plugin.getLanguageManager().rawTemplate("admin_never")
                 : new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm").format(new java.util.Date(region.getLastAttackAt()));
@@ -241,7 +219,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                         .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm")));
     }
 
-    /** Выгрузка в JSON выполняется асинхронно: файл может быть большим. */
     private void export(CommandSender sender) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_export_started"));
 
@@ -258,11 +235,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         });
     }
 
-    /** Ручной запуск очистки заброшенных приватов, не дожидаясь расписания. */
-    /**
-     * Журналирование административного действия: запись в журнал региона
-     * (виден через /ps log с пометкой «админ») и в файл критических операций.
-     */
     private void auditLog(Region region, CommandSender sender, String action, String detail) {
         String actor = sender.getName();
         if (region != null) {
@@ -327,11 +299,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%flush%", flushAgo));
     }
 
-    // ------------------------------------------------------------------
-    // Выдача и правка приватов
-    // ------------------------------------------------------------------
-
-    /** /qps give <игрок> <тип> [количество] — выдать блок-ядро, из которого ставится приват. */
     private void give(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_give_usage"));
@@ -366,10 +333,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // Не помещается в инвентарь — выпадает на землю, а не пропадает.
-        // Пред предмета (имя, описание, свечение — секция item в regions.yml),
-        // а для ограниченных типов — ещё и PDC-тег, без которого блок
-        // не создаст приват.
+        // не влезло — падает на землю
+
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
         ItemStack core = org.qweyns.qweprotectstones.utils.RegionItems.core(
                 plugin, type, amount, null, tags || type.restrictObtaining(), true);
@@ -385,7 +350,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%type%", type.displayName(), "%amount%", String.valueOf(amount)));
     }
 
-    /** /qps setdurability <id> <прочность> — актуальная прочность ядра. */
     private void setDurability(CommandSender sender, Player player, String[] args) {
         int value = parseInt(sender, args, 2);
         if (value < 0) return;
@@ -400,7 +364,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
 
-    /** /qps setmax <id> <максимум> — потолок прочности (после правки типа/config тоже пересчитывается). */
     private void setMaxDurability(CommandSender sender, Player player, String[] args) {
         int value = parseInt(sender, args, 2);
         if (value < 1) {
@@ -419,7 +382,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
 
-    /** /qps settype <id> <тип> — сменить тип: границы, блок ядра, потолок прочности. */
     private void setType(CommandSender sender, Player player, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_settype_usage"));
@@ -446,7 +408,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         region.setMaxDurability(type.maxDurability());
         region.setDurability(Math.min(region.getDurability(), type.maxDurability()));
 
-        // Заменяем блок ядра на материал нового типа, если мир загружен.
         org.bukkit.World world = region.getWorld();
         if (world != null) {
             world.getBlockAt(region.getCoreX(), region.getCoreY(), region.getCoreZ()).setType(type.material());
@@ -464,7 +425,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%size%", type.widthX() + "x" + type.widthZ()));
     }
 
-    /** /qps setbounds <id> <minX> <minY> <minZ> <maxX> <maxY> <maxZ> — границы вручную. */
     private void setBounds(CommandSender sender, Player player, String[] args) {
         if (args.length < 8) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_setbounds_usage"));
@@ -504,7 +464,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%size%", region.getBounds().sizeX() + "x" + region.getBounds().sizeZ()));
     }
 
-    /** /qps tp <id> — телепорт к ядру привата. */
     private void teleport(CommandSender sender, Player player, String[] args) {
         if (player == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("players_only"));
@@ -529,7 +488,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%owner%", region.getOwnerName()));
     }
 
-    /** /qps flag <id> <флаг> <true|false|reset> — те же значения, что у игроков, но без проверки доверия. */
     private void flag(CommandSender sender, Player player, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_flag_usage"));
@@ -571,10 +529,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%flag%", flag.key(), "%value%", args[3]));
     }
 
-    /**
-     * /qps transfer <id> <игрок> — прежний владелец остаётся управляющим (как у игроков).
-     * /qps setowner <id> <игрок> — полная смена владельца, прежний теряет доступ.
-     */
     private void transfer(CommandSender sender, Player player, String[] args, boolean forgetPrevious) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
@@ -617,7 +571,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%new%", target.getName()));
     }
 
-    /** /qps ban|unban <id> <игрок> — чёрный список привата от имени администрации. */
     private void ban(CommandSender sender, Player player, String[] args, boolean add) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
@@ -662,7 +615,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%id%", region.getShortId(), "%player%", targetName));
     }
 
-    /** /qps members <id> — владелец, участники с уровнями и чёрный список. */
     private void members(CommandSender sender, Player player, String[] args) {
         Region region = resolveRegionWithMessage(sender, player, args);
         if (region == null) return;
@@ -686,7 +638,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    /** /qps trust|untrust <id> <игрок> [уровень] — выдача/отзыв доступа от имени администрации. */
     private void trust(CommandSender sender, Player player, String[] args, boolean grant) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
@@ -748,17 +699,11 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%level%", plugin.getLanguageManager().rawTemplate("trust_build")));
     }
 
-    /** /qps backup — ручной прогон автобэкапа: выгрузка + ротация. */
     private void backup(CommandSender sender) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_backup_started"));
         plugin.getBackupTask().run();
     }
 
-    /**
-     * /qps restore <файл> — восстановление приватов из JSON-выгрузки
-     * (ручной export или автобэкап из exports/). Существующие id и
-     * пересечения пропускаются, поэтому команду можно перезапускать.
-     */
     private void restore(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_usage"));
@@ -775,7 +720,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // Только имя файла: путь с ../ не должен покидать папку exports.
+        // только имя файла, чтобы ../ не вышел за пределы exports
         String fileName = args[1].replace("..", "").replace('/', '_').replace('\\', '_');
         File file = new File(new File(plugin.getDataFolder(), "exports"), fileName);
         if (!file.isFile()) {
@@ -785,7 +730,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_started", "%file%", fileName));
 
-        // Файл может быть большим — читаем и разбираем вне основного потока.
+        // парсим вне основного потока
         plugin.getSchedulers().runAsync(() -> {
             var restorer = new org.qweyns.qweprotectstones.features.importer.RegionRestorer(plugin);
             org.qweyns.qweprotectstones.features.importer.RegionRestorer.Result result;
@@ -810,7 +755,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         });
     }
 
-    /** /qps debug — состояние подсистем: хранилище, интеграции, среда выполнения. */
     private void debug(CommandSender sender) {
         long uptimeMinutes = (System.currentTimeMillis() - enabledAt) / 60_000L;
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_debug_header",
@@ -839,7 +783,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%memory%", (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024 + "/" + rt.maxMemory() / 1024 / 1024 + " MB",
                 "%threads%", String.valueOf(Thread.activeCount())));
 
-        // Подробный режим: регионы по типам — удобно ловить «раздутые» типы.
         if (plugin.getConfigManager().getConfig().getBoolean("debug.verbose", false)) {
             for (RegionType type : plugin.getRegionTypes().all()) {
                 int count = 0;
@@ -856,11 +799,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         return value ? "+" : "-";
     }
 
-    // ------------------------------------------------------------------
-    // Импорт из чужих плагинов
-    // ------------------------------------------------------------------
-
-    /** /qps import <worldguard|protectionstones|griefprevention> — перенос чужих приватов. */
     private void importRegions(CommandSender sender, String[] args) {
         String source = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
         org.qweyns.qweprotectstones.features.importer.RegionImporter importer =
@@ -885,17 +823,11 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 "%errors%", String.valueOf(result.errors())));
     }
 
-    // ------------------------------------------------------------------
-    // Вспомогательные
-    // ------------------------------------------------------------------
-
-    /** Приват по короткому id из аргумента, иначе — тот, в котором стоит администратор. */
     private Region resolveRegion(Player player, String[] args) {
         if (args.length > 1) return plugin.getRegionManager().getByShortId(args[1]);
         return player == null ? null : plugin.getRegionManager().getRegionAt(player.getLocation());
     }
 
-    /** Как {@link #resolveRegion}, но с готовым сообщением «не найден». */
     private Region resolveRegionWithMessage(CommandSender sender, Player player, String[] args) {
         Region region = resolveRegion(player, args);
         if (region == null) {
@@ -913,7 +845,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         return cached != null && cached.getUniqueId() != null ? cached : null;
     }
 
-    /** Число из args[index] или -1 с сообщением об ошибке (для неотрицательных значений). */
     private int parseInt(CommandSender sender, String[] args, int index) {
         if (args.length <= index) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_bad_number", "%value%", "-"));
@@ -949,8 +880,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return filter(ids, args[1]);
         }
 
-        // give: <игрок> <тип> [кол-во]. Остальные действия с игроком
-        // (transfer, setowner, ban, trust…) сначала требуют id привата.
         if (args.length == 2 && action.equals("give")) {
             return filter(onlineNames(), args[1]);
         }
@@ -977,7 +906,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return filter(names, args[2]);
         }
 
-        // <id> <ник> — у всех действий, где после привата идёт игрок.
         if (args.length == 3 && (action.equals("transfer") || action.equals("setowner")
                 || action.equals("ban") || action.equals("unban")
                 || action.equals("trust") || action.equals("untrust"))) {
@@ -988,14 +916,12 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("true", "false", "reset"), args[3]);
         }
 
-        // trust <id> <ник> [уровень] — уровень выдачи.
         if (args.length == 4 && action.equals("trust")) {
             List<String> levels = new ArrayList<>();
             for (TrustLevel level : TrustLevel.grantable()) levels.add(level.key());
             return filter(levels, args[3]);
         }
 
-        // give <игрок> <тип> [кол-во] — потолок выдачи из config.yml.
         if (args.length == 4 && action.equals("give")) {
             return filter(List.of(String.valueOf(plugin.getConfigManager().getConfig()
                     .getInt("admin.give.max-amount", 64))), args[3]);
@@ -1004,7 +930,6 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         return List.of();
     }
 
-    /** Ники игроков онлайн — универсальная подсказка для аргумента-игрока. */
     private List<String> onlineNames() {
         List<String> names = new ArrayList<>();
         for (Player online : Bukkit.getOnlinePlayers()) names.add(online.getName());

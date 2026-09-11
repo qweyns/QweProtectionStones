@@ -12,20 +12,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 
-/**
- * Файловый журнал критических операций: удаления приватов, смены владельца,
- * сделки рынка и административные правки.
- *
- * <p>Журнал в базе ({@code /ps log}) привязан к региону и живёт вместе с ним,
- * поэтому на случай «приват исчез, а записи уже недоступны» дублируем самое
- * важное в обычный текстовый файл. Он переживает любые проблем с базой и
- * читается любым редактором.</p>
- *
- * <p>Настройки — блок {@code settings.critical_log} в config.yml: включение,
- * имя файла, порог ротации. Запись идёт асинхронно, чтобы ввод-вывод не
- * останавливал основной поток. При превышении размера текущий файл
- * переименовывается в {@code .old} — хранится одна предыдущая копия.</p>
- */
 public final class CriticalFileLogger {
 
     private final QweProtectStones plugin;
@@ -54,7 +40,6 @@ public final class CriticalFileLogger {
         return (long) mb * 1024 * 1024;
     }
 
-    /** Асинхронно добавить запись о событии. */
     public void log(String event, String detail) {
         if (!isEnabled()) return;
 

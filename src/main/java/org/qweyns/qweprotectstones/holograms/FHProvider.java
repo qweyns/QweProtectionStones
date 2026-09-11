@@ -20,13 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Голограммы через FancyHolograms.
- *
- * <p>Провайдер отдаёт всё, что умеет TextDisplay: подложку, выравнивание,
- * прозрачность для блоков, тень, яркость, смещение и интерполяцию. Раньше из
- * этого настраивались только тень, масштаб и billboard.</p>
- */
 public class FHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
@@ -36,7 +29,6 @@ public class FHProvider implements IHologramProvider {
         this.plugin = plugin;
     }
 
-    /** FancyHolograms может быть выключен раньше нас при остановке сервера. */
     private Optional<de.oliver.fancyholograms.api.HologramManager> manager() {
         if (!FancyHologramsPlugin.isEnabled()) return Optional.empty();
 
@@ -68,8 +60,8 @@ public class FHProvider implements IHologramProvider {
         textData.setText(buildLines(region, typeId, config));
         textData.setLocation(hologramLoc);
 
-        // Без этого FancyHolograms сохранит наши голограммы в свой holograms.yml,
-        // и после рестарта они останутся висеть дубликатами.
+        // иначе FH сохранит их в свой файл и повиснут дубли
+
         textData.setPersistent(false);
 
         applyTextSettings(textData, typeId, config);
@@ -82,9 +74,8 @@ public class FHProvider implements IHologramProvider {
     }
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {
-        // Голограмма целиком состоит из hologram_lines (или _under_attack):
-        // display_name автоматически не подставляется — заголовок, если
-        // нужен, задаётся строкой с плейсхолдером %type%.
+        // заголовок задаётся строкой с %type%, display_name не подставляется
+
         List<String> lines = new ArrayList<>();
         for (String line : config.getHologramLines(typeId, plugin.isUnderSiege(region))) {
             lines.add(HologramText.apply(plugin, line, region));
@@ -98,7 +89,6 @@ public class FHProvider implements IHologramProvider {
         textData.setTextUpdateInterval(config.getHologramUpdateInterval(typeId));
         textData.setTextAlignment(parseAlignment(config.getHologramAlignment(typeId)));
 
-        // Пустая строка означает «без подложки» — FancyHolograms принимает null.
         String background = config.getHologramBackground(typeId);
         textData.setBackground(background.isBlank() ? null : ColorUtil.parseParticleColor(background));
     }
@@ -122,7 +112,6 @@ public class FHProvider implements IHologramProvider {
         applyBrightness(textData, typeId, config);
     }
 
-    /** Отрицательные значения означают «брать освещение сцены», как в ваниле. */
     private void applyBrightness(TextHologramData textData, String typeId, ConfigManager config) {
         int block = config.getHologramBlockLight(typeId);
         int sky = config.getHologramSkyLight(typeId);

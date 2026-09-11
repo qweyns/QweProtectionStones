@@ -24,19 +24,13 @@ import org.qweyns.qweprotectstones.config.Tunables;
 
 import java.util.Set;
 
-/**
- * Взаимодействие с блоками и сущностями. Уровень доступа подбирается по смыслу
- * действия: двери — ACCESS, сундуки — CONTAINER, всё разрушающее — BUILD.
- */
 public class InteractProtectionListener implements Listener {
 
-    /** Блоки, которые меняют мир и потому требуют полноценных прав строительства. */
     private static final Set<Material> BUILD_LEVEL_BLOCKS = Set.of(
             Material.FARMLAND, Material.TURTLE_EGG, Material.SNIFFER_EGG,
             Material.RESPAWN_ANCHOR, Material.CAKE, Material.DRAGON_EGG,
             Material.SPAWNER, Material.JUKEBOX, Material.COMPOSTER);
 
-    /** Предметы, применение которых по блоку изменяет мир. */
     private static final Set<Material> BUILD_LEVEL_ITEMS = Set.of(
             Material.FLINT_AND_STEEL, Material.FIRE_CHARGE, Material.BONE_MEAL,
             Material.ARMOR_STAND, Material.END_CRYSTAL, Material.ITEM_FRAME,
@@ -62,23 +56,21 @@ public class InteractProtectionListener implements Listener {
         Region region = protection.regionAt(block.getLocation());
         if (region == null) return;
 
-        // Клик по ядру — это открытие меню, его разбирает RegionInteractListener.
+        // клик по ядру разбирает InteractListener
         if (region.isCore(block.getLocation()) && event.getAction() == Action.RIGHT_CLICK_BLOCK) return;
 
         TrustLevel required = protection.requiredFor(requiredActionFor(block, event));
         if (protection.has(region, event.getPlayer(), required)) return;
 
-        // Нажатие на нажимную плиту не должно спамить сообщением об отказе.
         if (event.getAction() != Action.PHYSICAL) protection.notifyDenied(event.getPlayer(), region);
         event.setCancelled(true);
     }
 
-    /** Что это за действие по смыслу — конкретный уровень доступа подставит ProtectionService. */
     private Tunables.TrustAction requiredActionFor(Block block, PlayerInteractEvent event) {
         Material type = block.getType();
 
         if (event.getAction() == Action.PHYSICAL) {
-            // Наступание на грядки и нажимные плиты.
+
             return type == Material.FARMLAND ? Tunables.TrustAction.BUILD : Tunables.TrustAction.INTERACT;
         }
 
@@ -88,7 +80,7 @@ public class InteractProtectionListener implements Listener {
         if (isContainer(block)) return Tunables.TrustAction.CONTAINER;
         if (isSimpleAccess(type)) return Tunables.TrustAction.INTERACT;
 
-        // Всё незнакомое считаем требующим доступа к содержимому — безопасный вариант по умолчанию.
+        // незнакомое = нужен доступ, безопасный дефолт
         return Tunables.TrustAction.CONTAINER;
     }
 
@@ -110,10 +102,6 @@ public class InteractProtectionListener implements Listener {
                 || type == Material.NOTE_BLOCK
                 || type == Material.LECTERN;
     }
-
-    // ------------------------------------------------------------------
-    // Сущности
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
@@ -154,10 +142,6 @@ public class InteractProtectionListener implements Listener {
             event.setCancelled(true);
         }
     }
-
-    // ------------------------------------------------------------------
-    // Вёдра
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBucketEmpty(PlayerBucketEmptyEvent event) {

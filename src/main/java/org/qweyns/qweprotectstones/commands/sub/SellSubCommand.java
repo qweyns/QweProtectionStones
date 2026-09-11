@@ -10,12 +10,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Рынок: {@code /ps sell <цена>} выставляет приват на продажу,
- * {@code /ps buy} покупает тот, в котором стоит игрок.
- *
- * <p>Лимиты и комиссия — в секции {@code market.sell} config.yml.</p>
- */
 public class SellSubCommand extends AbstractRegionSubCommand implements SubCommand {
 
     public enum Mode {
@@ -161,7 +155,6 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         return Math.max(1.0, plugin.getConfigManager().getConfig().getDouble("market.sell.max-price", 1_000_000.0));
     }
 
-    /** Красивое число: без хвоста «.0» у целых цен. */
     static String money(double value) {
         if (value == Math.floor(value) && !Double.isInfinite(value)) return String.valueOf((long) value);
         return String.format(Locale.ROOT, "%.2f", value);
@@ -170,7 +163,7 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
         if (mode == Mode.SELL && args.length == 1) {
-            // off — снять с продажи; число — потолок цены из market.sell.
+
             return filter(List.of("off", String.valueOf(plugin.getConfigManager().getConfig()
                     .getInt("market.sell.max-price", 1000000))), args[0]);
         }

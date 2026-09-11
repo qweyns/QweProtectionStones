@@ -15,14 +15,6 @@ import org.qweyns.qweprotectstones.config.Tunables;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionFlag;
 
-/**
- * Трюки через границу привата: ледоход, костная мука и удочка.
- *
- * <p>Общее у всех трёх: действие начинается на «своей» территории (или вне
- * привата), а его эффект попадает в чужой регион — поэтому обычные проверки
- * блока под рукой их не ловят. Каждая защита включается отдельно в секции
- * {@code protection.border} config.yml.</p>
- */
 public class BorderProtectionListener implements Listener {
 
     private final QweProtectStones plugin;
@@ -33,17 +25,6 @@ public class BorderProtectionListener implements Listener {
         this.protection = plugin.getProtectionService();
     }
 
-    // ------------------------------------------------------------------
-    // Ледоход и следы мобов
-    // ------------------------------------------------------------------
-
-    /**
-     * Ледоход замораживает воду в чужом привате, снежный голем заметает его
-     * снегом. Внимание: {@link EntityBlockFormEvent} наследует
-     * {@code BlockFormEvent}, поэтому листенер флага ICE_AND_SNOW в
-     * {@code BlockProtectionListener} тоже получает эти события — правила не
-     * конфликтуют: там решает флаг, здесь — доверие.
-     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityBlockForm(EntityBlockFormEvent event) {
         Region region = protection.regionAt(event.getBlock().getLocation());
@@ -52,7 +33,6 @@ public class BorderProtectionListener implements Listener {
         if (event.getEntity() instanceof Player player) {
             if (!plugin.getTunables().borderFrostWalker()) return;
 
-            // Ледоход — строительное действие: лёд остаётся в чужом привате.
             if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
                 protection.notifyDenied(player, region);
                 event.setCancelled(true);
@@ -60,35 +40,21 @@ public class BorderProtectionListener implements Listener {
             return;
         }
 
-        // Следы мобов (снег голема): подчиняются флагу MOB_GRIEFING.
-        // Отдельный переключатель позволяет оставить прежнее поведение,
-        // когда снег внутри привата решал только флаг ICE_AND_SNOW.
         if (!plugin.getTunables().borderMobTrails()) return;
         if (!protection.flag(region, RegionFlag.MOB_GRIEFING)) event.setCancelled(true);
     }
 
-    // ------------------------------------------------------------------
-    // Костная мука
-    // ------------------------------------------------------------------
-
-    /**
-     * Мука, внесённая снаружи, заставляет растения «прорастать» в чужой
-     * приват. Прямое нажатие мукой по блоку привата уже закрыто обычной
-     * проверкой взаимодействия (BONE_MEAL — предмет уровня BUILD); здесь
-     * ловится только рост через границу.
-     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockFertilize(BlockFertilizeEvent event) {
         if (!plugin.getTunables().borderBonemeal()) return;
 
         Player player = event.getPlayer();
-        if (player == null) return; // диспенсер — не игрок, доверие проверить не к кому
+        if (player == null) return;
 
         Region origin = protection.regionAt(event.getBlock().getLocation());
         for (BlockState state : event.getBlocks()) {
             Region region = protection.regionAt(state.getLocation());
-            // Блоки вне привата и тот же приват, где внесена мука, не считаются:
-            // внутри своего привата игрок уже прошёл все проверки.
+
             if (region == null || region.equals(origin)) continue;
 
             if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
@@ -99,15 +65,6 @@ public class BorderProtectionListener implements Listener {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Удочка
-    // ------------------------------------------------------------------
-
-    /**
-     * Крючок перелетает границу и вытаскивает оттуда мобов, вагонетки и
-     * выпавшие предметы. Правила те же, что для рук: живности — уровень
-     * ENTITY, предметы — INTERACT + флаг ITEM_PICKUP.
-     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerFish(PlayerFishEvent event) {
         if (!plugin.getTunables().borderFishing()) return;

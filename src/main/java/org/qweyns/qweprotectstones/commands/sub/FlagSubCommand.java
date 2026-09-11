@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Locale;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 
-/** Просмотр и изменение флагов привата. */
 public class FlagSubCommand extends AbstractRegionSubCommand {
 
     public FlagSubCommand(QweProtectStones plugin) {
@@ -91,10 +90,6 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
                 "%flag%", flag.key(), "%value%", localizedValue(parsed)));
     }
 
-    /**
-     * Флаг доступен игроку, если он вообще предназначен для игроков и не закрыт
-     * администрацией через {@code flags.locked}. Админ обходит оба ограничения.
-     */
     private boolean isEditable(RegionFlag flag, boolean admin) {
         if (admin) return true;
         return flag.playerEditable() && !plugin.getTunables().isFlagLocked(flag);

@@ -33,15 +33,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Главная команда плагина. Имя и алиасы берутся из config.yml, поэтому команда
- * не объявлена в plugin.yml, а регистрируется через {@link CommandRegistrar}.
- */
 public class RegionCommand extends Command {
 
     private final QweProtectStones plugin;
 
-    /** Порядок важен: в таком же виде выводится справка. */
     private final Map<String, SubCommand> subCommands = new LinkedHashMap<>();
     private final List<SubCommand> ordered = new ArrayList<>();
 
@@ -50,7 +45,7 @@ public class RegionCommand extends Command {
         this.plugin = plugin;
 
         setAliases(aliases);
-        // Описание видно в списке команд клиента — берём из lang-файла.
+
         setDescription(plugin.getLanguageManager().getRawMessage("command_description"));
         setUsage("/" + name + " help");
 
@@ -137,7 +132,6 @@ public class RegionCommand extends Command {
         return true;
     }
 
-    /** Команда без аргументов открывает меню привата, в котором стоит игрок. */
     private void openDefault(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("players_only"));
@@ -153,11 +147,6 @@ public class RegionCommand extends Command {
         plugin.getMenuManager().openMenu(player, plugin.getMenuManager().defaultMenuFor(region), region);
     }
 
-    /**
-     * Постраничная справка: игрок видит только команды, на которые у него есть
-     * право. Оформление (шапка, строки, кнопки перелистывания) — в lang-файле,
-     * здесь только нарезка по страницам.
-     */
     private void sendHelp(CommandSender sender, String label, int requestedPage) {
         var lm = plugin.getLanguageManager();
 
@@ -180,15 +169,14 @@ public class RegionCommand extends Command {
             sender.sendMessage(lm.getMessage("help_line",
                     "%command%", label,
                     "%sub%", sub.name(),
-                    // Описание — сырой MiniMessage, а не legacy: getRawMessage сериализует
-            // в §x-hex, который внутри шаблона ломается в чёрно-зелёные цвета.
+                    // сырой MiniMessage: getRawMessage отдаёт §x-legacy и ломает цвета в шаблоне
+
             "%description%", lm.rawTemplate(sub.helpKey())));
         }
 
-        // Кнопки перелистывания — только когда страниц больше одной.
         if (total > 1) {
-            // Кнопки берутся raw-строкой: подстановки в footer выполняются
-            // до разбора MiniMessage, поэтому <click> внутри кнопок работает.
+            // кнопки сырой строкой, подстановки идут до MM-разбора
+
             String prev = page > 1
                     ? lm.rawTemplate("help_button_prev", "%command%", label, "%page%", String.valueOf(page - 1))
                     : "";
@@ -201,7 +189,6 @@ public class RegionCommand extends Command {
         }
     }
 
-    /** Номер страницы из аргументов команды; мусор трактуется как первая. */
     private static int parsePage(String[] args) {
         if (args.length < 2) return 1;
         try {
@@ -211,7 +198,6 @@ public class RegionCommand extends Command {
         }
     }
 
-    /** Сколько страниц справки доступно отправителю (для Tab-подсказки). */
     private int helpPages(CommandSender sender) {
         int visible = 0;
         for (SubCommand sub : ordered) {
@@ -237,7 +223,6 @@ public class RegionCommand extends Command {
             return result;
         }
 
-        // /ps help <страница> — подсказываем номера доступных страниц.
         String key = args[0].toLowerCase(Locale.ROOT);
         if ((key.equals("help") || key.equals("?")) && args.length == 2) {
             List<String> pages = new ArrayList<>();

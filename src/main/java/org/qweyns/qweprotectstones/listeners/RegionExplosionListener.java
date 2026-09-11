@@ -29,18 +29,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Механика осад: взрывы не ломают постройки внутри привата, но снимают прочность
- * с ядра. Когда прочность заканчивается — приват падает.
- */
 public class RegionExplosionListener implements Listener {
 
     private final QweProtectStones plugin;
 
-    /** Приваты, для которых уже запланирован снос, — защита от двойного срабатывания. */
     private final Set<UUID> processingRemoval = ConcurrentHashMap.newKeySet();
 
-    /** Кулдаун урона: без него стак ТНТ сносил бы приват за один тик. */
     private final Cache<UUID, Long> lastDamageTime = CacheBuilder.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build();
@@ -60,7 +54,7 @@ public class RegionExplosionListener implements Listener {
     }
 
     private String classify(EntityType type) {
-        // Остальное (сам ТНТ, вагонетка с ТНТ, гаст) считаем обычным взрывом.
+
         return switch (type) {
             case WITHER, WITHER_SKULL -> "WITHER";
             case CREEPER -> "CREEPER";
@@ -75,22 +69,21 @@ public class RegionExplosionListener implements Listener {
 
         Set<Region> affected = new HashSet<>();
 
-        // Один проход по списку блоков: индекс отвечает за O(1), поэтому
-        // радиусы больше не нужны — мы точно знаем, что реально задето взрывом.
+        // один проход, индекс даёт O(1), радиусы не нужны
+
         blockList.removeIf(block -> {
             Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
             if (region == null) return false;
 
             affected.add(region);
-            if (region.isCore(block.getLocation())) return true; // ядро сносится только по прочности
+            if (region.isCore(block.getLocation())) return true;
             return !plugin.getProtectionService().flag(region, RegionFlag.EXPLOSION_DAMAGE);
         });
 
         if (affected.isEmpty()) return;
 
-        // Мастер-выключатель осад (siege.enabled в siege.yml): блоки внутри
-        // привата по-прежнему защищены флагом EXPLOSION_DAMAGE, но прочность
-        // ядра взрывы не снимают и атака не засчитывается.
+        // осады выключены, прочность не снимаем, блоки по-прежнему под флагом
+
         if (!plugin.getConfigManager().isSiegeEnabled()) return;
 
         List<Region> damaged = new ArrayList<>();
@@ -105,8 +98,8 @@ public class RegionExplosionListener implements Listener {
             Location core = region.getCoreLocation();
             if (core == null) continue;
 
-            // Прочность снимается только если рвануло рядом с самим ядром,
-            // а не на дальнем краю большой территории.
+            // прочность только если рвануло у самого ядра
+
             double radius = explosionRadiusFor(region);
             if (core.distanceSquared(center) <= radius * radius) {
                 damageRegion(region, explosionType);
@@ -114,7 +107,6 @@ public class RegionExplosionListener implements Listener {
         }
     }
 
-    /** Радиус берётся у типа привата, а если он его не задаёт — из общей настройки. */
     private double explosionRadiusFor(Region region) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         return type != null && type.overridesExplosionRadius()
@@ -126,7 +118,7 @@ public class RegionExplosionListener implements Listener {
         if (processingRemoval.contains(region.getId())) return;
 
         RegionType regionType = plugin.getRegionTypes().byId(region.getTypeId());
-        // Тип может быть объявлен неуязвимым для рейдов — тогда прочность не трогаем.
+
         if (regionType != null && regionType.raidImmune()) return;
 
         long cooldownTicks = regionType != null && regionType.overridesDamageCooldown()
@@ -156,8 +148,8 @@ public class RegionExplosionListener implements Listener {
             region.setDurability(region.getDurability() - event.getDamage());
             plugin.getRegionStorage().save(region);
 
-            // Сообщение об атаке — после списания прочности: %durability%
-            // показывает актуальное значение, а не «до удара».
+            // алерт после списания, %durability% уже актуальный
+
             plugin.getNotificationManager().sendAttackAlert(region, owner, core);
             plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
             plugin.getVisualManager().playEffect(core, region.getTypeId(), "damage");
@@ -166,18 +158,15 @@ public class RegionExplosionListener implements Listener {
             return;
         }
 
-        // Ядро добито: сообщение о разрушении (внутри destroyRegion) уже
-        // сообщает всем доверенным, отдельное «приват атакован» не нужно.
         plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
         alertNeighbours(region, core);
 
         destroyRegion(region, core);
     }
 
-    /** Кто ближе всех к взрыву — тот и записывается нападавшим. */
     private String attackerNameNear(Location core) {
-        // Мир мог выгрузиться между поджиганием ТНТ и взрывом — тогда искать
-        // нападавшего некому (и core.getWorld() стал бы null).
+        // мир мог выгрузиться между поджигом и взрывом
+
         if (core == null || core.getWorld() == null) return "";
 
         double radius = plugin.getConfigManager().getExplosionDamageRadius() + 16.0;
@@ -194,7 +183,6 @@ public class RegionExplosionListener implements Listener {
         return best;
     }
 
-    /** Соседям слышно, что рядом идёт рейд: это часть атмосферы осады. */
     private void alertNeighbours(Region region, Location core) {
         int radius = plugin.getConfigManager().getConfig().getInt("siege.neighbour_alert_radius", 0);
         if (radius <= 0 || core.getWorld() == null) return;
@@ -208,7 +196,6 @@ public class RegionExplosionListener implements Listener {
         }
     }
 
-    /** Прочность кончилась: приват уничтожен рейдом. */
     private void destroyRegion(Region region, Location core) {
         processingRemoval.add(region.getId());
 

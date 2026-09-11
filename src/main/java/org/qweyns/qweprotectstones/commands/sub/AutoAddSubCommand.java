@@ -6,14 +6,10 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 
 import java.util.List;
 
-/**
- * Список друзей, которых плагин автоматически вписывает в каждый новый приват.
- * Три подкоманды с общей логикой собраны в один класс.
- */
 public class AutoAddSubCommand extends AbstractRegionSubCommand {
 
     public enum Mode {
-        /** Без аргумента — переключатель, с аргументом — добавление игрока. */
+
         TOGGLE_OR_ADD("autoadd"),
         REMOVE("autoremove"),
         LIST("autolist");

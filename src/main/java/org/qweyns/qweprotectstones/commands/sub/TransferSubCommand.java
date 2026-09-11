@@ -9,7 +9,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 import java.util.List;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 
-/** Передача привата другому игроку. Прежний владелец остаётся управляющим. */
 public class TransferSubCommand extends AbstractRegionSubCommand {
 
     public TransferSubCommand(QweProtectStones plugin) {
@@ -36,7 +35,6 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
         Region region = regionUnderFeet(player);
         if (region == null) return;
 
-        // Передать приват может только владелец — даже управляющему это не по силам.
         boolean allowed = region.isOwner(player.getUniqueId()) || player.hasPermission("qweprotectstones.admin");
         if (!allowed) {
             player.sendMessage(plugin.getLanguageManager().getMessage("not_an_owner"));
@@ -50,7 +48,7 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
 
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            // Требуем онлайн: так новый владелец точно узнает о передаче.
+            // требуем онлайн, новый владелец должен увидеть передачу
             player.sendMessage(plugin.getLanguageManager().getMessage("player_not_online", "%player%", args[0]));
             return;
         }

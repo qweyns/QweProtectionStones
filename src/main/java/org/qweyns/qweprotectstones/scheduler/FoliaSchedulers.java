@@ -11,13 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
-/**
- * Планировщик Folia. Вызовы идут через рефлексию намеренно: так плагин
- * собирается обычным paper-api и остаётся одним jar-ом и для Paper, и для Folia.
- *
- * <p>Методы ищутся один раз при создании — в горячем пути остаётся только
- * {@code Method.invoke}, что для планирования задач несущественно.</p>
- */
 final class FoliaSchedulers implements Schedulers {
 
     private final Plugin plugin;
@@ -85,7 +78,6 @@ final class FoliaSchedulers implements Schedulers {
         }
     }
 
-    /** Ищет метод в классе и его интерфейсах: реализация может быть не публичной. */
     private static Method findMethod(Class<?> owner, String name, Class<?>... params) throws NoSuchMethodException {
         try {
             Method method = owner.getMethod(name, params);
@@ -123,7 +115,6 @@ final class FoliaSchedulers implements Schedulers {
         }
     }
 
-    /** Folia передаёт в задачу саму ScheduledTask — нам она не нужна. */
     private static Consumer<Object> ignoreTask(Runnable action) {
         return task -> action.run();
     }

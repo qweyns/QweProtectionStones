@@ -12,26 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Собственные крафты блоков-ядер (секция {@code recipe} у типа в regions.yml).
- *
- * <p>Если у типа рецепта нет — ничего не регистрируется: блок получается
- * как обычный блок Minecraft, каким он и является. Для типов с
- * {@code restrict-obtaining: true} рецепт — легальный способ получить
- * предмет (как в ProtectionStones): результат крафта помечается тегом.</p>
- */
 public class CoreRecipeManager {
 
     private final QweProtectStones plugin;
 
-    /** Ключи зарегистрированных рецептов — чтобы снять их при /qps reload. */
     private final List<NamespacedKey> registered = new ArrayList<>();
 
     public CoreRecipeManager(QweProtectStones plugin) {
         this.plugin = plugin;
     }
 
-    /** Перерегистрация рецептов: вызывается при старте и /qps reload. */
     public void reload() {
         for (NamespacedKey key : registered) {
             Bukkit.removeRecipe(key);
@@ -52,8 +42,6 @@ public class CoreRecipeManager {
     private boolean register(RegionType type, CoreRecipe recipe) {
         NamespacedKey key = keyOf(type);
 
-        // Результат помечаем тегом типа (по настройке settings.core-item-tags;
-        // для ограниченных типов — всегда) и красим по секции item.
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
         ShapedRecipe shaped = new ShapedRecipe(key,
                 RegionItems.core(plugin, type, recipe.resultAmount(), null,

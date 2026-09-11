@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Общие помощники для подкоманд: поиск привата под ногами и проверка прав. */
 abstract class AbstractRegionSubCommand implements SubCommand {
 
     protected final QweProtectStones plugin;
@@ -19,7 +18,6 @@ abstract class AbstractRegionSubCommand implements SubCommand {
         this.plugin = plugin;
     }
 
-    /** Приват, в котором стоит игрок. Сам сообщает об ошибке и возвращает null. */
     protected Region regionUnderFeet(Player player) {
         Region region = plugin.getRegionManager().getRegionAt(player.getLocation());
         if (region == null) {
@@ -29,7 +27,6 @@ abstract class AbstractRegionSubCommand implements SubCommand {
         return region;
     }
 
-    /** Приват с проверкой уровня доступа. Сам сообщает об ошибке и возвращает null. */
     protected Region regionWithTrust(Player player, TrustLevel required) {
         Region region = regionUnderFeet(player);
         if (region == null) return null;
@@ -52,7 +49,6 @@ abstract class AbstractRegionSubCommand implements SubCommand {
         return result;
     }
 
-    /** Ники онлайн-игроков для автодополнения. */
     protected List<String> onlinePlayerNames(String prefix) {
         List<String> names = new ArrayList<>();
         for (Player online : plugin.getServer().getOnlinePlayers()) {

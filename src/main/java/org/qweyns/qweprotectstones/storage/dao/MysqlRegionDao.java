@@ -9,7 +9,6 @@ import java.sql.Statement;
 
 public class MysqlRegionDao extends AbstractSqlRegionDao {
 
-    /** MySQL: «Duplicate key name» — индекс уже создан прошлым запуском. */
     private static final int ER_DUP_KEYNAME = 1061;
 
     public MysqlRegionDao(QweProtectStones plugin) {
@@ -45,8 +44,8 @@ public class MysqlRegionDao extends AbstractSqlRegionDao {
 
     @Override
     protected void createIndexes(Statement statement) throws SQLException {
-        // MySQL не поддерживает CREATE INDEX IF NOT EXISTS — повторное создание
-        // отлавливаем по коду ошибки, всё остальное пробрасываем наверх.
+        // в mysql нет IF NOT EXISTS для индексов, ловим 1061
+
         createIndexIgnoringDuplicate(statement, "CREATE INDEX " + ownerIndexName() + " ON " + regionsTable() + " (owner_uuid)");
         createIndexIgnoringDuplicate(statement, "CREATE INDEX " + worldIndexName() + " ON " + regionsTable() + " (world)");
         createIndexIgnoringDuplicate(statement, "CREATE INDEX idx_" + tablePrefix + "log_region ON " + logTable() + " (region_id, at)");

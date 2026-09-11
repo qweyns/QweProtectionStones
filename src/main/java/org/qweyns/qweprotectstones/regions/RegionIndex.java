@@ -8,19 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Пространственный индекс: мир -> чанк -> объекты, задевающие этот чанк.
- *
- * <p>Поиск по координате выполняется на каждое движение игрока и на каждое
- * событие защиты, поэтому он обязан быть O(1) по числу приватов на сервере.
- * Приват регистрируется во всех чанках, которые пересекает — при радиусе 16
- * это 3x3 чанка, то есть память расходуется незначительно.</p>
- *
- * <p>Индекс работает с {@link Bounded}, а не с {@code Region}, поэтому не
- * зависит от Bukkit и покрыт юнит-тестами.</p>
- *
- * @param <T> тип индексируемого объекта
- */
 public final class RegionIndex<T extends Bounded> {
 
     private final Map<String, Map<Long, Set<T>>> byWorld = new ConcurrentHashMap<>();
@@ -58,7 +45,6 @@ public final class RegionIndex<T extends Bounded> {
         if (world.isEmpty()) byWorld.remove(value.getWorldName(), world);
     }
 
-    /** Объект, накрывающий точку. Пересечения запрещены, поэтому он не более одного. */
     public T at(String worldName, int x, int y, int z) {
         for (T value : inChunk(worldName, x >> 4, z >> 4)) {
             if (value.getBounds().contains(x, y, z)) return value;
@@ -74,13 +60,12 @@ public final class RegionIndex<T extends Bounded> {
         return values == null ? Set.of() : values;
     }
 
-    /** Всё, что пересекается с областью — для проверки наложения при создании. */
     public List<T> intersecting(String worldName, RegionBounds bounds) {
         Map<Long, Set<T>> world = byWorld.get(worldName);
         if (world == null) return List.of();
 
-        // LinkedHashSet вместо списка с contains: при большой области проверка
-        // на дубликаты линейным поиском становилась квадратичной.
+        // LinkedHashSet, contains на списке был O(n)
+
         Set<T> result = new LinkedHashSet<>();
         for (int cx = bounds.chunkMinX(); cx <= bounds.chunkMaxX(); cx++) {
             for (int cz = bounds.chunkMinZ(); cz <= bounds.chunkMaxZ(); cz++) {
@@ -92,7 +77,6 @@ public final class RegionIndex<T extends Bounded> {
         return new ArrayList<>(result);
     }
 
-    /** Первый найденный объект, пересекающийся с областью, или null. */
     public T firstIntersecting(String worldName, RegionBounds bounds) {
         Map<Long, Set<T>> world = byWorld.get(worldName);
         if (world == null) return null;

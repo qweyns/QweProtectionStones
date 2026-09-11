@@ -17,10 +17,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Покадровая анимация меню. Кадры компилируются в готовые действия один раз при
- * открытии, поэтому в каждом тике не разбирается YAML.
- */
 public class MenuAnimator implements Runnable {
 
     private final QweProtectStones plugin;
@@ -171,7 +167,7 @@ public class MenuAnimator implements Runnable {
                 case "sound", "snd" -> {
                     float volume = args.length > 2 ? Float.parseFloat(args[2]) : 1f;
                     float pitch = args.length > 3 ? Float.parseFloat(args[3]) : 1f;
-                    // Опечатка в названии не должна ронять аниматор каждый тик.
+
                     Sound sound = org.qweyns.qweprotectstones.config.SoundSetting.resolve(args[1]);
                     if (sound == null) {
                         plugin.getLogger().warning("Неизвестный звук в анимации меню: " + args[1]);

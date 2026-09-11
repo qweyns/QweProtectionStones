@@ -25,7 +25,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionFlag;
 import org.qweyns.qweprotectstones.config.Tunables;
 
-/** PvP, защита животных и питомцев, картины, вагонетки и спавн мобов. */
 public class EntityProtectionListener implements Listener {
 
     private final ProtectionService protection;
@@ -33,10 +32,6 @@ public class EntityProtectionListener implements Listener {
     public EntityProtectionListener(QweProtectStones plugin) {
         this.protection = plugin.getProtectionService();
     }
-
-    // ------------------------------------------------------------------
-    // Урон
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
@@ -46,7 +41,7 @@ public class EntityProtectionListener implements Listener {
 
         Player attacker = resolveAttacker(event.getDamager());
         if (attacker == null) {
-            // Мобы бьют игроков и животных свободно — это не гриферство.
+
             return;
         }
 
@@ -58,7 +53,7 @@ public class EntityProtectionListener implements Listener {
             return;
         }
 
-        // Враждебных мобов бить можно всегда, иначе приват станет фермой мобов.
+        // враждебных бить можно всегда, иначе приват ферма мобов
         if (victim instanceof Monster) return;
 
         if (protection.has(region, attacker, protection.requiredFor(Tunables.TrustAction.ENTITY))) return;
@@ -70,7 +65,6 @@ public class EntityProtectionListener implements Listener {
         event.setCancelled(true);
     }
 
-    /** Разворачивает снаряды и зелья до игрока, который их запустил. */
     private Player resolveAttacker(Entity damager) {
         if (damager instanceof Player player) return player;
 
@@ -88,7 +82,7 @@ public class EntityProtectionListener implements Listener {
     public void onPotionSplash(PotionSplashEvent event) {
         if (!(event.getPotion().getShooter() instanceof Player thrower)) return;
 
-        // Зельем нельзя обойти запрет PvP: убираем из области действия чужих игроков.
+        // зельем не обойти запрет pvp
         event.getAffectedEntities().removeIf(entity -> {
             if (!(entity instanceof Player target) || target.equals(thrower)) return false;
 
@@ -96,10 +90,6 @@ public class EntityProtectionListener implements Listener {
             return region != null && !protection.flag(region, RegionFlag.PVP);
         });
     }
-
-    // ------------------------------------------------------------------
-    // Декор и транспорт
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onHangingBreak(HangingBreakByEntityEvent event) {
@@ -145,16 +135,11 @@ public class EntityProtectionListener implements Listener {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Спавн и предметы
-    // ------------------------------------------------------------------
-
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         Region region = protection.regionAt(event.getLocation());
         if (region == null) return;
 
-        // Спавн-яйца и командный спавн не режем: это осознанное действие игрока.
         CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
         if (reason == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG
                 || reason == CreatureSpawnEvent.SpawnReason.CUSTOM

@@ -20,10 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Список друзей, которых плагин автоматически вписывает в каждый новый приват
- * игрока — чтобы не выдавать доступ вручную после каждой установки блока.
- */
 public class AutoAddManager implements Listener {
 
     private final QweProtectStones plugin;
@@ -53,8 +49,8 @@ public class AutoAddManager implements Listener {
 
     private void loadPlayer(UUID uuid) {
         plugin.getRegionStorage().loadAutoAddAsync(uuid, (friends, isToggledOff) -> {
-            // Колбэк приходит из потока БД: игрок мог выйти, а данные измениться,
-            // поэтому не перетираем список, а дополняем.
+            // колбэк из потока БД, не перетираем а дополняем
+
             if (Bukkit.getPlayer(uuid) == null) return;
 
             if (!friends.isEmpty()) {
@@ -123,15 +119,10 @@ public class AutoAddManager implements Listener {
         }
     }
 
-    /** Для автодополнения /region autoremove. */
     public List<String> getList(Player owner) {
         return new ArrayList<>(autoAddLists.getOrDefault(owner.getUniqueId(), Set.of()));
     }
 
-    /**
-     * Вписывает друзей в только что созданный приват. В отличие от старой версии
-     * доступ выдаётся по UUID, а не по нику, поэтому смена ника его не ломает.
-     */
     public void applyToRegion(Player owner, Region region) {
         if (toggledOff.contains(owner.getUniqueId())) return;
 
@@ -144,7 +135,6 @@ public class AutoAddManager implements Listener {
             if (target == null || target.getUniqueId() == null) continue;
             if (region.isOwner(target.getUniqueId())) continue;
 
-            // Системная выдача (авто-вписывание друзей) — actor = null.
             if (RegionEvents.fireMemberChange(region, null, target.getUniqueId(),
                     target.getName() != null ? target.getName() : name,
                     org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.BUILD)) {
@@ -160,7 +150,6 @@ public class AutoAddManager implements Listener {
         }
     }
 
-    /** Синхронное сохранение при выключении сервера, когда планировщик уже стоит. */
     public void saveAllOnline() {
         Set<UUID> saved = ConcurrentHashMap.newKeySet();
 

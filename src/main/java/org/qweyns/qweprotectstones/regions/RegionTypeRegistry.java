@@ -15,18 +15,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Разбирает секцию {@code region_types} из config.yml. Каждый тип описывается
- * материалом блока-ядра; поиск по материалу выполняется на каждой установке
- * блока, поэтому держим отдельную карту Material -> тип.
- */
 public class RegionTypeRegistry {
 
     private static final List<String> EXPLOSION_KINDS = List.of("TNT", "CREEPER", "WITHER", "ENDER_CRYSTAL", "BED");
 
     private final QweProtectStones plugin;
     private final Map<String, RegionType> byId = new LinkedHashMap<>();
-    /** Тот же реестр, но ключи в нижнем регистре — для поиска без учёта регистра. */
+
     private final Map<String, RegionType> byIdNormalized = new LinkedHashMap<>();
     private final Map<Material, RegionType> byMaterial = new EnumMap<>(Material.class);
 
@@ -127,10 +122,6 @@ public class RegionTypeRegistry {
                 parseRecipe(section, defaults, id));
     }
 
-    /**
-     * Собственный крафт блока-ядра. Отсутствие секции recipe — это норма:
-     * блок получается как обычный блок Minecraft.
-     */
     private CoreRecipe parseRecipe(ConfigurationSection section, ConfigurationSection defaults, String typeId) {
         ConfigurationSection recipe = section.contains("recipe")
                 ? section.getConfigurationSection("recipe")
@@ -169,7 +160,6 @@ public class RegionTypeRegistry {
             ingredients.put(key.charAt(0), material);
         }
 
-        // Каждая буква схемы должна быть известна, иначе крафт не зарегистрируется.
         for (char c : String.join("", pattern).toCharArray()) {
             if (c != ' ' && !ingredients.containsKey(c)) {
                 plugin.getLogger().warning("recipe у " + typeId + ": символ '" + c + "' не описан в ingredients — рецепт пропущен.");
@@ -216,10 +206,6 @@ public class RegionTypeRegistry {
         return rules;
     }
 
-    // ------------------------------------------------------------------
-    // Чтение с откатом на default_region
-    // ------------------------------------------------------------------
-
     private int readInt(ConfigurationSection section, ConfigurationSection defaults, String key, int fallback) {
         if (section.contains(key)) return section.getInt(key);
         if (defaults != null && defaults.contains(key)) return defaults.getInt(key);
@@ -244,22 +230,17 @@ public class RegionTypeRegistry {
         return new ArrayList<>();
     }
 
-    // ------------------------------------------------------------------
-    // Доступ
-    // ------------------------------------------------------------------
-
     public RegionType byId(String id) {
         if (id == null) return null;
         RegionType type = byId.get(id);
-        // Регистр не должен мешать: /qps give пишет тип в нижнем регистре,
-        // а ключи в regions.yml традиционно заглавные (DIAMOND_BLOCK).
+        // два индекса: give пишет нижним регистром, yml заглавными
+
         return type != null ? type : byIdNormalized.get(id.toLowerCase(Locale.ROOT));
     }
 
     public RegionType byMaterial(Material material) {
         return material == null ? null : byMaterial.get(material);
     }
-
 
     public Collection<RegionType> all() {
         return byId.values();
@@ -269,10 +250,6 @@ public class RegionTypeRegistry {
         return byId.keySet();
     }
 
-    /**
-     * Тип для привата, загруженного из базы. Если тип удалили из конфига,
-     * подставляем любой доступный, чтобы приват не потерял защиту целиком.
-     */
     public RegionType resolveOrFallback(String typeId) {
         RegionType type = byId(typeId);
         if (type != null) return type;

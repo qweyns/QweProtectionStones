@@ -13,12 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * Выгрузка всех приватов в JSON — бэкап и способ посмотреть данные без SQL.
- *
- * <p>JSON собирается вручную: тянуть Gson ради одной функции и раздувать jar
- * не хочется, а структура здесь простая и полностью под нашим контролем.</p>
- */
 public class RegionExporter {
 
     private final QweProtectStones plugin;
@@ -27,7 +21,6 @@ public class RegionExporter {
         this.plugin = plugin;
     }
 
-    /** Выполняется асинхронно: файл может весить мегабайты. */
     public File export() throws IOException {
         File folder = new File(plugin.getDataFolder(), "exports");
         if (!folder.isDirectory() && !folder.mkdirs()) {

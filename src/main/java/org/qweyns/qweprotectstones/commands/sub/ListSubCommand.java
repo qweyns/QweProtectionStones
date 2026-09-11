@@ -9,7 +9,6 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 import java.util.Comparator;
 import java.util.List;
 
-/** Список приватов игрока: свои и те, куда его вписали. */
 public class ListSubCommand extends AbstractRegionSubCommand {
 
     public ListSubCommand(QweProtectStones plugin) {

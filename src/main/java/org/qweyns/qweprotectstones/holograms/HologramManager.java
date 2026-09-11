@@ -19,14 +19,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
-/** Голограммы над ядрами приватов с выгрузкой вместе с чанками. */
 public class HologramManager implements Listener {
 
     private final QweProtectStones plugin;
     private IHologramProvider dhProvider;
     private IHologramProvider fhProvider;
 
-    /** Чанк -> приваты, чьи ядра в нём стоят. */
     private final Map<String, Set<UUID>> chunkCache = new ConcurrentHashMap<>();
 
     public HologramManager(QweProtectStones plugin) {
@@ -73,7 +71,7 @@ public class HologramManager implements Listener {
         if (primary == null) return;
 
         try {
-            // Голограмма могла быть нарисована другим провайдером до смены настройки.
+
             IHologramProvider other = primary == fhProvider ? dhProvider : fhProvider;
             if (other != null) other.remove(region.getId());
 
@@ -107,7 +105,7 @@ public class HologramManager implements Listener {
             if (dhProvider != null) dhProvider.deleteAll();
             if (fhProvider != null) fhProvider.deleteAll();
         } catch (Exception e) {
-            // При остановке сервера плагин голограмм может отключиться раньше нас.
+
             plugin.getLogger().log(Level.WARNING, "Ошибка при удалении голограмм", e);
         }
         chunkCache.clear();
@@ -130,7 +128,7 @@ public class HologramManager implements Listener {
         if (regionIds == null || regionIds.isEmpty()) return;
 
         List<UUID> snapshot = List.copyOf(regionIds);
-        // Голограммы создаём в потоке региона этого чанка — на Folia он свой.
+        // создание в потоке региона, на Folia обязательно
         Location anchor = event.getChunk().getBlock(0, 0, 0).getLocation();
         plugin.getSchedulers().runAtLocationLater(anchor, () -> {
             for (UUID id : snapshot) {
@@ -145,7 +143,6 @@ public class HologramManager implements Listener {
         Set<UUID> regionIds = chunkCache.get(chunkKey(event.getChunk()));
         if (regionIds == null) return;
 
-        // Сам чанк из кэша не убираем: при загрузке голограммы нужно вернуть.
         regionIds.forEach(this::removeHologramVisual);
     }
 

@@ -8,14 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Вложенность уровней доступа, разбор из строки и список выдаваемых уровней.
- */
 class TrustLevelTest {
 
     @Test
     void levelsAreStrictlyNested() {
-        // Каждый уровень включает права всех предыдущих.
+
         for (TrustLevel given : TrustLevel.values()) {
             for (TrustLevel required : TrustLevel.values()) {
                 assertEquals(given.weight() >= required.weight(),
@@ -42,7 +39,7 @@ class TrustLevelTest {
 
     @Test
     void grantableExcludesOwner() {
-        // OWNER выдаётся только передачей привата, не командой trust.
+
         for (TrustLevel level : TrustLevel.grantable()) {
             assertFalse(level == TrustLevel.OWNER);
         }

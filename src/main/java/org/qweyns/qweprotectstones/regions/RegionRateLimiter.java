@@ -8,13 +8,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Ограничение частоты создания приватов.
- *
- * <p>Без него игрок зажимает ПКМ со стаком блоков-ядер и за секунду создаёт
- * десятки приватов: лимиты по типу помогают не везде, а нагрузка на базу и
- * пространственный индекс возникает сразу.</p>
- */
 public class RegionRateLimiter {
 
     private final QweProtectStones plugin;
@@ -31,7 +24,6 @@ public class RegionRateLimiter {
         return Math.max(0L, plugin.getConfigManager().getConfig().getLong("settings.region_cooldown_seconds", 3L)) * 1000L;
     }
 
-    /** @return сколько секунд осталось ждать; 0 — можно создавать */
     public long secondsRemaining(Player player) {
         if (player.hasPermission("qweprotectstones.admin")) return 0;
 
@@ -45,7 +37,6 @@ public class RegionRateLimiter {
         return passed >= cooldown ? 0 : (cooldown - passed + 999) / 1000;
     }
 
-    /** Отмечает удачное создание — кулдаун не тратится на неудачные попытки. */
     public void markCreated(Player player) {
         lastCreation.put(player.getUniqueId(), System.currentTimeMillis());
     }

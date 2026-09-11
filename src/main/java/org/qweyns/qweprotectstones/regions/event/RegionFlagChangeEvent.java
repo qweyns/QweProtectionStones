@@ -8,12 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionFlag;
 
-/**
- * Вызывается перед сменой флага привата ({@code /ps flag}).
- *
- * <p>Отмена события оставляет флаг прежним — например, плагин кланов может
- * запретить включать PvP на территории, привязанной к клановой базе.</p>
- */
 public class RegionFlagChangeEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -21,9 +15,9 @@ public class RegionFlagChangeEvent extends Event implements Cancellable {
     private final Region region;
     private final Player player;
     private final RegionFlag flag;
-    /** Прежнее переопределение; {@code null} — флаг не был задан и брался из типа. */
+
     private final Boolean oldValue;
-    /** Новое значение; {@code null} — игрок сбрасывает флаг к значению типа. */
+
     private final Boolean newValue;
 
     private boolean cancelled;
@@ -38,7 +32,6 @@ public class RegionFlagChangeEvent extends Event implements Cancellable {
 
     public Region getRegion() { return region; }
 
-    /** Кто меняет флаг; {@code null} — изменил плагин или консоль. */
     public Player getPlayer() { return player; }
 
     public RegionFlag getFlag() { return flag; }

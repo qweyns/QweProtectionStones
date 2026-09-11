@@ -12,10 +12,6 @@ import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.util.List;
 
-/**
- * Открывает GUI привата. Один класс обслуживает menu/upgrade/effects —
- * различаются они только именем файла меню.
- */
 public class MenuSubCommand extends AbstractRegionSubCommand {
 
     private final String commandName;
@@ -55,7 +51,6 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        // Сервер может подменить встроенное меню своими командами (headless-режим).
         String action = plugin.getConfigManager().getConfig()
                 .getString("settings.custom_menus." + menuName + ".action", "MENU");
         if (action.equalsIgnoreCase("COMMAND")) {
@@ -67,7 +62,6 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
         plugin.getMenuManager().openMenu(player, target, region);
     }
 
-    /** Меню открывается только рядом с ядром — иначе приват можно было бы качать издалека. */
     private boolean isCloseEnough(Player player, Region region) {
         Location core = region.getCoreLocation();
         if (core == null) return true;

@@ -21,10 +21,6 @@ public final class ColorUtil {
     private ColorUtil() {
     }
 
-    /**
-     * Переводит легаси-код (&c, &#RRGGBB) в тег MiniMessage.
-     * Switch вместо Map — без боксинга Character и без лишних аллокаций.
-     */
     private static String legacyToTag(char code) {
         return switch (code) {
             case '0' -> "<black>";
@@ -59,26 +55,17 @@ public final class ColorUtil {
         String preProcessed = LEGACY_PATTERN.matcher(text).replaceAll(match -> {
             if (match.group(2) != null) return "<#" + match.group(2) + ">";
             String tag = legacyToTag(Character.toLowerCase(match.group(1).charAt(0)));
-            // Matcher.replaceAll трактует $ и \ в замене как спецсимволы — экранируем.
+            // $ и \ в замене спецсимволы, quoteReplacement
             return java.util.regex.Matcher.quoteReplacement(tag != null ? tag : match.group());
         });
 
         return MINI_MESSAGE.deserialize(preProcessed);
     }
 
-    /**
-     * То же самое, но для названий/лора предметов: ванильный курсив по умолчанию
-     * отключается, иначе весь текст в GUI выглядит наклонным.
-     */
     public static Component formatItemComponent(String text) {
         return formatComponent(text).decoration(TextDecoration.ITALIC, false);
     }
 
-    /**
-     * Чистый текст без разметки: MiniMessage-теги и §-коды (включая §x-hex)
-     * вырезаются. Для мест, где цвета невозможны в принципе: вебхуки Discord
-     * и Telegram, файловые журналы.
-     */
     public static String stripFormatting(String text) {
         if (text == null || text.isEmpty()) return "";
         return MiniMessage.miniMessage().stripTags(text)

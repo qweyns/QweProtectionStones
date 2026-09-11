@@ -17,30 +17,24 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Реестр всех приватов сервера: создание, удаление, поиск и проверка лимитов.
- * Заменяет собой обращения к ProtectionStones и WorldGuard.
- */
 public class RegionManager {
 
-    /** Результат попытки создать приват. */
     public enum CreateStatus {
         SUCCESS,
-        /** Территория пересекается с чужим приватом. */
+
         OVERLAP,
-        /** Слишком близко к чужому привату (min_distance_to_others). */
+
         TOO_CLOSE,
-        /** Достигнут лимит приватов этого типа. */
+
         LIMIT_REACHED,
-        /** Нет права на установку этого блока. */
+
         NO_PERMISSION,
-        /** Тип запрещён в этом мире. */
+
         WORLD_DISABLED,
-        /** Создание отменено другим плагином через RegionCreateEvent. */
+
         CANCELLED
     }
 
-    /** Итог создания: статус плюс контекст для сообщения игроку. */
     public record CreateResult(CreateStatus status, Region region, Region blockingRegion, int limit) {
         public static CreateResult success(Region region) {
             return new CreateResult(CreateStatus.SUCCESS, region, null, 0);
@@ -73,11 +67,6 @@ public class RegionManager {
         this.plugin = plugin;
     }
 
-    // ------------------------------------------------------------------
-    // Загрузка
-    // ------------------------------------------------------------------
-
-    /** Заполняет реестр данными из базы (вызывается один раз при запуске). */
     public void loadAll(Collection<Region> loaded) {
         regions.clear();
         regionsByOwner.clear();
@@ -86,9 +75,8 @@ public class RegionManager {
         int skippedUnknownWorld = 0;
         for (Region region : loaded) {
             if (Bukkit.getWorld(region.getWorldName()) == null) {
-                // Мир может быть просто не подключён (мультиверс) — приват
-                // остаётся в памяти и в индексе: когда мир подключат, защита
-                // заработает сама, без перезапуска.
+                // мир может быть не подключён, приват ждёт в памяти
+
                 skippedUnknownWorld++;
             }
             register(region);
@@ -107,11 +95,6 @@ public class RegionManager {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Поиск
-    // ------------------------------------------------------------------
-
-    /** Приват в этой точке или {@code null}. Основной метод горячего пути. */
     public Region getRegionAt(Location loc) {
         if (loc == null) return null;
         World world = loc.getWorld();
@@ -127,7 +110,6 @@ public class RegionManager {
         return id == null ? null : regions.get(id);
     }
 
-    /** Поиск по началу короткого идентификатора — для админских команд. */
     public Region getByShortId(String shortId) {
         if (shortId == null || shortId.isBlank()) return null;
         String needle = shortId.toLowerCase(java.util.Locale.ROOT);
@@ -137,8 +119,6 @@ public class RegionManager {
         }
         return null;
     }
-
-    /** Приват, чьё ядро стоит именно в этой точке. */
 
     public List<Region> getRegionsOf(UUID ownerId) {
         Set<UUID> ids = regionsByOwner.get(ownerId);
@@ -152,7 +132,6 @@ public class RegionManager {
         return result;
     }
 
-    /** Приваты, где игрок владелец или участник, — для /region list. */
     public List<Region> getAccessibleRegions(UUID playerId) {
         List<Region> result = new ArrayList<>(getRegionsOf(playerId));
         for (Region region : regions.values()) {
@@ -173,8 +152,6 @@ public class RegionManager {
         return Collections.unmodifiableCollection(regions.values());
     }
 
-
-    /** Сколько игроков владеет хотя бы одним приватам — для /qps stats. */
     public int ownersCount() {
         java.util.Set<UUID> owners = new java.util.HashSet<>();
         for (Region region : getAllRegions()) {
@@ -187,14 +164,6 @@ public class RegionManager {
         return regions.size();
     }
 
-    // ------------------------------------------------------------------
-    // Создание и удаление
-    // ------------------------------------------------------------------
-
-    /**
-     * Проверяет все условия и создаёт приват. Вызывается из обработчика
-     * установки блока, поэтому ничего не делает при неуспехе.
-     */
     public CreateResult createRegion(Player owner, RegionType type, Location coreLocation) {
         World world = coreLocation.getWorld();
         if (world == null) return CreateResult.failure(CreateStatus.WORLD_DISABLED);
@@ -202,8 +171,8 @@ public class RegionManager {
         if (!type.isWorldAllowed(world.getName().toLowerCase(java.util.Locale.ROOT))) {
             return CreateResult.failure(CreateStatus.WORLD_DISABLED);
         }
-        // Право на создание приватов вообще (qweprotectstones.create) и право
-        // на конкретный тип (place_permission из regions.yml) — разные вещи.
+        // право на тип (place_permission) отдельно от общего create
+
         if (!owner.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".create")) {
             return CreateResult.failure(CreateStatus.NO_PERMISSION);
         }
@@ -249,10 +218,6 @@ public class RegionManager {
         return CreateResult.success(region);
     }
 
-    /**
-     * @param reason причина удаления, попадает в {@link RegionDeleteEvent}
-     * @return false, если удаление отменено другим плагином
-     */
     public boolean deleteRegion(Region region, RegionDeleteEvent.Reason reason, Player actor) {
         if (region == null || !regions.containsKey(region.getId())) return false;
 
@@ -270,9 +235,9 @@ public class RegionManager {
         }
 
         plugin.getRegionStorage().delete(region.getId());
-        // Штраф больше не имеет смысла: привата нет, а UUID нового никогда не совпадёт.
+
         plugin.getPenaltyManager().removeRegion(region.getId());
-        // Объявления рынка тоже теряют смысл без привата.
+
         if (plugin.getMarketManager() != null) {
             plugin.getMarketManager().cancelSale(region);
             plugin.getMarketManager().cancelRental(region);
@@ -280,13 +245,6 @@ public class RegionManager {
         return true;
     }
 
-    /**
-     * Импорт чужого региона (WorldGuard / ProtectionStones / GriefPrevention):
-     * без проверок лимитов и прав — только контроль пересечений с нашими
-     * приватами. Ядро виртуальное: bounds не обязаны быть симметричны вокруг него.
-     *
-     * @return true, если регион принят
-     */
     public boolean importRegion(Region region) {
         if (region == null) return false;
         if (findOverlapping(region.getWorld(), region.getBounds()) != null) return false;
@@ -296,7 +254,6 @@ public class RegionManager {
         return true;
     }
 
-    /** Меняет владельца и переносит приват между индексами. */
     public void transferRegion(Region region, UUID newOwnerId, String newOwnerName) {
         UUID previousOwner = region.getOwnerId();
 
@@ -309,10 +266,6 @@ public class RegionManager {
         plugin.getRegionStorage().save(region);
     }
 
-    /**
-     * Лимит приватов данного типа: значение из permission вида
-     * {@code qweprotectstones.limit.<тип>.<число>} перекрывает настройку типа.
-     */
     public int resolveLimit(Player player, RegionType type) {
         if (player.hasPermission("qweprotectstones.limit." + type.id().toLowerCase(java.util.Locale.ROOT) + ".unlimited")
                 || player.hasPermission("qweprotectstones.limit.unlimited")) {
@@ -330,29 +283,20 @@ public class RegionManager {
             try {
                 best = Math.max(best, Integer.parseInt(node.substring(prefix.length())));
             } catch (NumberFormatException ignored) {
-                // Узел не с числом на конце — не наш формат.
+
             }
         }
         return best >= 0 ? best : type.maxPerPlayer();
     }
 
-    /** Свободна ли область: используется поиском места и предпросмотром границ. */
     public boolean isAreaFree(World world, RegionBounds bounds) {
         return world != null && index.firstIntersecting(world.getName(), bounds) == null;
     }
 
-    /** Приват, мешающий занять область, или null. */
     public Region findOverlapping(World world, RegionBounds bounds) {
         return world == null ? null : index.firstIntersecting(world.getName(), bounds);
     }
 
-    /**
-     * Меняет границы существующего привата (/ps expand, /ps move, setbounds).
-     * Сам приват пересечением не считается. Пересобирает чанковый индекс
-     * и сохраняет регион в базу.
-     *
-     * @return приватов-нарушитель, если новые границы пересекают чужую область, иначе null
-     */
     public Region updateBounds(Region region, RegionBounds newBounds) {
         if (region == null || newBounds == null) return null;
 
@@ -360,7 +304,7 @@ public class RegionManager {
             if (!other.getId().equals(region.getId())) return other;
         }
 
-        // Сначала убираем из индекса по СТАРЫМ границам, потом меняем и добавляем заново.
+        // сначала убрать по старым границам, потом добавить по новым
         index.remove(region);
         region.setBounds(newBounds);
         index.add(region);
@@ -369,11 +313,6 @@ public class RegionManager {
         return null;
     }
 
-    /**
-     * Пересчитывает границы привата по радиусам типа (используется при смене типа).
-     *
-     * @return приватов-нарушитель или null при успехе
-     */
     public Region reapplyTypeBounds(Region region, RegionType type) {
         World world = region.getWorld();
         if (world == null) return null;
@@ -386,19 +325,13 @@ public class RegionManager {
         return updateBounds(region, bounds);
     }
 
-    /**
-     * Переносит ядро привата в новую точку (/ps move): переставляет блок ядра,
-     * центрирует границы вокруг нового ядра и пересобирает индекс.
-     *
-     * @return приватов-нарушитель на новом месте или null при успехе
-     */
     public Region moveRegion(Region region, org.bukkit.Location newCore) {
         World world = newCore.getWorld();
         if (world == null || !world.getName().equals(region.getWorldName())) return null;
 
         RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
         if (type == null) {
-            // Без типов regions.yml переносить нечего: не из чего взять радиусы.
+
             plugin.getLogger().warning("Перенос привата " + region.getShortId() + " невозможен: типы не настроены.");
             return null;
         }
@@ -414,7 +347,6 @@ public class RegionManager {
 
         index.remove(region);
 
-        // Блок ядра переносится: старое место очищаем, на новом ставим материал типа.
         org.bukkit.block.Block oldCore = world.getBlockAt(region.getCoreX(), region.getCoreY(), region.getCoreZ());
         if (oldCore.getType() == type.material()) oldCore.setType(org.bukkit.Material.AIR);
         world.getBlockAt(newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ()).setType(type.material());
@@ -427,7 +359,6 @@ public class RegionManager {
         return null;
     }
 
-    /** Пересчитывает максимум прочности у всех приватов после правки config.yml. */
     public void refreshTypeData() {
         for (Region region : regions.values()) {
             RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());

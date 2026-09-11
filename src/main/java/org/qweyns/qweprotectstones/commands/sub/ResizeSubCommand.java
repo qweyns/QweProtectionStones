@@ -16,13 +16,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-/**
- * Изменение границ существующего привата: {@code /ps expand} и {@code /ps move}.
- *
- * <p>Все лимиты — шаг расширения, потолок радиуса, дальность переноса, требуемый
- * уровень доступа, запрет во время осады — берутся из секции {@code resize}
- * config.yml, без зашитых констант.</p>
- */
 public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCommand {
 
     public enum Mode {
@@ -45,7 +38,7 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
 
     @Override
     public String permission() {
-        // expand и move — разные права: расширение доступнее переноса.
+
         return QweProtectStones.PERMISSION_PREFIX + (mode == Mode.EXPAND ? ".expand" : ".move");
     }
 
@@ -63,7 +56,7 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
         Region region = regionWithTrust(player, required);
         if (region == null) return;
 
-        // Во время осады границы менять нельзя — иначе приват «убегает» от атаки.
+        // во время осады границы не меняются
         if (plugin.getConfigManager().getConfig().getBoolean("resize.block-during-siege", true)
                 && plugin.isUnderSiege(region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("resize_siege"));
@@ -74,7 +67,6 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
         else move(player, region);
     }
 
-    /** /ps expand [количество] [all|horizontal|up|down] */
     private void expand(Player player, Region region, String[] args) {
         int amount = 1;
         if (args.length > 0) {
@@ -119,7 +111,7 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
             default -> current.expand(amount);
         };
 
-        // Клампим по высоте мира: за пределы Heightmap не выходим.
+        // кламп по высоте мира
         expanded = new RegionBounds(
                 expanded.minX(), Math.max(world.getMinHeight(), expanded.minY()), expanded.minZ(),
                 expanded.maxX(), Math.min(world.getMaxHeight() - 1, expanded.maxY()), expanded.maxZ());
@@ -146,7 +138,6 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
                 "%height%", String.valueOf(region.getBounds().sizeY())));
     }
 
-    /** /ps move — перенести ядро на блок, где стоит игрок. */
     private void move(Player player, Region region) {
         Block target = player.getLocation().getBlock();
         World world = target.getWorld();
@@ -167,7 +158,6 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
             return;
         }
 
-        // Ставить ядро можно только на свободное место: список заменяемых блоков в конфиге.
         if (!replaceable().contains(target.getType())) {
             player.sendMessage(plugin.getLanguageManager().getMessage("move_blocked"));
             return;
@@ -189,10 +179,6 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
                 "%y%", String.valueOf(region.getCoreY()),
                 "%z%", String.valueOf(region.getCoreZ())));
     }
-
-    // ------------------------------------------------------------------
-    // Настройки из config.yml (секция resize)
-    // ------------------------------------------------------------------
 
     private boolean enabled() {
         return plugin.getConfigManager().getConfig().getBoolean("resize." + mode.key() + ".enable", true);
@@ -231,7 +217,7 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
         if (mode != Mode.EXPAND) return List.of();
-        // Количество блоков: подсказываем максимальный шаг из resize.expand.
+
         if (args.length == 1) {
             return filter(List.of(String.valueOf(maxStep())), args[0]);
         }

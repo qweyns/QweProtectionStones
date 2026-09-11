@@ -9,10 +9,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 
 import java.util.UUID;
 
-/**
- * Вызывается перед передачей привата другому владельцу ({@code /ps transfer}
- * или административной командой). Отмена оставляет владельца прежним.
- */
 public class RegionTransferEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -39,7 +35,6 @@ public class RegionTransferEvent extends Event implements Cancellable {
 
     public Region getRegion() { return region; }
 
-    /** Кто инициировал передачу; {@code null} — плагин или консоль. */
     public Player getActor() { return actor; }
 
     public UUID getOldOwnerId() { return oldOwnerId; }

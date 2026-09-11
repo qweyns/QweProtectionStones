@@ -15,10 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Выдача и снятие доступа. Один класс обслуживает и trust, и untrust —
- * логика поиска игрока и проверки прав у них общая.
- */
 public class TrustSubCommand extends AbstractRegionSubCommand {
 
     private final boolean granting;
@@ -83,7 +79,6 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
             level = parsed.get();
         }
 
-        // Управляющий не может выдать уровень выше собственного.
         TrustLevel actorTrust = plugin.getProtectionService().trustOf(region, player);
         if (actorTrust != null && !actorTrust.atLeast(level)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_too_high"));
@@ -121,10 +116,6 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         player.sendMessage(plugin.getLanguageManager().getMessage("trust_revoked", "%player%", targetName));
     }
 
-    /**
-     * Ищем сначала среди онлайна, затем среди тех, кто уже заходил на сервер.
-     * К Mojang API не обращаемся — это заблокировало бы основной поток.
-     */
     private OfflinePlayer resolvePlayer(String name) {
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) return online;

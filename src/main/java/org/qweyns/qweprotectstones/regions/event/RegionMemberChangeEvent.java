@@ -10,33 +10,28 @@ import org.qweyns.qweprotectstones.regions.TrustLevel;
 
 import java.util.UUID;
 
-/**
- * Вызывается перед изменением списка участников привата: выдача доступа,
- * отзыв, бан и разбан. Отмена отменяет и само изменение.
- */
 public class RegionMemberChangeEvent extends Event implements Cancellable {
 
-    /** Что именно происходит с участником. */
     public enum Action {
-        /** Выдача или смена уровня доступа. */
+
         TRUST,
-        /** Отзыв доступа. */
+
         UNTRUST,
-        /** Бан (сильнее отзыва: не пускает на территорию). */
+
         BAN,
-        /** Снятие бана. */
+
         UNBAN
     }
 
     private static final HandlerList HANDLERS = new HandlerList();
 
     private final Region region;
-    /** Кто произвёл изменение; {@code null} — плагин или консоль. */
+
     private final Player actor;
     private final UUID targetUuid;
     private final String targetName;
     private final Action action;
-    /** Новый уровень при {@link Action#TRUST}; для остальных действий — {@code null}. */
+
     private final TrustLevel trust;
 
     private boolean cancelled;

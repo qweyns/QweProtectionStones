@@ -27,7 +27,6 @@ public class PAPIExpansion extends PlaceholderExpansion {
     @Override
     public @NotNull String getVersion() { return plugin.getPluginMeta().getVersion(); }
 
-    /** Без этого PlaceholderAPI выгружает расширение при /papi reload. */
     @Override
     public boolean persist() { return true; }
 
@@ -37,7 +36,6 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
         String key = params.toLowerCase(Locale.ROOT);
 
-        // Плейсхолдеры, не зависящие от текущей позиции игрока.
         switch (key) {
             case "regions_count" -> {
                 return String.valueOf(plugin.getRegionManager().getRegionsOf(player.getUniqueId()).size());
@@ -46,7 +44,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
                 return String.valueOf(plugin.getRegionManager().size());
             }
             case "regions_area" -> {
-                // Суммарная охраняемая площадь всех приватов игрока (в блоках).
+
                 long area = 0;
                 for (Region owned : plugin.getRegionManager().getRegionsOf(player.getUniqueId())) {
                     RegionType type = plugin.getRegionTypes().byId(owned.getTypeId());
@@ -54,7 +52,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
                 }
                 return String.valueOf(area);
             }
-            default -> { /* дальше смотрим на приват под ногами */ }
+            default -> {  }
         }
 
         Region region = plugin.getRegionManager().getRegionAt(player.getLocation());

@@ -13,14 +13,6 @@ import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Аренда приватов: {@code /ps rent offer <цена> <минуты>} публикует условия,
- * {@code /ps rent take} снимает (или продлевает) аренду,
- * {@code /ps rent cancel} убирает объявление.
- *
- * <p>Период, лимиты и уровень доступа арендатора — секция {@code market.rent}
- * в config.yml.</p>
- */
 public class RentSubCommand extends AbstractRegionSubCommand implements SubCommand {
 
     public RentSubCommand(QweProtectStones plugin) {
@@ -151,10 +143,10 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
     private void cancel(Player player) {
         Region region;
         if (player.hasPermission("qweprotectstones.admin")) {
-            // Админ может снять с аренды любой приват, где стоит.
+
             region = regionUnderFeet(player);
         } else {
-            // Обычный игрок — только собственный.
+
             region = regionWithTrust(player, TrustLevel.OWNER);
         }
         if (region == null) return;
@@ -166,7 +158,6 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        // Активную аренду завершаем сразу: доступ арендатора снимается.
         if (rental.tenantId() != null) {
             if (!RegionEvents.fireMemberChange(region, player, rental.tenantId(), rental.tenantName(),
                     RegionMemberChangeEvent.Action.UNTRUST, null)) {
@@ -190,8 +181,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
         if (args.length == 1) {
             return filter(List.of("offer", "take", "cancel"), args[0]);
         }
-        // offer <цена> <минуты>: подсказываем потолок цены и границы
-        // длительности периода — всё из market.rent (features.yml).
+
         if (args.length == 2 && args[0].equalsIgnoreCase("offer")) {
             return filter(List.of(String.valueOf(plugin.getConfigManager().getConfig()
                     .getInt("market.rent.max-price", 100000))), args[1]);

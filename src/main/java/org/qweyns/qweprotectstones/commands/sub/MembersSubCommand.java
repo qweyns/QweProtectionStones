@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Список тех, у кого есть доступ к привату, с их уровнями. */
 public class MembersSubCommand extends AbstractRegionSubCommand {
 
     public MembersSubCommand(QweProtectStones plugin) {
@@ -47,7 +46,7 @@ public class MembersSubCommand extends AbstractRegionSubCommand {
         }
 
         List<RegionMember> members = new ArrayList<>(region.getMembers());
-        // Сначала самые доверенные — так список читается сверху вниз.
+
         members.sort(Comparator.comparingInt((RegionMember m) -> -m.trust().weight())
                 .thenComparing(RegionMember::displayName, String.CASE_INSENSITIVE_ORDER));
 

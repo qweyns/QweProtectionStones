@@ -17,7 +17,7 @@ public class PlayerPointsHook {
             PlayerPoints instance = PlayerPoints.getInstance();
             if (instance != null) api = instance.getAPI();
         } catch (Throwable t) {
-            // Несовместимая версия PlayerPoints не должна ронять запуск плагина.
+
             logger.warning("Не удалось подключиться к PlayerPoints: " + t.getMessage());
         }
     }
@@ -28,7 +28,6 @@ public class PlayerPointsHook {
         return api != null && api.look(player.getUniqueId()) >= amount;
     }
 
-    /** @return true, если очки действительно списаны. */
     public boolean takePoints(Player player, int amount) {
         if (api == null || amount <= 0) return false;
         return api.take(player.getUniqueId(), amount);

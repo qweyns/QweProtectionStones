@@ -12,42 +12,19 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Единая точка сборки предмета-ядра: PDC-тег типа, накопленная прочность
- * и внешний вид (имя, описание, свечение — секция item в regions.yml).
- *
- * <p>Раньше тег ставили в трёх местах независимо (/qps give, возврат при
- * поломке, клавиши дублировались строками) — теперь клавиши и логика
- * живут здесь.</p>
- */
 public final class RegionItems {
 
     private RegionItems() {
     }
 
-    /** PDC-тег с типом привата на предмете-ядре. */
     public static NamespacedKey typeKey(QweProtectStones plugin) {
         return new NamespacedKey(plugin, "core-type");
     }
 
-    /** PDC-тег с накопленной прочностью (переносится при переустановке ядра). */
     public static NamespacedKey durabilityKey(QweProtectStones plugin) {
         return new NamespacedKey(plugin, "core-durability");
     }
 
-    /**
-     * Собирает блок-ядро.
-     *
-     * @param tagType ставить ли PDC-тег типа: для типов с
-     *               {@code restrict-obtaining: true} — всегда (без тега блок
-     *               приват не создаст), для обычных — по настройке
-     *               {@code settings.core-item-tags};
-     * @param carriedDurability накопленная прочность или null — не переносить;
-     * @param styled применять ли внешний вид из секции item (имя, описание,
-     *               свечение). Включено для выдачи командой и крафта;
-     *               при поломке ядра — только у ограниченных типов,
-     *               обычные возвращаются как обычный блок.
-     */
     public static ItemStack core(QweProtectStones plugin, RegionType type, int amount,
                                  Integer carriedDurability, boolean tagType, boolean styled) {
         ItemStack stack = new ItemStack(type.material(), Math.max(1, amount));
@@ -64,13 +41,12 @@ public final class RegionItems {
         }
 
         if (styled) {
-            // Плейсхолдеры прочности: накопленная (ядро вернулось при поломке
-            // привата) или стартовая для свежего предмета; потолок — из типа.
+            // %durability% накопленная или стартовая
+
             String durability = String.valueOf(carriedDurability != null && carriedDurability > 0
                     ? carriedDurability : type.startDurability());
             String maxDurability = String.valueOf(type.maxDurability());
 
-            // Имя предмета (MiniMessage); пусто — стандартное имя блока.
             if (!type.itemName().isEmpty()) {
                 meta.displayName(ColorUtil.formatItemComponent(
                         durabilityPlaceholders(type.itemName(), durability, maxDurability)));
@@ -83,7 +59,7 @@ public final class RegionItems {
                 }
                 meta.lore(lore);
             }
-            // Свечение, как у зачарованного предмета.
+
             if (type.itemGlow()) {
                 meta.setEnchantmentGlintOverride(true);
             }
@@ -93,25 +69,12 @@ public final class RegionItems {
         return stack;
     }
 
-    /**
-     * Подстановка прочности в имя и описание предмета-ядра.
-     *
-     * <p>{@code %durability%} — накопленная прочность (для возвращённого при
-     * поломке ядра) или стартовая для свежего предмета; {@code %max_durability%} —
-     * потолок прочности типа. Совпадает с плейсхолдерами голограмм.</p>
-     */
     static String durabilityPlaceholders(String text, String durability, String maxDurability) {
         if (text == null || text.isEmpty()) return text;
         return text.replace("%durability%", durability)
                 .replace("%max_durability%", maxDurability);
     }
 
-    /**
-     * Предмет-ядро, возвращаемый при удалении привата (поломка блока или
-     * /ps delete): PDC-теги прочности — по настройке, ограниченные типы
-     * (restrict-obtaining) — с тегом и в полном оформлении, чтобы покупка
-     * не превращалась в обычный блок.
-     */
     public static ItemStack returnCore(QweProtectStones plugin, RegionType type, Region region) {
         boolean tags = plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true);
         Integer durability = region != null

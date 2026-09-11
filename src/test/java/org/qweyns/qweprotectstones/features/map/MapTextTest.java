@@ -4,11 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Тесты экранирования HTML для подписей веб-карт: Dynmap и BlueMap рендерят
- * всплывающие подсказки маркеров в браузере, поэтому значение из игры не
- * должно открывать разметку на странице карты.
- */
 class MapTextTest {
 
     @Test

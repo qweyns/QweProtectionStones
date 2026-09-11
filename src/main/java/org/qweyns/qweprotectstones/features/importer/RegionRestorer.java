@@ -18,18 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Восстановление приватов из JSON-выгрузки {@code /qps export} (или автобэкапа
- * из {@code exports/}).
- *
- * <p>Формат выгрузки — наш собственный, и он же является подмножеством YAML,
- * поэтому разбор идёт через SnakeYAML без JSON-зависимостей. Уже существующие
- * id и пересечения с текущими привата пропускаются: восстановление можно
- * безопасно перезапускать.</p>
- */
 public class RegionRestorer {
 
-    /** Итог восстановления. */
     public record Result(int restored, int skipped, int errors) {
     }
 
@@ -39,9 +29,6 @@ public class RegionRestorer {
         this.plugin = plugin;
     }
 
-    /**
-     * @param file файл regions_*.json из exports/
-     */
     public Result restore(File file) throws IOException {
         String raw = Files.readString(file.toPath(), StandardCharsets.UTF_8);
 
@@ -80,12 +67,11 @@ public class RegionRestorer {
         RegionType type = plugin.getRegionTypes().byId(String.valueOf(data.get("type")).toLowerCase(java.util.Locale.ROOT));
         if (id == null || type == null) return Outcome.ERROR;
 
-        // Дубликат id или пересечение с существующим приватом — пропускаем.
         if (plugin.getRegionManager().getById(id) != null) return Outcome.SKIPPED;
 
         String world = String.valueOf(data.get("world"));
         UUID ownerId = data.get("owner") instanceof Map<?, ?> owner ? uuid(String.valueOf(owner.get("uuid"))) : null;
-        if (ownerId == null) return Outcome.SKIPPED; // административные не восстанавливаем
+        if (ownerId == null) return Outcome.SKIPPED;
 
         int[] core = intArray(data.get("core"));
         RegionBounds bounds = bounds(data.get("bounds"));
@@ -147,8 +133,6 @@ public class RegionRestorer {
 
         if (!plugin.getRegionManager().importRegion(region)) return Outcome.SKIPPED;
 
-        // Голограмму создаём только по настройке импорта: ядро виртуальное,
-        // и текст над случайным блоком сбивает с толку.
         if (plugin.getConfigManager().getConfig().getBoolean("import.create-holograms", false)) {
             plugin.getHologramManager().createOrUpdateHologram(region);
         }

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-/** Выполнение действий из click_commands: покупки, звуки, переходы между меню. */
 public class MenuActions {
 
     private static final String CLOSE = "[close]";
@@ -30,7 +29,7 @@ public class MenuActions {
     private static final String TAKE_EXP = "[takeexp] ";
     private static final String TAKE_POINTS = "[takepoints] ";
     private static final String ADD_EFFECT = "[region_add_effect] ";
-    /** Прежние имена действия: меню, написанные до переименования, должны работать. */
+
     private static final String[] ADD_EFFECT_LEGACY = {"[claim_add_effect] ", "[ps_add_effect] "};
 
     private final QweProtectStones plugin;
@@ -49,7 +48,7 @@ public class MenuActions {
         for (String raw : commands) {
             String cmd = placeholders.apply(player, raw, region, null);
             try {
-                // Если оплата не прошла, остальные действия не выполняются.
+
                 if (!run(player, cmd, region)) return;
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Ошибка выполнения действия меню: " + cmd, e);
@@ -57,7 +56,6 @@ public class MenuActions {
         }
     }
 
-    /** @return false, если цепочку действий нужно прервать */
     private boolean run(Player player, String cmd, Region region) {
         if (cmd.startsWith(TAKE_MONEY)) {
             return takePayment(player, plugin.getVaultHook().isEnabled(),
@@ -130,7 +128,6 @@ public class MenuActions {
         if (targetMenu != null) plugin.getMenuManager().openMenu(player, targetMenu, region);
     }
 
-    /** Принимает и {@code ENTITY_X}, и {@code ENTITY_X:0.5:1.2} — как в config.yml. */
     private void playSound(Player player, String soundName) {
         SoundSetting sound = SoundSetting.parse(soundName, SoundSetting.NONE);
         if (!sound.isEnabled()) {
@@ -140,7 +137,6 @@ public class MenuActions {
         sound.playTo(player);
     }
 
-    /** Некорректное число в конфиге меню не должно прерывать остальные действия. */
     private double parseDouble(String raw) {
         try {
             return Double.parseDouble(raw.trim());
@@ -157,8 +153,6 @@ public class MenuActions {
         String effectName = parts[0].trim();
         if (effectName.isEmpty()) return;
 
-        // Эффект, не разрешённый типом привата, купить нельзя — даже если меню
-        // настроено с ошибкой.
         if (!requirements.isEffectAllowed(region, effectName)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("effect_not_allowed", "%effect%", effectName));
             return;
@@ -173,11 +167,11 @@ public class MenuActions {
             }
         }
 
-        // Даём другим плагинам шанс наложить вето (налоги, клановые правила).
+        // чужие плагины могут наложить вето
         if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return;
 
-        // Проверяем имя эффекта ДО списания: за опечатку в конфиге меню
-        // игрок платить не должен.
+        // имя эффекта до списания, за опечатку в конфиге не платят
+
         boolean builtin = effectName.equalsIgnoreCase("ALERTS") || effectName.equalsIgnoreCase("EXP_BOOST");
         if (!builtin && plugin.getEffectManager().potionType(effectName) == null) {
             plugin.getLogger().warning("Магазин эффектов: неизвестный эффект '" + effectName + "' (проверьте menus/effects.yml)");
@@ -185,7 +179,6 @@ public class MenuActions {
             return;
         }
 
-        // Оплата: тип и цена настраиваются в effects.purchase (по умолчанию бесплатно).
         var purchase = plugin.getEffectPurchaseManager();
         switch (purchase.charge(player, effectName, amplifier)) {
             case NO_ECONOMY -> {
@@ -199,7 +192,7 @@ public class MenuActions {
                         "%unit%", purchase.costTypeName()));
                 return;
             }
-            default -> { /* FREE и SUCCESS: выдаём */ }
+            default -> {  }
         }
 
         plugin.getEffectManager().addCustomEffect(region, effectName, amplifier);

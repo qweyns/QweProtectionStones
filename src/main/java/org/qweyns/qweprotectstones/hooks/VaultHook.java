@@ -23,10 +23,6 @@ public class VaultHook {
         return economy != null && economy.has(player, amount);
     }
 
-    /**
-     * @return true, если деньги действительно списаны. Раньше результат
-     * игнорировался, и покупка проходила даже при неудачной транзакции.
-     */
     public boolean takeMoney(Player player, double amount) {
         if (economy == null || amount <= 0) return false;
 
@@ -34,11 +30,6 @@ public class VaultHook {
         return response != null && response.transactionSuccess();
     }
 
-    /**
-     * Перевод игроку (продавец может быть оффлайн в момент покупки).
-     *
-     * @return true, если зачисление прошло успешно
-     */
     public boolean giveMoney(OfflinePlayer player, double amount) {
         if (economy == null || amount <= 0 || player == null) return false;
 

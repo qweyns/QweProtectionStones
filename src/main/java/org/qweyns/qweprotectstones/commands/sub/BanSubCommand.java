@@ -15,12 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Чёрный список конкретного привата: ban, unban, banlist.
- *
- * <p>Точечная альтернатива флагу {@code entry}: закрывать вход всем ради одного
- * нарушителя — плохой вариант.</p>
- */
 public class BanSubCommand extends AbstractRegionSubCommand {
 
     public enum Mode {
@@ -92,7 +86,6 @@ public class BanSubCommand extends AbstractRegionSubCommand {
         ejectIfInside(region, target.getUniqueId());
     }
 
-    /** Забаненного, стоящего внутри, сразу выставляем наружу. */
     private void ejectIfInside(Region region, UUID bannedId) {
         Player online = Bukkit.getPlayer(bannedId);
         if (online == null || !region.contains(online.getLocation())) return;
@@ -104,7 +97,6 @@ public class BanSubCommand extends AbstractRegionSubCommand {
         plugin.getSchedulers().runAtEntity(online, () -> online.teleportAsync(outside));
     }
 
-    /** Ищет ближайшую точку сразу за границей привата по той же высоте. */
     private Location findExit(Region region, Location from) {
         if (from.getWorld() == null) return null;
 
@@ -173,7 +165,6 @@ public class BanSubCommand extends AbstractRegionSubCommand {
         return target == null ? null : target.getUniqueId();
     }
 
-    /** Только онлайн и уже известные сервером игроки: к Mojang API не ходим. */
     private OfflinePlayer resolvePlayer(String name) {
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) return online;

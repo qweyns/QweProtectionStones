@@ -17,20 +17,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Голограммы через DecentHolograms.
- *
- * <p>Часть настроек ставится рефлексией: набор методов у DecentHolograms
- * менялся между версиями, и прямой вызов отсутствующего метода уронил бы
- * плагин целиком на серверах со старой сборкой. Здесь недоступная настройка
- * просто пропускается — один раз с предупреждением в лог.</p>
- */
 public class DHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
     private final Set<String> activeHolograms = new LinkedHashSet<>();
 
-    /** Кэш найденных методов: рефлексия не должна работать на каждое обновление. */
     private final Map<String, Method> optionalSetters = new ConcurrentHashMap<>();
     private final Set<String> missingSetters = ConcurrentHashMap.newKeySet();
 
@@ -51,7 +42,7 @@ public class DHProvider implements IHologramProvider {
         if (holo == null) {
             holo = DHAPI.createHologram(name, hologramLoc);
         }
-        // Голограммы полностью управляются плагином, в holograms.yml им не место.
+
         holo.setSaveToFile(false);
 
         DHAPI.setHologramLines(holo, buildLines(region, typeId, config));
@@ -63,9 +54,8 @@ public class DHProvider implements IHologramProvider {
     }
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {
-        // Голограмма целиком состоит из hologram_lines (или _under_attack):
-        // display_name автоматически не подставляется — заголовок, если
-        // нужен, задаётся строкой с плейсхолдером %type%.
+        // заголовок задаётся строкой с %type%, display_name не подставляется
+
         List<String> lines = new ArrayList<>();
         for (String line : config.getHologramLines(typeId, plugin.isUnderSiege(region))) {
             lines.add(ColorUtil.formatLegacyString(HologramText.apply(plugin, line, region)));
@@ -78,15 +68,10 @@ public class DHProvider implements IHologramProvider {
         set(holo, "setUpdateInterval", int.class, config.getHologramUpdateInterval(typeId));
         set(holo, "setDownOrigin", boolean.class, config.isHologramDownOrigin(typeId));
 
-        // Пустое право означает «видно всем» — тогда настройку не трогаем вовсе.
         String permission = config.getHologramPermission(typeId);
         if (!permission.isBlank()) set(holo, "setPermission", String.class, permission);
     }
 
-    /**
-     * Вызывает сеттер, если он есть в установленной версии DecentHolograms.
-     * Об отсутствующем методе предупреждаем один раз, а не каждое обновление.
-     */
     private void set(Hologram holo, String setter, Class<?> paramType, Object value) {
         if (missingSetters.contains(setter)) return;
 

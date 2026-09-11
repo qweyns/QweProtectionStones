@@ -14,13 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Автоочистка заброшенных приватов: если владелец не заходил дольше заданного
- * срока, территория освобождается.
- *
- * <p>Прокачанные приваты можно защитить настройкой {@code keep_upgraded}: жалко
- * сносить базу, в которую вложили ресурсы, только потому что игрок ушёл в отпуск.</p>
- */
 public class AbandonedRegionTask {
 
     private final QweProtectStones plugin;
@@ -33,7 +26,7 @@ public class AbandonedRegionTask {
         if (!isEnabled()) return;
 
         long intervalTicks = TimeUnit.MINUTES.toSeconds(checkIntervalMinutes()) * 20L;
-        // Первый прогон не сразу после запуска: сервер ещё догружает миры.
+
         plugin.getSchedulers().runTimer(this::sweep, 20L * 60, intervalTicks);
 
         plugin.getLogger().info("Автоочистка заброшенных приватов включена: срок "
@@ -56,7 +49,6 @@ public class AbandonedRegionTask {
         return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.keep_upgraded", true);
     }
 
-    /** Один проход очистки. Тяжёлое чтение базы уходит в асинхронный поток. */
     public void sweep() {
         plugin.getSchedulers().runAsync(() -> {
             Map<UUID, Long> lastSeen = plugin.getRegionStorage().loadLastSeen();
@@ -73,7 +65,7 @@ public class AbandonedRegionTask {
             if (owner == null) continue;
             if (Bukkit.getPlayer(owner) != null) continue;
 
-            // Нет записи о входе — считаем моментом отсчёта создание привата.
+            // нет записи о входе, отсчёт от создания
             long seen = lastSeen.getOrDefault(owner, region.getCreatedAt());
             if (seen > threshold) continue;
 
@@ -100,7 +92,6 @@ public class AbandonedRegionTask {
         return type != null ? type.startDurability() : 1;
     }
 
-    /** Блок-ядро убираем в потоке его региона: на Folia иначе нельзя. */
     private void clearCoreBlock(Region region) {
         Location core = region.getCoreLocation();
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());

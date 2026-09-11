@@ -7,10 +7,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.qweyns.qweprotectstones.regions.Region;
 
-/**
- * Вызывается перед регистрацией нового привата. Отмена события отменяет и
- * установку блока-ядра — игрок получит предмет обратно.
- */
 public class RegionCreateEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();

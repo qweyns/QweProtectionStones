@@ -12,7 +12,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-/** Показывает карточку привата, в котором стоит игрок. */
 public class InfoSubCommand extends AbstractRegionSubCommand {
 
     public InfoSubCommand(QweProtectStones plugin) {
@@ -41,8 +40,8 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
 
         TrustLevel trust = plugin.getProtectionService().trustOf(region, player);
 
-        // Чужой приват (нет доступа): просмотр чужих территорий — отдельное
-        // право, по умолчанию только у операторов (как /rg info в WorldGuard).
+        // чужие территории — отдельное право, как /rg info
+
         if (trust == null && !player.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".info.others")) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
             return;
@@ -77,8 +76,6 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
                     "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
         }
 
-        // Развёрнутая карточка чужого привата: границы, участники с уровнями
-        // доступа и история атак — всё, что нужно модератору.
         if (trust == null) {
             player.sendMessage(plugin.getLanguageManager().getMessage("info_bounds",
                     "%min%", bounds.minX() + ", " + bounds.minY() + ", " + bounds.minZ(),
@@ -96,7 +93,6 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
             }
         }
 
-        // Заодно подсвечиваем границы — так игрок сразу видит, где заканчивается приват.
         plugin.getVisualManager().showBoundary(region, "info");
     }
 }

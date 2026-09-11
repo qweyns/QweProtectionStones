@@ -12,9 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Тесты маппинга флагов WorldGuard на флаги плагина при импорте.
- */
 class WgFlagsTest {
 
     @Test
@@ -31,7 +28,7 @@ class WgFlagsTest {
     void mapValueПропускаетСтроковыеИПустые() {
         assertNull(WgFlags.mapValue(null));
         assertNull(WgFlags.mapValue(""));
-        // строковые флаги WorldGuard (текст приветствия) не переносятся
+
         assertNull(WgFlags.mapValue("Добро пожаловать!"));
         assertNull(WgFlags.mapValue("members"));
     }
@@ -52,7 +49,7 @@ class WgFlagsTest {
 
     @Test
     void дефолтныйМаппингРезолвитсяЦеликом() {
-        // каждый ключ и значение дефолтного маппинга обязаны существовать
+
         WgFlags.DEFAULT_MAPPING.forEach((wg, our) -> {
             assertNotNull(wg);
             assertEquals(wg, wg.toLowerCase(), "ключи хранятся в нижнем регистре");

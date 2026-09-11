@@ -9,11 +9,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Режим обхода защиты для администрации. Отдельный переключатель нужен, чтобы
- * админ с правами не сносил чужие постройки по неосторожности: по умолчанию
- * режим выключен даже при наличии права.
- */
 public class BypassManager implements Listener {
 
     private final Set<UUID> enabled = ConcurrentHashMap.newKeySet();
@@ -22,7 +17,6 @@ public class BypassManager implements Listener {
         return player != null && enabled.contains(player.getUniqueId());
     }
 
-    /** @return новое состояние режима */
     public boolean toggle(Player player) {
         UUID uuid = player.getUniqueId();
         if (enabled.remove(uuid)) return false;
@@ -35,7 +29,6 @@ public class BypassManager implements Listener {
         enabled.remove(player.getUniqueId());
     }
 
-    /** Режим не переживает выход — иначе он тихо остаётся включённым навсегда. */
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         enabled.remove(event.getPlayer().getUniqueId());

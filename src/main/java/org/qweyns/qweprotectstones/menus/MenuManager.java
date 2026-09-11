@@ -32,13 +32,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Реестр меню и обработка кликов.
- *
- * <p>Раньше этот класс делал всё сразу и разросся до тысячи строк. Теперь
- * сборка предметов, плейсхолдеры, требования, действия и анимация вынесены в
- * отдельные классы, а здесь остались открытие, отрисовка и события.</p>
- */
 public class MenuManager implements Listener {
 
     private static final List<String> DEFAULT_MENUS = List.of("main", "effects", "upgrade");
@@ -94,8 +87,6 @@ public class MenuManager implements Listener {
             return;
         }
 
-        // Стандартные меню восстанавливаются по одному: удаление файла больше
-        // не означает, что он не появится снова.
         for (String name : DEFAULT_MENUS) {
             File file = new File(folder, name + ".yml");
             if (!file.isFile()) plugin.saveResource("menus/" + name + ".yml", false);
@@ -114,14 +105,6 @@ public class MenuManager implements Listener {
         plugin.getLogger().info("Загружено меню: " + menus.size());
     }
 
-    // ------------------------------------------------------------------
-    // Открытие и отрисовка
-    // ------------------------------------------------------------------
-
-    /**
-     * Какое меню открывает клик по ядру. Тип привата может назвать его прямо
-     * ({@code menu: effects}); иначе выбираем по тому, есть ли у типа прокачка.
-     */
     public String defaultMenuFor(Region region) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (type == null) return "main";
@@ -156,8 +139,8 @@ public class MenuManager implements Listener {
         int interval = menuCfg.getInt("update_interval", 0);
         if (interval > 0) {
             holder.updateTask = plugin.getSchedulers().runTimer(() -> {
-                // Страховка от утечки: если игрок отключился, а InventoryCloseEvent
-                // по какой-то причине не сработал, задача снимает себя сама.
+                // страховка, игрок мог выйти без InventoryCloseEvent
+
                 if (!player.isOnline()) {
                     holder.cancelTasks();
                     return;
@@ -169,9 +152,8 @@ public class MenuManager implements Listener {
         if (menuCfg.contains("animations.default")) {
             MenuAnimator animator = new MenuAnimator(plugin, player, menuCfg, region, inv, holder);
             holder.animator = animator;
-            // Задачу обязательно сохраняем в holder: без этого она тикала бы
-            // вечно, даже после закрытия меню, — по задаче на каждое открытие.
-            // Плюс та же страховка от отключившегося игрока, что и у updateTask.
+            // задачу держим в holder, иначе тикает вечно
+
             holder.animatorTask = plugin.getSchedulers().runTimer(() -> {
                 if (!player.isOnline()) {
                     holder.cancelTasks();
@@ -184,7 +166,6 @@ public class MenuManager implements Listener {
         player.openInventory(inv);
     }
 
-    /** Bukkit падает, если размер сундука не кратен 9 или больше 54. */
     private int normalizeSize(int configured, String menuName) {
         int size = Math.max(9, Math.min(54, configured));
         if (size % 9 != 0) size = ((size / 9) + 1) * 9;
@@ -195,10 +176,6 @@ public class MenuManager implements Listener {
         return size;
     }
 
-    /**
-     * @param force перерисовать даже если приват не менялся; периодическое
-     *              обновление вызывается без force и обычно завершается сразу
-     */
     public void render(Player player, MenuHolder holder, boolean force) {
         FileConfiguration menuCfg = menus.get(holder.menuName);
         if (menuCfg == null) return;
@@ -206,8 +183,8 @@ public class MenuManager implements Listener {
         Region region = holder.region;
         long version = region == null ? 0 : region.getVersion();
 
-        // Главная экономия: если приват не менялся и живых плейсхолдеров нет,
-        // пересобирать 45 слотов дважды в секунду незачем.
+        // статичные предметы не пересобираем дважды в секунду
+
         if (!force && holder.renderedVersion == version && !hasLivePlaceholders(menuCfg)) return;
         holder.renderedVersion = version;
 
@@ -247,7 +224,6 @@ public class MenuManager implements Listener {
         else holder.animator.refreshBaseLayer(contents);
     }
 
-    /** Есть ли плейсхолдеры, значение которых меняется само (баланс, время). */
     private boolean hasLivePlaceholders(FileConfiguration menuCfg) {
         return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")
                 && menuCfg.getBoolean("live_placeholders", true);
@@ -287,8 +263,8 @@ public class MenuManager implements Listener {
             ItemStack item = itemFactory.build(template, player, region, extra);
             if (item == null) continue;
 
-            // withType, а не setType: сохраняет метаданные (название, зачарования,
-            // PDC), которые setType терял при переходе на компоненты предметов.
+            // withType, не setType, второй теряет метаданные
+
             item = item.withType(upgradeMaterial);
             item.setAmount(Math.max(1, Math.min(64, targetLevel)));
             contents[slot] = item;
@@ -311,7 +287,6 @@ public class MenuManager implements Listener {
         return UpgradeCost.calculate(current, target, multiplier, tax, penalty);
     }
 
-    /** Предмет оплаты: свой у типа привата или общий из config.yml. */
     public Material upgradeItemFor(Region region) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (type == null || !type.overridesUpgradeItem()) return plugin.getConfigManager().getUpgradeItem();
@@ -346,10 +321,6 @@ public class MenuManager implements Listener {
         return map;
     }
 
-    // ------------------------------------------------------------------
-    // События инвентаря
-    // ------------------------------------------------------------------
-
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() instanceof MenuHolder holder) holder.cancelTasks();
@@ -371,8 +342,8 @@ public class MenuManager implements Listener {
         Inventory clicked = event.getClickedInventory();
         if (clicked == null || !clicked.equals(event.getView().getTopInventory())) return;
 
-        // Кулдаун считаем только для кликов по самому меню, иначе возня в своём
-        // инвентаре блокировала бы следующее нажатие кнопки.
+        // кулдаун только по кликам в самом меню
+
         long now = System.currentTimeMillis();
         if (now - clickCooldowns.getOrDefault(player.getUniqueId(), 0L) < plugin.getTunables().menuClickCooldownMs()) return;
         clickCooldowns.put(player.getUniqueId(), now);
@@ -385,8 +356,8 @@ public class MenuManager implements Listener {
         }
 
         Region region = holder.region;
-        // Права проверяем повторно: меню могло остаться открытым после того,
-        // как игрока исключили из привата или сам приват удалили.
+        // права перепроверяем, меню могло пережить исключение
+
         if (region != null && !isStillTrusted(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
                     "%level%", plugin.getLanguageManager().rawTemplate("trust_container")));
@@ -426,7 +397,6 @@ public class MenuManager implements Listener {
         return itemCfg.getStringList("click_commands");
     }
 
-    /** @return true, если клик был по слоту прокачки и обработан здесь */
     private boolean handleUpgradeClick(Player player, MenuHolder holder, FileConfiguration menuCfg, int slot) {
         List<Integer> upgradeSlots = menuCfg.getIntegerList("upgrade_slots");
         int slotIndex = upgradeSlots.indexOf(slot);
@@ -435,7 +405,6 @@ public class MenuManager implements Listener {
         Region region = holder.region;
         if (region == null) return true;
 
-        // Качать приват может только управляющий: обычный участник — нет.
         if (!plugin.getProtectionService().canManage(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
                     "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));

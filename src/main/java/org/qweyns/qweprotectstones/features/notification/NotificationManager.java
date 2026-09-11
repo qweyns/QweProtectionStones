@@ -20,7 +20,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-/** Оповещения владельцу в чат и вебхуки в Discord/Telegram. */
 public class NotificationManager {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -31,7 +30,6 @@ public class NotificationManager {
             .expireAfterWrite(15, TimeUnit.SECONDS)
             .build();
 
-    /** Один переиспользуемый клиент вместо нового соединения на каждое уведомление. */
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(TIMEOUT)
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -77,10 +75,6 @@ public class NotificationManager {
         dispatchWebhooks(region.getId() + "_intrude", "intruder_alert_raw", placeholders);
     }
 
-    /**
-     * Сообщение получает владелец и все управляющие: раньше уведомление уходило
-     * только владельцу, и совладельцы о рейде не узнавали.
-     */
     private void notifyTrusted(Region region, String messageKey, SoundSetting sound, String... placeholders) {
         notifyPlayer(region.getOwnerId(), messageKey, sound, placeholders);
 
@@ -114,8 +108,8 @@ public class NotificationManager {
         if (webhookRateLimiter.getIfPresent(rateLimitKey) != null) return;
         webhookRateLimiter.put(rateLimitKey, System.currentTimeMillis());
 
-        // Текст готовим в основном потоке: конфигурация читается из кэша.
-        // Для Discord/Telegram — чистый текст: §-коды там не рендерятся.
+        // для discord/telegram чистый текст без §-кодов
+
         String rawMessage = ColorUtil.stripFormatting(
                 plugin.getLanguageManager().rawTemplate(messageKey, placeholders)).replace("\n", " ");
 
@@ -132,7 +126,6 @@ public class NotificationManager {
         }
     }
 
-    /** Без экранирования кавычка в нике ломала JSON, и вебхук молча отваливался. */
     private static String escapeJson(String value) {
         StringBuilder sb = new StringBuilder(value.length() + 16);
 
@@ -168,7 +161,6 @@ public class NotificationManager {
             return;
         }
 
-        // sendAsync не блокирует ни основной поток, ни планировщик Bukkit.
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.discarding())
                 .exceptionally(throwable -> {
                     plugin.getLogger().log(Level.FINE, "Не удалось отправить уведомление", throwable);

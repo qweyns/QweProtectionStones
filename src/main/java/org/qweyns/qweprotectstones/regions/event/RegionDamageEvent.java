@@ -6,10 +6,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.qweyns.qweprotectstones.regions.Region;
 
-/**
- * Вызывается перед снятием прочности с ядра. Позволяет другим плагинам
- * изменить урон или полностью защитить приват (например, на время «мирного часа»).
- */
 public class RegionDamageEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -27,7 +23,6 @@ public class RegionDamageEvent extends Event implements Cancellable {
 
     public Region getRegion() { return region; }
 
-    /** TNT, CREEPER, WITHER, ENDER_CRYSTAL, BED или OTHER. */
     public String getExplosionType() { return explosionType; }
 
     public int getDamage() { return damage; }

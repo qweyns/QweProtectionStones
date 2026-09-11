@@ -9,7 +9,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Телепорт к своему привату по короткому идентификатору. */
 public class HomeSubCommand extends AbstractRegionSubCommand {
 
     public HomeSubCommand(QweProtectStones plugin) {
@@ -61,7 +60,6 @@ public class HomeSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        // Задержка и перезарядка настраиваются в секции home (0 = мгновенно).
         plugin.getHomeWarmup().teleport(player, target, home);
     }
 

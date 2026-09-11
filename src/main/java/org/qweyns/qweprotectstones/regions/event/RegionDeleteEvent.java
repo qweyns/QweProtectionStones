@@ -7,20 +7,18 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.qweyns.qweprotectstones.regions.Region;
 
-/** Вызывается перед удалением привата. */
 public class RegionDeleteEvent extends Event implements Cancellable {
 
-    /** Почему приват удаляется — влияет на возврат блока и эффекты. */
     public enum Reason {
-        /** Владелец или доверенный игрок сломал ядро. */
+
         BROKEN,
-        /** Прочность закончилась под взрывами. */
+
         DESTROYED_BY_RAID,
-        /** Команда /region delete. */
+
         COMMAND,
-        /** Административное удаление. */
+
         ADMIN,
-        /** Автоочистка заброшенных приватов. */
+
         EXPIRED
     }
 
@@ -39,7 +37,6 @@ public class RegionDeleteEvent extends Event implements Cancellable {
 
     public Region getRegion() { return region; }
 
-    /** Игрок, инициировавший удаление, или {@code null} для автоматических причин. */
     public Player getPlayer() { return player; }
 
     public Reason getReason() { return reason; }

@@ -17,19 +17,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Подсказка в actionbar, когда блок-ядро в руке: влезет ли здесь приват
- * и не пересечётся ли он с чужим.
- *
- * <p>Подсветка границ частицами при взятии в руку убрана как лишняя;
- * осталась только текстовая подсказка — и она по умолчанию выключена
- * ({@code settings.preview-messages}).</p>
- */
 public class RegionPreviewListener implements Listener {
 
     private final QweProtectStones plugin;
 
-    /** Какой тип показывали игроку последним — чтобы не спамить одно и то же. */
     private final Map<UUID, String> showing = new ConcurrentHashMap<>();
 
     public RegionPreviewListener(QweProtectStones plugin) {
@@ -53,7 +44,6 @@ public class RegionPreviewListener implements Listener {
             return;
         }
 
-        // Одно сообщение, пока игрок держит тот же тип блока.
         String previous = showing.put(player.getUniqueId(), type.id());
         if (type.id().equals(previous)) return;
 

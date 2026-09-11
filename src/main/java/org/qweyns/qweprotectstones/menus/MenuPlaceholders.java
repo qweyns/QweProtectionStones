@@ -11,10 +11,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Подстановка значений привата и PlaceholderAPI в строки меню. */
 public class MenuPlaceholders {
 
-    /** Компилируется один раз, а не на каждый отрисованный предмет. */
     private static final Pattern EFFECT_LEVEL_PATTERN = Pattern.compile("(?i)%effect_level_([a-zA-Z_]+)%");
 
     private final QweProtectStones plugin;
@@ -23,14 +21,13 @@ public class MenuPlaceholders {
         this.plugin = plugin;
     }
 
-    /** Есть ли в строке вообще что подставлять — если нет, предмет можно кэшировать навсегда. */
     public static boolean isDynamic(String text) {
         return text != null && text.indexOf('%') >= 0;
     }
 
     public String apply(Player player, String text, Region region, Map<String, String> extra) {
         if (text == null) return "";
-        if (text.indexOf('%') < 0) return text; // быстрый выход для статичных строк
+        if (text.indexOf('%') < 0) return text;
 
         if (extra != null) {
             for (Map.Entry<String, String> entry : extra.entrySet()) {
@@ -79,7 +76,6 @@ public class MenuPlaceholders {
         return text;
     }
 
-    /** Уровень эффекта в понятном игроку виде: 0 — нет, 1 — первый уровень. */
     public int effectLevel(Region region, String effectName) {
         if (effectName == null || region == null) return 0;
 

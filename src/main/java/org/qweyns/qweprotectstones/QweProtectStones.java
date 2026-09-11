@@ -55,7 +55,6 @@ import java.util.List;
 
 public final class QweProtectStones extends JavaPlugin {
 
-    /** Префикс прав плагина; узлы объявлены в plugin.yml. */
     public static final String PERMISSION_PREFIX = "qweprotectstones";
 
     private ConfigManager configManager;
@@ -102,7 +101,7 @@ public final class QweProtectStones extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Планировщик выбирается первым: на нём держится вся остальная асинхронность.
+        // планировщик первым, на нём вся асинхронность
         this.schedulers = Schedulers.create(this);
         this.configManager = new ConfigManager(this);
         this.regionConfig = new RegionConfig(this);
@@ -111,7 +110,6 @@ public final class QweProtectStones extends JavaPlugin {
         this.languageManager = new LanguageManager(this);
         this.languageManager.init();
 
-        // Типы приватов нужны раньше хранилища: по ним восстанавливаются приваты.
         this.regionTypes = new RegionTypeRegistry(this);
         this.regionTypes.load();
         this.coreRecipeManager = new org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager(this);
@@ -125,7 +123,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.regionManager = new RegionManager(this);
         this.regionManager.loadAll(regionStorage.init());
         this.regionManager.refreshTypeData();
-        // Крафты зависят от типов: регистрируем после загрузки regions.yml.
+
         this.coreRecipeManager.reload();
 
         this.vaultHook = new VaultHook();
@@ -135,8 +133,6 @@ public final class QweProtectStones extends JavaPlugin {
         this.discordSrvHook = new org.qweyns.qweprotectstones.hooks.DiscordSrvHook(this);
         this.discordSrvHook.setup();
 
-        // Рынок (продажа/аренда) грузит объявления сразу: без Vault просто
-        // откажется проводить сделки.
         this.marketManager = new MarketManager(this);
         this.marketManager.load();
 
@@ -167,23 +163,19 @@ public final class QweProtectStones extends JavaPlugin {
         this.marketManager.startExpiryTask();
         this.actionLogger.startPruning();
 
-        // Плановые выгрузки всех приватов с ротацией (backup.enable).
         this.criticalFileLogger = new org.qweyns.qweprotectstones.features.log.CriticalFileLogger(this);
         this.backupTask = new org.qweyns.qweprotectstones.features.backup.BackupTask(this);
         this.backupTask.start();
 
-        // Dynmap подключаем последним: к этому моменту приваты уже загружены.
         this.dynmapIntegration = new DynmapIntegration(this);
         this.dynmapIntegration.enable();
 
-        // BlueMap — та же история: подписка на onEnable API, если карта грузится позже.
         this.blueMapIntegration = new BlueMapIntegration(this);
         this.blueMapIntegration.enable();
 
         getLogger().info("QweProtectStones v" + getPluginMeta().getVersion() + " запущен"
                 + (schedulers.isFolia() ? " (режим Folia)" : "") + ": приватов — " + regionManager.size());
 
-        // API для сторонних плагинов инициализируем последним: всё уже готово.
         QpsApi.init(this);
     }
 
@@ -198,7 +190,6 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(new RegionInteractListener(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
-        // Движок защиты: то, что раньше делал WorldGuard.
         pm.registerEvents(new BlockProtectionListener(this), this);
         pm.registerEvents(new InteractProtectionListener(this), this);
         pm.registerEvents(new EntityProtectionListener(this), this);
@@ -212,13 +203,12 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(previewListener, this);
         pm.registerEvents(new PlayerActivityListener(this), this);
 
-        // Задержка /ps home: слушает движение и урон, чтобы срывать телепорт.
         pm.registerEvents(homeWarmup, this);
     }
 
     private void registerCommands() {
-        // Игровая команда: имя и алиасы задаются в config.yml, поэтому она
-        // регистрируется в CommandMap, а не объявляется в plugin.yml.
+        // имя команды из config.yml, поэтому регистрация через CommandMap
+
         String name = configManager.getCommandName();
         List<String> aliases = configManager.getCommandAliases();
 
@@ -228,7 +218,6 @@ public final class QweProtectStones extends JavaPlugin {
                     + (aliases.isEmpty() ? "" : " (алиасы: " + String.join(", ", aliases) + ")"));
         }
 
-        // Административная команда носит имя плагина и объявлена в plugin.yml.
         PluginCommand adminCommand = getCommand("qweprotectstones");
         if (adminCommand != null) {
             AdminCommand executor = new AdminCommand(this);
@@ -241,11 +230,11 @@ public final class QweProtectStones extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // API закрываем первым: сторонние плагины не должны получить NPE при выключении.
+        // API закрываем первым, чтобы чужие плагины не ловили NPE
         QpsApi.shutdown();
         if (blueMapIntegration != null) blueMapIntegration.disable();
 
-        // Меню закрываем первыми: InventoryCloseEvent снимет задачи анимации.
+        // меню первыми, close снимет задачи анимации
         for (Player player : Bukkit.getOnlinePlayers()) {
             Inventory topInv = player.getOpenInventory().getTopInventory();
             if (topInv.getHolder() instanceof MenuHolder) player.closeInventory();
@@ -262,13 +251,12 @@ public final class QweProtectStones extends JavaPlugin {
         if (hologramManager != null) hologramManager.deleteAll();
 
         if (regionStorage != null) {
-            // Полное сохранение: отложенная очередь могла не успеть сработать.
+            // очередь могла не успеть, сохраняем всё синхронно
             if (regionManager != null) regionStorage.saveAll(regionManager.getAllRegions());
             regionStorage.close();
         }
     }
 
-    /** Перезагрузка конфигов без перезапуска сервера. */
     public void reloadEverything() {
         configManager.reload();
         regionConfig.reload();
@@ -283,26 +271,18 @@ public final class QweProtectStones extends JavaPlugin {
 
         hologramManager.restoreHolograms();
         if (dynmapIntegration != null) dynmapIntegration.redrawAll();
-        // enable() идемпотентен: перечитывает настройки и перерисовывает маркеры.
+
         if (blueMapIntegration != null) blueMapIntegration.enable();
 
-        // Имя команды меняется только после перезапуска — переучивать игроков
-        // посреди сессии хуже, чем подождать рестарта.
         getLogger().info("Конфигурация перезагружена. Смена имени команды применится после перезапуска сервера.");
     }
-
-    // ------------------------------------------------------------------
-    // Доступ к подсистемам
-    // ------------------------------------------------------------------
 
     public Schedulers getSchedulers() { return schedulers; }
 
     public ConfigManager getConfigManager() { return configManager; }
 
-    /** Настройки типов приватов из regions.yml. */
     public RegionConfig getRegionConfig() { return regionConfig; }
 
-    /** Тайминги, звуки, частицы и правила доступа, вычитанные из config.yml. */
     public Tunables getTunables() { return tunables; }
     public LanguageManager getLanguageManager() { return languageManager; }
 
@@ -318,10 +298,8 @@ public final class QweProtectStones extends JavaPlugin {
     public MenuManager getMenuManager() { return menuManager; }
     public EffectManager getEffectManager() { return effectManager; }
 
-    /** Оплата эффектов: деньги, очки или предметы (effects.purchase). */
     public org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager getEffectPurchaseManager() { return effectPurchaseManager; }
 
-    /** Задержка и перезарядка телепорта /ps home. */
     public org.qweyns.qweprotectstones.features.teleport.HomeWarmup getHomeWarmup() { return homeWarmup; }
     public NotificationManager getNotificationManager() { return notificationManager; }
     public PenaltyManager getPenaltyManager() { return penaltyManager; }
@@ -330,22 +308,17 @@ public final class QweProtectStones extends JavaPlugin {
     public RegionExporter getRegionExporter() { return regionExporter; }
     public DynmapIntegration getDynmapIntegration() { return dynmapIntegration; }
 
-    /** Интеграция с BlueMap (может быть неактивна, если карта не установлена). */
     public BlueMapIntegration getBlueMapIntegration() { return blueMapIntegration; }
 
-    /** Рынок приватов: продажа и аренда. */
     public org.qweyns.qweprotectstones.features.market.MarketManager getMarketManager() { return marketManager; }
 
-    /** Плановые выгрузки приватов в JSON с ротацией. */
     public org.qweyns.qweprotectstones.features.backup.BackupTask getBackupTask() { return backupTask; }
 
     public org.qweyns.qweprotectstones.features.log.CriticalFileLogger getCriticalFileLogger() { return criticalFileLogger; }
 
-    /** Уведомления через DiscordSRV (рефлексия, работает без зависимости). */
     public org.qweyns.qweprotectstones.hooks.DiscordSrvHook getDiscordSrvHook() { return discordSrvHook; }
     public AbandonedRegionTask getAbandonedRegionTask() { return abandonedRegionTask; }
 
-    /** Идёт ли осада: приват атаковали недавно (окно берётся из настройки штрафа). */
     public boolean isUnderSiege(org.qweyns.qweprotectstones.regions.Region region) {
         return region != null && region.isUnderSiege(tunables.siegeWindowMs());
     }
@@ -355,7 +328,6 @@ public final class QweProtectStones extends JavaPlugin {
     public VaultHook getVaultHook() { return vaultHook; }
     public PlayerPointsHook getPlayerPointsHook() { return playerPointsHook; }
 
-    /** Удобный доступ для сторонних плагинов: приват в точке или null. */
     public Region getRegionAt(org.bukkit.Location location) {
         return regionManager == null ? null : regionManager.getRegionAt(location);
     }

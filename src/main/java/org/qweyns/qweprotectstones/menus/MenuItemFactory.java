@@ -26,20 +26,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Сборка предметов меню из YAML.
- *
- * <p>Статичные предметы (в конфиге которых нет ни одного плейсхолдера)
- * собираются один раз и переиспользуются: при {@code update_interval: 10} меню
- * из 45 слотов иначе пересобиралось бы целиком дважды в секунду, каждый раз
- * заново разбирая цвета и MiniMessage.</p>
- */
 public class MenuItemFactory {
 
     private final QweProtectStones plugin;
     private final MenuPlaceholders placeholders;
 
-    /** Кэш статичных предметов: ключ — меню и имя элемента. */
     private final Map<String, ItemStack> staticCache = new ConcurrentHashMap<>();
 
     public MenuItemFactory(QweProtectStones plugin, MenuPlaceholders placeholders) {
@@ -47,7 +38,6 @@ public class MenuItemFactory {
         this.placeholders = placeholders;
     }
 
-    /** Сбрасывается при перезагрузке меню — иначе останутся предметы из старого конфига. */
     public void clearCache() {
         staticCache.clear();
     }
@@ -56,9 +46,6 @@ public class MenuItemFactory {
         return build(cfg, player, region, extra, null);
     }
 
-    /**
-     * @param cacheKey ключ кэша или {@code null}, если предмет кэшировать нельзя
-     */
     public ItemStack build(ConfigurationSection cfg, Player player, Region region,
                            Map<String, String> extra, String cacheKey) {
         boolean cacheable = cacheKey != null && isStatic(cfg);
@@ -72,7 +59,6 @@ public class MenuItemFactory {
         return item;
     }
 
-    /** Предмет статичен, если ни в имени, ни в лоре, ни в материале нет плейсхолдеров. */
     private boolean isStatic(ConfigurationSection cfg) {
         if (MenuPlaceholders.isDynamic(cfg.getString("material"))) return false;
         if (MenuPlaceholders.isDynamic(cfg.getString("display_name"))) return false;
@@ -113,7 +99,7 @@ public class MenuItemFactory {
 
         if (cfg.getBoolean("unbreakable", false)) meta.setUnbreakable(true);
         if (cfg.contains("custom_model_data")) {
-            // С 1.21.5 числовой custom_model_data хранится в компоненте со списком float.
+            // с 1.21.5 custom_model_data это компонент со списком float
             CustomModelDataComponent component = meta.getCustomModelDataComponent();
             component.setFloats(java.util.List.of((float) cfg.getInt("custom_model_data")));
             meta.setCustomModelDataComponent(component);
@@ -165,7 +151,7 @@ public class MenuItemFactory {
 
         for (String raw : cfg.getStringList("enchantments")) {
             String[] parts = raw.split(":");
-            // fromString сам подставит пространство имён minecraft и вернёт null вместо исключения.
+            // fromString вернёт null вместо исключения
             NamespacedKey key = NamespacedKey.fromString(parts[0].toLowerCase(Locale.ROOT));
             if (key == null) {
                 plugin.getLogger().warning("Некорректное имя зачарования в меню: " + parts[0]);
@@ -204,7 +190,7 @@ public class MenuItemFactory {
             try {
                 meta.addItemFlags(ItemFlag.valueOf("HIDE_ADDITIONAL_TOOLTIP"));
             } catch (IllegalArgumentException ignored) {
-                // Флага нет на старых версиях API — просто пропускаем.
+
             }
         }
     }

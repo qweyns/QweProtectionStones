@@ -8,10 +8,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.qweyns.qweprotectstones.QweProtectStones;
 
-/**
- * Запоминает, когда игрок последний раз был на сервере. Без этих данных
- * невозможно отличить заброшенный приват от привата отпускника.
- */
 public class PlayerActivityListener implements Listener {
 
     private final QweProtectStones plugin;
@@ -25,7 +21,6 @@ public class PlayerActivityListener implements Listener {
         touch(event.getPlayer());
     }
 
-    /** Отметка и на выходе: иначе долгая сессия выглядела бы как отсутствие. */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         touch(event.getPlayer());

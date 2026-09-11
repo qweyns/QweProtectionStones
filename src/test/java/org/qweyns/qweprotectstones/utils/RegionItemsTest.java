@@ -5,10 +5,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-/**
- * Подстановка прочности в имя и описание предмета-ядра: плейсхолдеры
- * %durability% и %max_durability% работают и в name, и в lore.
- */
 class RegionItemsTest {
 
     @Test

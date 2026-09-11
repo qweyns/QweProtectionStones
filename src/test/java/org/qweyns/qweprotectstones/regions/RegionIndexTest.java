@@ -10,13 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Пространственный индекс: поиск точки, чанки, пересечения и очистка.
- * Работает на простой заглушке — как и обещано в комментарии к {@link Bounded}.
- */
 class RegionIndexTest {
 
-    /** Минимальный объект с границами: имя мира + область. */
     private record Stub(String world, RegionBounds bounds) implements Bounded {
         @Override
         public String getWorldName() {
@@ -92,15 +87,13 @@ class RegionIndexTest {
         index.add(second);
         index.add(far);
 
-        // Большая область накрывает first и second в нескольких чанках сразу —
-        // дубликатов быть не должно.
         List<Stub> found = index.intersecting("world", new RegionBounds(0, 0, 0, 30, 10, 30));
 
         assertEquals(2, found.size());
         assertTrue(found.contains(first));
         assertTrue(found.contains(second));
 
-        // Порядок в индексе не гарантирован — важно, что найден один из пересекающихся.
+        // порядок не гарантирован, важен сам факт находки
         Stub hit = index.firstIntersecting("world", new RegionBounds(10, 5, 10, 11, 5, 11));
         assertTrue(hit == first || hit == second);
         assertNull(index.firstIntersecting("world", new RegionBounds(200, 5, 200, 210, 5, 210)));
@@ -122,14 +115,13 @@ class RegionIndexTest {
         index.add(region);
         index.remove(region);
 
-        // Мир не должен навсегда остаться в карте — иначе это медленная утечка.
         assertTrue(index.inChunk("lonely", 0, 0).isEmpty());
     }
 
     @Test
     void chunkKeySeparatesNegativeAndPositiveChunks() {
-        // Блок -1 лежит в чанке -1, блок 0 — в чанке 0: ключи не должны
-        // склеиваться из-за знакового сдвига.
+        // -1 в чанк -1, ключи не должны склеиваться из-за сдвига
+
         assertTrue(RegionIndex.chunkKey(-1, -1) != RegionIndex.chunkKey(0, 0));
         assertEquals(RegionIndex.chunkKey(-1, -1), RegionIndex.chunkKey(-1, -1));
 

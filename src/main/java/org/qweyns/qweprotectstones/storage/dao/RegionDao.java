@@ -11,13 +11,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
-/** Доступ к хранилищу приватов. Все методы вызываются вне основного потока. */
 public interface RegionDao {
 
-    /** Создаёт или обновляет схему до актуальной версии. */
     void init();
 
-    /** Полная загрузка при запуске: приваты вместе с участниками, флагами и банами. */
     List<Region> loadAll();
 
     void saveAll(Collection<Region> regions);
@@ -28,7 +25,6 @@ public interface RegionDao {
 
     void saveAutoAdd(UUID uuid, Set<String> friends, boolean toggledOff);
 
-    /** Отмечает вход игрока — по этим данным находятся заброшенные приваты. */
     void touchPlayer(UUID uuid, String name, long lastSeen);
 
     Map<UUID, Long> loadLastSeen();
@@ -37,21 +33,14 @@ public interface RegionDao {
 
     List<RegionLogEntry> readLog(UUID regionId, int limit);
 
-    /** @return сколько записей журнала удалено */
     int pruneLog(long olderThan);
 
-    // ------------------------------------------------------------------
-    // Рынок: продажа и аренда (схема 4)
-    // ------------------------------------------------------------------
-
-    /** Все активные объявления о продаже: ключ — id привата. */
     Map<UUID, RegionSale> loadSales();
 
     void saveSale(RegionSale sale);
 
     void deleteSale(UUID regionId);
 
-    /** Все опубликованные условия аренды: ключ — id привата. */
     Map<UUID, RegionRental> loadRentals();
 
     void saveRental(RegionRental rental);

@@ -49,8 +49,8 @@ public class LanguageManager {
                 ? YamlConfiguration.loadConfiguration(langFile)
                 : new YamlConfiguration();
 
-        // Ключи, которых нет в пользовательском файле, берутся из встроенного в jar —
-        // иначе после обновления плагина новые сообщения приходили бы пустыми.
+        // недостающие ключи берутся из jar, иначе после обновления приходят пустыми
+
         loadBundled(selectedLang)
                 .or(() -> loadBundled(FALLBACK_LANGUAGE))
                 .ifPresent(loaded::setDefaults);
@@ -77,15 +77,6 @@ public class LanguageManager {
         }
     }
 
-    /**
-     * Сообщение из lang-файла — работает с ЛЮБЫМ ключом, как бы тот ни был
-     * записан: одиночной строкой или списком. Список превращается в
-     * многострочный компонент (строки разделены переводом строки), поэтому
-     * любой {@code sendMessage(getMessage(...))} в плагине выводит все строки.
-     *
-     * <p>МиниMessage-теги, включая кликабельность ({@code <click:...>},
-     * {@code <hover:...>}), работают в каждой строке.</p>
-     */
     public Component getMessage(String path, String... replacements) {
         if (langConfig.isList(path)) {
             List<Component> lines = getMessageList(path, replacements);
@@ -99,14 +90,6 @@ public class LanguageManager {
         return raw.isEmpty() ? Component.empty() : ColorUtil.formatComponent(raw);
     }
 
-    /**
-     * Многострочное сообщение: в lang-файле значение задаётся списком строк
-     * (каждая — отдельная строка чата, пустая строка — отступ), а не одной
-     * строкой с переводами \n. Одиночная строка тоже принимается — так
-     * старые конфиги продолжают работать.
-     *
-     * <p>Отправка построчно — через {@link #sendList}.</p>
-     */
     public List<Component> getMessageList(String path, String... replacements) {
         List<String> raw = langConfig.getStringList(path);
         if (raw.isEmpty()) {
@@ -117,21 +100,19 @@ public class LanguageManager {
         String prefix = langConfig.getString("prefix", "");
         List<Component> lines = new ArrayList<>(raw.size());
         for (String line : raw) {
-            // Пустая строка в списке — это осознанный отступ между блоками.
+
             String text = line == null ? "" : line.replace("%prefix%", prefix);
             lines.add(ColorUtil.formatComponent(applyReplacements(text, replacements)));
         }
         return lines;
     }
 
-    /** Отправляет многострочное сообщение (см. {@link #getMessageList}). */
     public void sendList(CommandSender sender, String path, String... replacements) {
         for (Component line : getMessageList(path, replacements)) {
             sender.sendMessage(line);
         }
     }
 
-    /** Как {@link #getMessage}, но legacy-строкой: многострочный список склеивается \n. */
     public String getRawMessage(String path, String... replacements) {
         if (langConfig.isList(path)) {
             List<String> raw = langConfig.getStringList(path);
@@ -148,21 +129,11 @@ public class LanguageManager {
         return ColorUtil.formatLegacyString(resolve(path, replacements));
     }
 
-    /**
-     * Оформляет произвольный текст, а не ключ из lang-файла: так игрок может
-     * задать своё приветствие с цветами и плейсхолдерами.
-     */
     public Component format(String text, String... replacements) {
         if (text == null || text.isEmpty()) return Component.empty();
         return ColorUtil.formatComponent(applyReplacements(text, replacements));
     }
 
-    /**
-     * Сырая строка шаблона с подстановками — без разбора MiniMessage и без
-     * конвертации в legacy. Нужна, когда фрагмент (например, кнопку справки)
-     * вставляют в другой шаблон: тот разбирается целиком, и теги клика
-     * внутри вставленного фрагмента работают.
-     */
     public String rawTemplate(String path, String... replacements) {
         return resolve(path, replacements);
     }
@@ -178,20 +149,14 @@ public class LanguageManager {
         return applyReplacements(msg.replace("%prefix%", langConfig.getString("prefix", "")), replacements);
     }
 
-    /** Ключи, о которых уже жаловались, — чтобы не заспамить лог при каждом сообщении. */
     private final java.util.Set<String> warnedMissing = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    /**
-     * Отсутствующий ключ — почти всегда опечатка в коде или в lang-файле:
-     * молчаливый пустой ответ тратит часы на отладку. Жалуемся один раз.
-     */
     private void warnMissing(String path) {
         if (warnedMissing.add(path)) {
             plugin.getLogger().warning("Языковой ключ '" + path + "' не найден — сообщение не будет показано.");
         }
     }
 
-    /** Пары «плейсхолдер, значение»: непарный хвост игнорируем, чтобы не ловить ArrayIndexOutOfBounds. */
     private String applyReplacements(String text, String... replacements) {
         String full = text;
         for (int i = 0; i + 1 < replacements.length; i += 2) {

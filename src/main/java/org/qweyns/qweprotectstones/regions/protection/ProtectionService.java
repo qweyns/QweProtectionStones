@@ -14,11 +14,6 @@ import org.qweyns.qweprotectstones.config.Tunables;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Единая точка принятия решений «можно или нельзя». Все листенеры защиты
- * спрашивают только её, поэтому правила описаны в одном месте, а не размазаны
- * по двадцати обработчикам.
- */
 public class ProtectionService {
 
     public static final String BYPASS_PERMISSION = "qweprotectstones.bypass";
@@ -32,11 +27,6 @@ public class ProtectionService {
         this.plugin = plugin;
     }
 
-    /**
-     * Пересобирает кулдаун «нельзя» — интервал берётся из
-     * timings.deny_message_cooldown_ms (Tunables). Запись в кэше нужна
-     * только пока идёт интервал, поэтому живёт вдвое дольше него.
-     */
     public void reloadDenyCooldown() {
         denyMessageCooldowns = CacheBuilder.newBuilder()
                 .expireAfterWrite(Math.max(1, plugin.getTunables().denyMessageCooldownMs() * 2),
@@ -44,38 +34,28 @@ public class ProtectionService {
                 .build();
     }
 
-    // ------------------------------------------------------------------
-    // Базовые проверки
-    // ------------------------------------------------------------------
-
     public Region regionAt(Location location) {
         return plugin.getRegionManager().getRegionAt(location);
     }
 
-    /**
-     * Игнорирует ли игрок защиту. Режим обхода включается командой и
-     * требует права, поэтому обычный админ не ломает чужие постройки случайно.
-     */
     public boolean bypasses(Player player) {
         return player != null && player.hasPermission(BYPASS_PERMISSION) && plugin.getBypassManager().isEnabled(player);
     }
 
-    /** Уровень доступа игрока с учётом бана и флага публичного доступа. */
     public TrustLevel trustOf(Region region, Player player) {
         if (region == null || player == null) return null;
         if (bypasses(player)) return TrustLevel.OWNER;
 
-        // Бан сильнее любых прав: даже публичный приват забаненного не пускает.
+        // бан сильнее всех прав
         if (region.isBanned(player.getUniqueId())) return null;
 
         TrustLevel explicit = region.getTrust(player.getUniqueId());
         if (explicit != null) return explicit;
 
-        // Публичный приват пускает всех на уровень «пользоваться, но не ломать».
+        // публичный: пользоваться можно, ломать нельзя
         return flag(region, RegionFlag.PUBLIC_ACCESS) ? TrustLevel.CONTAINER : null;
     }
 
-    /** Забанен ли игрок в этом привате (админский обход бан игнорирует). */
     public boolean isBanned(Region region, Player player) {
         return region != null && player != null && !bypasses(player) && region.isBanned(player.getUniqueId());
     }
@@ -85,17 +65,11 @@ public class ProtectionService {
         return trust != null && trust.atLeast(required);
     }
 
-    /** Разрешено ли действие требуемого уровня в этой точке. */
     public boolean allows(Player player, Location location, TrustLevel required) {
         Region region = regionAt(location);
         return region == null || has(region, player, required);
     }
 
-    /**
-     * Уровень, который сервер требует для действия. Значения настраиваются в
-     * {@code trust.required.*}, поэтому «пускать к сундукам всех, кому дан
-     * ACCESS» решается конфигом, а не правкой кода.
-     */
     public TrustLevel requiredFor(Tunables.TrustAction action) {
         return plugin.getTunables().required(action);
     }
@@ -108,15 +82,6 @@ public class ProtectionService {
         return region != null && has(region, player, requiredFor(Tunables.TrustAction.MANAGE));
     }
 
-
-    // ------------------------------------------------------------------
-    // Флаги
-    // ------------------------------------------------------------------
-
-    /**
-     * Значение флага: переопределение привата → настройка типа → значение по
-     * умолчанию у самого флага.
-     */
     public boolean flag(Region region, RegionFlag flag) {
         if (region == null) return true;
 
@@ -127,16 +92,10 @@ public class ProtectionService {
         return type != null ? type.flagDefault(flag) : flag.defaultValue();
     }
 
-    /** Значение флага в точке. Вне приватов флаги считаются разрешающими. */
     public boolean flagAt(Location location, RegionFlag flag) {
         return flag(regionAt(location), flag);
     }
 
-    // ------------------------------------------------------------------
-    // Сообщения
-    // ------------------------------------------------------------------
-
-    /** Показывает отказ в actionbar, не чаще раза в две секунды на игрока. */
     public void notifyDenied(Player player, Region region) {
         if (player == null) return;
 
@@ -149,7 +108,6 @@ public class ProtectionService {
         player.sendActionBar(plugin.getLanguageManager().getMessage("protection_denied", "%owner%", owner));
     }
 
-    /** Комбинация «проверить и, если нельзя, сообщить». Уровень берётся из trust.required.build. */
     public boolean denyBuild(Player player, Location location) {
         Region region = regionAt(location);
         if (region == null || has(region, player, requiredFor(Tunables.TrustAction.BUILD))) return false;

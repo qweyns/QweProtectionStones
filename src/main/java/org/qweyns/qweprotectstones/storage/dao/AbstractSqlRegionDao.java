@@ -28,13 +28,8 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
-/**
- * Общая для SQLite и MySQL реализация хранилища. Приват разложен на три
- * таблицы: сам приват, его участники и переопределённые флаги.
- */
 public abstract class AbstractSqlRegionDao implements RegionDao {
 
-    /** Версия схемы: при изменении структуры увеличиваем и дописываем миграцию. */
     private static final int SCHEMA_VERSION = 4;
 
     protected final QweProtectStones plugin;
@@ -46,19 +41,12 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         this.tablePrefix = sanitizePrefix(plugin == null ? "qps_" : plugin.getConfigManager().getConfig().getString("database.table_prefix", "qps_"));
     }
 
-    /**
-     * Префикс подставляется в SQL напрямую, поэтому оставляем только безопасные
-     * символы — иначе значение из config.yml превращается в SQL-инъекцию.
-     */
     private String sanitizePrefix(String raw) {
         if (raw == null) return "qps_";
         String cleaned = raw.replaceAll("[^A-Za-z0-9_]", "");
         return cleaned.isEmpty() ? "qps_" : cleaned;
     }
 
-    /**
-     * Логгер: в юнит-тестах DAO создаётся без плагина (plugin == null).
-     */
     java.util.logging.Logger log() {
         return plugin != null ? plugin.getLogger() : java.util.logging.Logger.getLogger("QweProtectStones-Test");
     }
@@ -85,16 +73,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
     protected abstract String playerUpsert();
 
-    /** Тип для булевых колонок: SQLite хранит их как INTEGER. */
     protected abstract String booleanType();
 
-    /**
-     * Создание индексов. MySQL не поддерживает {@code CREATE INDEX IF NOT EXISTS},
-     * поэтому каждый диалект решает это по-своему.
-     */
     protected abstract void createIndexes(Statement statement) throws SQLException;
 
-    /** Имена индексов, одинаковые для всех диалектов. */
     protected final String ownerIndexName() { return "idx_" + tablePrefix + "regions_owner"; }
 
     protected final String worldIndexName() { return "idx_" + tablePrefix + "regions_world"; }
@@ -119,10 +101,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
     protected String rentalsTable() { return tablePrefix + "region_rentals"; }
 
-    // ------------------------------------------------------------------
-    // Схема
-    // ------------------------------------------------------------------
-
     @Override
     public void init() {
         HikariConfig config = new HikariConfig();
@@ -135,8 +113,8 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         dataSource = new HikariDataSource(config);
 
         try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
-            // Строго до CREATE TABLE: иначе рядом со старыми таблицами появятся
-            // пустые новые, и данные окажутся потеряны.
+            // переносы строго до CREATE TABLE, иначе потеряем данные
+
             renameLegacyTables(conn, st);
 
             st.executeUpdate("CREATE TABLE IF NOT EXISTS " + metaTable() + " (" +
@@ -185,8 +163,8 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "player_name VARCHAR(32)," +
                     "PRIMARY KEY (region_id, player_uuid))");
 
-            // Отдельная таблица игроков нужна для автоочистки заброшенных приватов:
-            // без даты последнего входа определить «заброшенность» невозможно.
+            // таблица игроков нужна автоочистке
+
             st.executeUpdate("CREATE TABLE IF NOT EXISTS " + playersTable() + " (" +
                     "uuid VARCHAR(36) PRIMARY KEY," +
                     "name VARCHAR(32)," +
@@ -199,8 +177,8 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "action VARCHAR(24)," +
                     "detail VARCHAR(128))");
 
-            // Схема 4: рынок — продажа и аренда приватов. Обе таблицы живут
-            // отдельными строками «один приват — одно объявление».
+            // схема 4: рынок, один приват одно объявление
+
             st.executeUpdate("CREATE TABLE IF NOT EXISTS " + salesTable() + " (" +
                     "region_id VARCHAR(36) PRIMARY KEY," +
                     "seller_id VARCHAR(36) NOT NULL," +
@@ -218,7 +196,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "tenant_name VARCHAR(32)," +
                     "rented_until BIGINT NOT NULL DEFAULT 0)");
 
-            // Выборка «все приваты игрока» идёт при каждом /ps list.
             // Синтаксис создания индексов у SQLite и MySQL разный — отдаём диалекту.
             createIndexes(st);
         } catch (SQLException e) {
@@ -229,13 +206,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         applyMigrations();
     }
 
-    /**
-     * Переименование таблиц с прежних имён {@code claim*} на {@code region*}.
-     *
-     * <p>Термин в плагине один — регион, — и таблицы приведены к нему же.
-     * Переименовываем только когда старая таблица есть, а новой ещё нет:
-     * повторный запуск ничего не трогает.</p>
-     */
     private void renameLegacyTables(Connection conn, Statement st) throws SQLException {
         Map<String, String> renames = Map.of(
                 tablePrefix + "claims", regionsTable(),
@@ -268,16 +238,12 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             return;
         }
 
-        // Схема 2 добавила статистику осад прямо в таблицу приватов.
-        // Новые таблицы создаются в init() через CREATE TABLE IF NOT EXISTS,
-        // а вот колонки существующей таблицы нужно досоздавать вручную.
         if (current < 2) {
             addColumnIfMissing("attack_count", "INT NOT NULL DEFAULT 0");
             addColumnIfMissing("last_attack_at", "BIGINT NOT NULL DEFAULT 0");
             addColumnIfMissing("last_attacker", "VARCHAR(32)");
         }
 
-        // Схема 3 добавила название привата и тексты приветствия/прощания.
         if (current < 3) {
             addColumnIfMissing("display_name", "VARCHAR(128)");
             addColumnIfMissing("greeting", "VARCHAR(128)");
@@ -288,10 +254,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         if (current > 0) log().info("Схема базы обновлена: " + current + " -> " + SCHEMA_VERSION);
     }
 
-    /**
-     * ALTER TABLE ADD COLUMN на уже существующей колонке падает в обоих
-     * диалектах, поэтому наличие проверяем по метаданным.
-     */
     private void addColumnIfMissing(String column, String definition) {
         try (Connection conn = dataSource.getConnection()) {
             try (ResultSet columns = conn.getMetaData().getColumns(null, null, regionsTable(), column)) {
@@ -329,10 +291,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     }
 
     protected abstract String metaUpsert();
-
-    // ------------------------------------------------------------------
-    // Загрузка
-    // ------------------------------------------------------------------
 
     @Override
     public List<Region> loadAll() {
@@ -404,16 +362,12 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 Region region = regions.get(parseUuid(rs.getString("region_id")));
                 if (region == null) continue;
 
-                // Значение читаем до лямбды: внутри неё ResultSet бросал бы проверяемое исключение.
+                // читаем до лямбды, ResultSet бросает проверяемое
                 boolean value = rs.getBoolean("value");
                 RegionFlag.parse(rs.getString("flag")).ifPresent(flag -> region.setFlag(flag, value));
             }
         }
     }
-
-    // ------------------------------------------------------------------
-    // Сохранение
-    // ------------------------------------------------------------------
 
     @Override
     public void saveAll(Collection<Region> regions) {
@@ -477,7 +431,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         }
     }
 
-    /** Участники и флаги переписываются целиком: так проще и надёжнее, чем ловить дельты. */
     private void writeMembers(Connection conn, Collection<Region> regions) throws SQLException {
         try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + membersTable() + " WHERE region_id = ?");
              PreparedStatement insert = conn.prepareStatement(memberUpsert())) {
@@ -597,10 +550,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Игроки и время последнего входа
-    // ------------------------------------------------------------------
-
     @Override
     public void touchPlayer(UUID uuid, String name, long lastSeen) {
         try (Connection conn = dataSource.getConnection();
@@ -630,10 +579,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         }
         return result;
     }
-
-    // ------------------------------------------------------------------
-    // Журнал действий
-    // ------------------------------------------------------------------
 
     @Override
     public void appendLog(Collection<RegionLogEntry> entries) {
@@ -703,10 +648,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Авто-добавление
-    // ------------------------------------------------------------------
-
     @Override
     public void loadAutoAdd(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
         Set<String> friends = new HashSet<>();
@@ -739,10 +680,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             log().log(Level.WARNING, "Не удалось сохранить авто-добавление для " + uuid, e);
         }
     }
-
-    // ------------------------------------------------------------------
-    // Рынок: продажа и аренда (схема 4)
-    // ------------------------------------------------------------------
 
     @Override
     public Map<UUID, RegionSale> loadSales() {
@@ -854,10 +791,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) dataSource.close();
     }
-
-    // ------------------------------------------------------------------
-    // Утилиты
-    // ------------------------------------------------------------------
 
     private static UUID parseUuid(String raw) {
         if (raw == null || raw.isBlank()) return null;

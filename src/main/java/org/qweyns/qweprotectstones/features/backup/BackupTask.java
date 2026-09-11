@@ -10,12 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-/**
- * Плановые выгрузки всех приватов в JSON (та же форма, что и ручной
- * {@code /qps export}) с ротацией старых копий.
- *
- * <p>Период и глубина ротации — секция {@code backup} в config.yml.</p>
- */
 public class BackupTask {
 
     private final QweProtectStones plugin;
@@ -36,7 +30,6 @@ public class BackupTask {
                 + keepCount() + ".");
     }
 
-    /** Один прогон: выгрузка + ротация. Тяжёлое — в асинхронном потоке. */
     public void run() {
         int keep = keepCount();
 
@@ -51,14 +44,13 @@ public class BackupTask {
         });
     }
 
-    /** Оставляем последние {@code keep} файлов regions_*.json, старейшие удаляем. */
     private void rotate(int keep) {
         File folder = new File(plugin.getDataFolder(), "exports");
         File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
         if (files == null || files.length <= keep) return;
 
         List<File> sorted = new ArrayList<>(List.of(files));
-        sorted.sort(Comparator.comparingLong(File::lastModified)); // старейшие первыми
+        sorted.sort(Comparator.comparingLong(File::lastModified));
 
         int toDelete = sorted.size() - keep;
         for (int i = 0; i < toDelete; i++) {

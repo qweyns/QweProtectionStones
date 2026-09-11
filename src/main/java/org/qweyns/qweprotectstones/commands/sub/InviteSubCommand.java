@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Приглашение в приват и ответ на него: invite, accept, deny. */
 public class InviteSubCommand extends AbstractRegionSubCommand {
 
     public enum Mode {
@@ -86,7 +85,6 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
             level = parsed.get();
         }
 
-        // Пригласить на уровень выше собственного нельзя — как и выдать его напрямую.
         TrustLevel actorTrust = plugin.getProtectionService().trustOf(region, player);
         if (actorTrust != null && !actorTrust.atLeast(level)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_too_high"));
@@ -107,7 +105,6 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
                 "%command%", plugin.getConfigManager().getCommandName(),
                 "%seconds%", String.valueOf(plugin.getInviteManager().expireSecondsForMessage()));
 
-        // Приглашение легко пропустить в потоке чата — сопровождаем звуком.
         plugin.getTunables().inviteReceived().playTo(target);
     }
 
@@ -120,7 +117,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
 
         Region region = plugin.getRegionManager().getById(invite.regionId());
         if (region == null) {
-            // Приват мог быть снесён, пока приглашение висело.
+            // приват могли снести, пока приглашение висело
             player.sendMessage(plugin.getLanguageManager().getMessage("invite_expired"));
             return;
         }

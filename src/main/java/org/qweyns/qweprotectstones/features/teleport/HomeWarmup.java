@@ -16,24 +16,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Задержка телепорта {@code /ps home}: телепорт не мгновенный, чтобы им нельзя
- * было убегать из боя. Срывается движением или уроном; между использованиями —
- * перезарядка.
- *
- * <p>Все параметры — секция {@code home} в config.yml:</p>
- * <ul>
- *   <li>{@code home.warmup-seconds} — задержка (0 = мгновенно, как раньше);</li>
- *   <li>{@code home.cancel-on-move} — срывать при движении;</li>
- *   <li>{@code home.cancel-on-damage} — срывать при получении урона;</li>
- *   <li>{@code home.cooldown-seconds} — перезарядка между телепортами.</li>
- * </ul>
- */
 public class HomeWarmup implements Listener {
 
     private final QweProtectStones plugin;
 
-    /** Ожидаемый телепорт: задача и цель, чтобы можно было снять. */
     private record Pending(Schedulers.Task task, Location home, String regionShortId) {
     }
 
@@ -44,12 +30,6 @@ public class HomeWarmup implements Listener {
         this.plugin = plugin;
     }
 
-    /**
-     * Запускает телепорт с учётом задержки и перезарядки. Сам сообщает игроку
-     * обо всех отказах.
-     *
-     * @return true, если телепорт запущен (или выполнен мгновенно)
-     */
     public boolean teleport(Player player, Region region, Location home) {
         int cooldown = cooldownSeconds();
         if (cooldown > 0) {
@@ -70,8 +50,8 @@ public class HomeWarmup implements Listener {
             return true;
         }
 
-        // Повторная команда до истечения задержки не должна плодить задачи:
-        // снимаем прежнее ожидание (без сообщения) и начинаем отсчёт заново.
+        // повторная команда не плодит задачи, снимаем прежнее ожидание
+
         Pending previous = pending.remove(player.getUniqueId());
         if (previous != null) previous.task().cancel();
 
@@ -95,7 +75,7 @@ public class HomeWarmup implements Listener {
     }
 
     private void doTeleport(Player player, Location home, String regionShortId) {
-        // Сохраняем направление взгляда, чтобы телепорт не крутил камеру.
+
         home.setYaw(player.getLocation().getYaw());
         home.setPitch(player.getLocation().getPitch());
 
@@ -108,7 +88,6 @@ public class HomeWarmup implements Listener {
         });
     }
 
-    /** Снимает ожидание и сообщает причину. */
     private void cancel(UUID playerId, String messageKey) {
         Pending entry = pending.remove(playerId);
         if (entry == null) return;
@@ -125,7 +104,7 @@ public class HomeWarmup implements Listener {
         if (!plugin.getConfigManager().getConfig().getBoolean("home.cancel-on-move", true)) return;
         if (pending.isEmpty()) return;
 
-        // Поворот головы — не движение: реагируем только на смену блока.
+        // поворот головы не движение
         Location from = event.getFrom();
         Location to = event.getTo();
         if (to == null || (from.getBlockX() == to.getBlockX()

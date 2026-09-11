@@ -9,7 +9,6 @@ import org.qweyns.qweprotectstones.regions.TrustLevel;
 
 import java.util.Locale;
 
-/** Проверка требований на показ и на клик по предмету меню. */
 public class MenuRequirements {
 
     private final QweProtectStones plugin;
@@ -30,7 +29,7 @@ public class MenuRequirements {
     private boolean check(ConfigurationSection reqs, Player player, Region region) {
         for (String key : reqs.getKeys(false)) {
             String type = reqs.getString(key + ".type");
-            if (type == null) continue; // кривой конфиг не должен ронять меню
+            if (type == null) continue;
 
             if (!evaluate(type.toLowerCase(Locale.ROOT), reqs, key, player, region)) return false;
         }

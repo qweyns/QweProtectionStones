@@ -14,11 +14,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Удаление своего привата командой, с подтверждением. */
 public class DeleteSubCommand extends AbstractRegionSubCommand {
 
-
-    /** Ожидающие подтверждения: игрок -> (приват, время запроса). */
     private final Map<UUID, PendingDelete> pending = new ConcurrentHashMap<>();
 
     private record PendingDelete(UUID regionId, long requestedAt) {
@@ -54,7 +51,7 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        // Удаление необратимо, поэтому спрашиваем подтверждение той же командой.
+        // подтверждение той же командой
         PendingDelete confirmation = pending.get(player.getUniqueId());
         boolean confirmed = confirmation != null
                 && confirmation.regionId().equals(region.getId())
@@ -85,11 +82,6 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
-    /**
-     * Убираем блок-ядро из мира; предмет выпадает на его месте — как при
-     * поломке. Политика тегов и вида единая (RegionItems.returnCore), чтобы
-     * «покупные» ядра не превращались в обычные блоки.
-     */
     private void returnCoreBlock(Region region) {
         Location core = region.getCoreLocation();
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());

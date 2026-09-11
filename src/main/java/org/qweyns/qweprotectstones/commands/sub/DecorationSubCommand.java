@@ -10,12 +10,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-/**
- * Текстовое оформление привата: название и сообщения на входе и выходе.
- *
- * <p>Три команды устроены одинаково — «показать текущее, задать новое или
- * стереть», — поэтому живут в одном классе, а различаются режимом.</p>
- */
 public class DecorationSubCommand extends AbstractRegionSubCommand {
 
     public enum Mode {
@@ -82,7 +76,7 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
         plugin.getRegionStorage().save(region);
         refreshViews(region);
 
-        // Показываем то, что реально сохранилось: текст мог быть подрезан по длине.
+        // показываем то, что сохранилось, текст подрезается по лимиту
         player.sendMessage(plugin.getLanguageManager().getMessage(mode.messagePrefix + "_set",
                 "%value%", mode.getter.apply(region)));
     }
@@ -98,7 +92,6 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
         }
     }
 
-    /** Название видно в голограмме и на карте — обновляем их сразу, а не после перезахода. */
     private void refreshViews(Region region) {
         if (mode != Mode.NAME) return;
 

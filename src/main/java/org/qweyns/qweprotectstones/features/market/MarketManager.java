@@ -15,14 +15,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Рынок приватов: продажа ({@code /ps sell}, {@code /ps buy}) и аренда
- * ({@code /ps rent}, {@code /ps rent take}).
- *
- * <p>Все цены, лимиты и уровни доступа задаются в секции {@code market}
- * config.yml. Денежные операции — через Vault; без экономики рынок просто
- * отказывается работать и сообщает об этом.</p>
- */
 public class MarketManager {
 
     private final QweProtectStones plugin;
@@ -30,17 +22,14 @@ public class MarketManager {
     private final Map<UUID, RegionSale> sales = new ConcurrentHashMap<>();
     private final Map<UUID, RegionRental> rentals = new ConcurrentHashMap<>();
 
-    /** Сколько приватов выставлено на продажу — для /qps stats. */
     public int salesCount() {
         return sales.size();
     }
 
-    /** Сколько объявлений аренды опубликовано — для /qps stats. */
     public int rentalListingsCount() {
         return rentals.size();
     }
 
-    /** Сколько приватов сдано прямо сейчас — для /qps stats. */
     public int rentedCount() {
         return (int) rentals.values().stream().filter(RegionRental::isRented).count();
     }
@@ -49,7 +38,6 @@ public class MarketManager {
         this.plugin = plugin;
     }
 
-    /** Загрузка объявлений из базы: вызывается один раз при старте. */
     public void load() {
         sales.putAll(plugin.getRegionStorage().loadSales());
         rentals.putAll(plugin.getRegionStorage().loadRentals());
@@ -57,24 +45,18 @@ public class MarketManager {
         if (!rentals.isEmpty()) plugin.getLogger().info("Приватов в аренде: " + rentals.size());
     }
 
-    /** Периодическое снятие истёкших аренд. */
     public void startExpiryTask() {
         long intervalMinutes = Math.max(1, plugin.getConfigManager().getConfig()
                 .getInt("market.rent.check-interval-minutes", 5));
         long intervalTicks = TimeUnit.MINUTES.toSeconds(intervalMinutes) * 20L;
-        // Первый прогон с задержкой: сервер ещё догружается.
+
         plugin.getSchedulers().runTimer(this::expireRentals, intervalTicks, intervalTicks);
     }
-
-    // ------------------------------------------------------------------
-    // Продажа
-    // ------------------------------------------------------------------
 
     public RegionSale getSale(Region region) {
         return region == null ? null : sales.get(region.getId());
     }
 
-    /** Выставить/перевоценить. Проверки прав и аргументов — в команде. */
     public void listForSale(Region region, Player seller, double price) {
         RegionSale sale = new RegionSale(region.getId(), seller.getUniqueId(), seller.getName(),
                 price, System.currentTimeMillis());
@@ -82,19 +64,12 @@ public class MarketManager {
         plugin.getRegionStorage().saveSaleNow(sale);
     }
 
-    /** Снять с продажи (цена 0 или off). */
     public boolean cancelSale(Region region) {
         if (region == null || sales.remove(region.getId()) == null) return false;
         plugin.getRegionStorage().deleteSaleNow(region.getId());
         return true;
     }
 
-    /**
-     * Покупка привата. Все проверки (наличие объявления, денег, осада) уже
-     * пройдены командой; здесь только транзакция и смена владельца.
-     *
-     * @return true при успехе
-     */
     public boolean buy(Player buyer, Region region) {
         RegionSale sale = sales.get(region.getId());
         if (sale == null) return false;
@@ -102,14 +77,14 @@ public class MarketManager {
         if (RegionEvents.fireTransfer(region, buyer, buyer.getUniqueId(), buyer.getName())) return false;
         if (!plugin.getVaultHook().takeMoney(buyer, sale.price())) return false;
 
-        // Комиссия уходит «в никуда» (экономика сервера распоряжается ими сама).
+        // комиссия просто сгорает
         double tax = Math.max(0.0, Math.min(100.0,
                 plugin.getConfigManager().getConfig().getDouble("market.sell.tax-percent", 0.0)));
         double payout = sale.price() * (100.0 - tax) / 100.0;
 
         OfflinePlayer seller = Bukkit.getOfflinePlayer(sale.sellerId());
         if (!plugin.getVaultHook().giveMoney(seller, payout)) {
-            // Зачислить не вышло (нет плагина экономики) — возвращаем деньги.
+
             plugin.getVaultHook().giveMoney(buyer, sale.price());
             plugin.getLogger().warning("Покупка привата " + region.getShortId()
                     + ": не удалось зачислить " + payout + " продавцу. Покупателю возвращены деньги.");
@@ -125,15 +100,10 @@ public class MarketManager {
         return true;
     }
 
-    // ------------------------------------------------------------------
-    // Аренда
-    // ------------------------------------------------------------------
-
     public RegionRental getRental(Region region) {
         return region == null ? null : rentals.get(region.getId());
     }
 
-    /** Опубликовать условия аренды. Проверки — в команде. */
     public void offerForRent(Region region, Player owner, double price, int durationMinutes) {
         RegionRental rental = new RegionRental(region.getId(), owner.getUniqueId(), owner.getName(),
                 price, durationMinutes, null, null, 0L);
@@ -141,32 +111,24 @@ public class MarketManager {
         plugin.getRegionStorage().saveRentalNow(rental);
     }
 
-    /** Снять приват с аренды (владельцем или при удалении привата). */
     public boolean cancelRental(Region region) {
         if (region == null || rentals.remove(region.getId()) == null) return false;
         plugin.getRegionStorage().deleteRentalNow(region.getId());
         return true;
     }
 
-    /**
-     * Снять приват в аренду (или продлить свою аренду). Транзакция и выдача
-     * доступа на настраиваемый период.
-     *
-     * @return true при успехе
-     */
     public boolean takeRent(Player tenant, Region region) {
         RegionRental rental = rentals.get(region.getId());
         if (rental == null) return false;
 
-        // Забаненный не снимает и не продлевает — даже если раньше арендовал.
+        // забаненный не снимает и не продлевает
         if (region.isBanned(tenant.getUniqueId())) return false;
 
-        // Продление доступно только действующему участнику: если владелец
-        // отозвал доступ, бывший арендатор платит как новый клиент — событие
-        // и выдача уровня пройдут заново.
+        // продление только действующему участнику, изгнанный платит как новый
+
         boolean extend = tenant.getUniqueId().equals(rental.tenantId())
                 && region.getMember(tenant.getUniqueId()).isPresent();
-        if (rental.isRented() && !extend) return false; // занято другим игроком
+        if (rental.isRented() && !extend) return false;
 
         if (!plugin.getVaultHook().takeMoney(tenant, rental.price())) return false;
 
@@ -177,14 +139,14 @@ public class MarketManager {
 
         long until;
         if (extend) {
-            // Продление: время добавляется к текущему сроку.
+
             until = Math.max(System.currentTimeMillis(), rental.rentedUntil())
                     + TimeUnit.MINUTES.toMillis(rental.durationMinutes());
         } else {
             until = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(rental.durationMinutes());
             if (RegionEvents.fireMemberChange(region, null, tenant.getUniqueId(), tenant.getName(),
                     RegionMemberChangeEvent.Action.TRUST, level)) {
-                // Событие отменили — возвращаем деньги и не выдаём доступ.
+                // событие отменили, возвращаем деньги
                 plugin.getVaultHook().giveMoney(tenant, rental.price());
                 return false;
             }
@@ -199,17 +161,12 @@ public class MarketManager {
         return true;
     }
 
-    /** Уровень доступа арендатора из конфига. */
     public TrustLevel rentTrustLevel() {
         String raw = plugin.getConfigManager().getConfig().getString("market.rent.trust-level", "manager");
         Optional<TrustLevel> parsed = TrustLevel.parse(raw);
         return parsed.orElse(TrustLevel.MANAGER);
     }
 
-    /**
-     * Один проход: снимаем истёкшие аренды. Вызывается таймером и при
-     * удалении привата. Уведомляем арендатора, если он онлайн.
-     */
     public void expireRentals() {
         long now = System.currentTimeMillis();
         for (RegionRental rental : rentals.values()) {
@@ -219,7 +176,7 @@ public class MarketManager {
             if (region != null) {
                 if (RegionEvents.fireMemberChange(region, null, rental.tenantId(), rental.tenantName(),
                         RegionMemberChangeEvent.Action.UNTRUST, null)) {
-                    continue; // другой плагин продлил аренду своим событием
+                    continue;
                 }
                 region.removeMember(rental.tenantId());
                 plugin.getRegionStorage().save(region);

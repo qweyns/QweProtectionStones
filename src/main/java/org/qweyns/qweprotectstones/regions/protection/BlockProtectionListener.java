@@ -29,10 +29,6 @@ import org.qweyns.qweprotectstones.config.Tunables;
 
 import java.util.List;
 
-/**
- * Защита блоков внутри привата: ручное строительство, огонь, жидкости, поршни,
- * рост растений и разрушение блоков мобами.
- */
 public class BlockProtectionListener implements Listener {
 
     private final ProtectionService protection;
@@ -41,13 +37,9 @@ public class BlockProtectionListener implements Listener {
         this.protection = plugin.getProtectionService();
     }
 
-    // ------------------------------------------------------------------
-    // Игроки
-    // ------------------------------------------------------------------
-
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        // Разрушение ядра — отдельный сценарий, им занимается RegionLifecycleListener.
+        // ядро не трогаем, это LifecycleListener
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && region.isCore(event.getBlock().getLocation())) return;
 
@@ -56,21 +48,12 @@ public class BlockProtectionListener implements Listener {
         }
     }
 
-    /**
-     * Проверка идёт и для блоков-ядер: иначе чужой приват можно было бы застроить,
-     * поставив блок-ядро с зажатым Shift (создание привата при этом не происходит,
-     * и проверка пересечения не срабатывала).
-     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         if (protection.denyBuild(event.getPlayer(), event.getBlockPlaced().getLocation())) {
             event.setCancelled(true);
         }
     }
-
-    // ------------------------------------------------------------------
-    // Огонь
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBurn(BlockBurnEvent event) {
@@ -85,7 +68,7 @@ public class BlockProtectionListener implements Listener {
 
         Player igniter = event.getPlayer();
         if (igniter != null) {
-            // Поджог руками — обычное строительное действие.
+
             if (!protection.has(region, igniter, protection.requiredFor(Tunables.TrustAction.BUILD))) {
                 protection.notifyDenied(igniter, region);
                 event.setCancelled(true);
@@ -111,17 +94,13 @@ public class BlockProtectionListener implements Listener {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Жидкости, лёд, рост
-    // ------------------------------------------------------------------
-
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onLiquidFlow(BlockFromToEvent event) {
         Region target = protection.regionAt(event.getToBlock().getLocation());
         if (target == null) return;
 
         Region source = protection.regionAt(event.getBlock().getLocation());
-        // Внутри своего привата вода течёт свободно; ограничиваем только приток снаружи.
+        // ограничиваем только приток снаружи
         if (target.equals(source)) return;
 
         if (!protection.flag(target, RegionFlag.LIQUID_FLOW_IN)) event.setCancelled(true);
@@ -153,17 +132,13 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onStructureGrow(StructureGrowEvent event) {
-        // Дерево, выросшее снаружи, не должно прорастать сквозь чужую постройку.
+
         Region origin = protection.regionAt(event.getLocation());
         event.getBlocks().removeIf(state -> {
             Region region = protection.regionAt(state.getLocation());
             return region != null && !region.equals(origin);
         });
     }
-
-    // ------------------------------------------------------------------
-    // Поршни
-    // ------------------------------------------------------------------
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
@@ -175,11 +150,6 @@ public class BlockProtectionListener implements Listener {
         if (pistonBlocked(event.getBlock().getLocation(), event.getBlocks())) event.setCancelled(true);
     }
 
-    /**
-     * Поршень нельзя использовать, чтобы вытаскивать блоки из чужого привата или
-     * заталкивать их внутрь. Ядро не двигается вообще — иначе приват можно было
-     * бы «увести» с места.
-     */
     private boolean pistonBlocked(Location pistonLocation, List<Block> blocks) {
         Region pistonRegion = protection.regionAt(pistonLocation);
 
@@ -194,16 +164,12 @@ public class BlockProtectionListener implements Listener {
         return false;
     }
 
-    // ------------------------------------------------------------------
-    // Мобы, ломающие блоки
-    // ------------------------------------------------------------------
-
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region == null) return;
 
-        // Ядро неуязвимо для мобов: урон по нему считается только через прочность.
+        // ядро неуязвимо для мобов, урон только через прочность
         if (region.isCore(event.getBlock().getLocation())) {
             event.setCancelled(true);
             return;
@@ -217,7 +183,6 @@ public class BlockProtectionListener implements Listener {
             return;
         }
 
-        // Вытаптывание грядок вынесено в отдельный флаг: его чаще хотят оставить включённым.
         boolean trampling = event.getEntityType() != EntityType.ENDERMAN
                 && event.getBlock().getType() == Material.FARMLAND;
 

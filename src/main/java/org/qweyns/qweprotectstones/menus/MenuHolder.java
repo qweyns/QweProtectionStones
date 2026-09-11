@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
-/** Состояние открытого меню: к какому привату оно привязано и что в нём нарисовано. */
 public class MenuHolder implements InventoryHolder {
 
     final String menuName;
@@ -19,10 +18,6 @@ public class MenuHolder implements InventoryHolder {
     ItemStack[] baseLayer;
     MenuAnimator animator;
 
-    /**
-     * Версия привата на момент последней отрисовки. Если она не изменилась и в
-     * меню нет динамических данных, перерисовку можно пропустить целиком.
-     */
     long renderedVersion = -1;
 
     MenuHolder(String menuName, Region region) {
@@ -53,7 +48,6 @@ public class MenuHolder implements InventoryHolder {
         }
     }
 
-    /** Контракт InventoryHolder: инвентарь должен возвращаться, а не null. */
     @Override
     public @NotNull Inventory getInventory() {
         return inventory;

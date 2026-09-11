@@ -18,10 +18,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Интеграционный тест DAO на файловой базе SQLite (без сервера): полный
- * цикл записи и чтения приватов, участников, флагов, банов, журнала и рынка.
- */
 class SqliteRegionDaoTest {
 
     private SqliteRegionDao dao;
@@ -126,7 +122,6 @@ class SqliteRegionDaoTest {
                 new RegionLogEntry(regionId, 1_000L, "Steve", "attack", "-1"),
                 new RegionLogEntry(regionId, 2_000L, "Alex", "break", null)));
 
-        // Журнал отдаётся от свежих к старым — так же, как его показывает /ps log.
         List<RegionLogEntry> entries = dao.readLog(regionId, 10);
         assertEquals(2, entries.size());
         assertEquals("break", entries.get(0).action());
@@ -164,12 +159,10 @@ class SqliteRegionDaoTest {
 
     @Test
     void freshDatabaseHasCurrentSchemaVersion() {
-        // init() на пустой базе должен записать актуальную версию схемы (4).
-        Map<UUID, Long> nothing = dao.loadLastSeen(); // любая операция после init
+
+        Map<UUID, Long> nothing = dao.loadLastSeen();
         assertTrue(nothing.isEmpty());
 
-        // Проверяем через meta-таблицу: версия схемы — 4 (рынок).
-        // Читаем через loadSales/loadRentals: таблицы созданы и читаются без ошибок.
         assertTrue(dao.loadSales().isEmpty());
         assertTrue(dao.loadRentals().isEmpty());
     }
