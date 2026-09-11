@@ -1,0 +1,44 @@
+# ============================================================
+#   QweProtectStones — эффекты приватов (effects.yml)
+# ============================================================
+#  Список эффектов, доступных конкретному типу привата, — в regions.yml
+#  (allowed_effects). ALERTS и EXP_BOOST — встроенные псевдоэффекты
+#  (уведомления о атаках и бустер опыта).
+# ============================================================
+
+# --- КОМУ ДОСТАЁТСЯ ЭФФЕКТ ---------------------------------------------------
+# Кому достаётся каждый эффект из магазина эффектов:
+#   MEMBERS — владельцу и доверенным (баффы);
+#   ENEMIES — посторонним, зашедшим на территорию (ловушки).
+effect_targets:
+  EXP_BOOST: MEMBERS
+  ALERTS: MEMBERS
+  FAST_DIGGING: MEMBERS
+  SPEED: MEMBERS
+  INCREASE_DAMAGE: MEMBERS
+  INVISIBILITY: MEMBERS
+  HEALTH_BOOST: MEMBERS
+  SLOW: ENEMIES
+  WITHER: ENEMIES
+
+# --- ОПЛАТА ЭФФЕКТОВ (/ps menu effects) ----------------------------------------------
+# По умолчанию покупка бесплатна (как раньше). Тип платы:
+#   none  — бесплатно
+#   money — Vault (экономика)
+#   points — PlayerPoints (списываются целыми очками)
+#   item  — предметы (сколько штук — в cost-amount)
+effects:
+  purchase:
+    cost-type: "none"
+    cost-amount: 100
+    # Повышенный уровень эффекта стоит дороже (цена x (уровень+1)).
+    scale-with-amplifier: false
+    # Предмет оплаты для cost-type: item.
+    item: "DIAMOND"
+    # Индивидуальные цены: имя_эффекта: цена (перекрывают cost-amount).
+    per-effect:
+      SPEED: 150
+      # ALERTS: 500
+
+  # Множитель эффекта «Бустер опыта» (EXP_BOOST), покупаемого в меню.
+  exp_boost_multiplier: 2.0

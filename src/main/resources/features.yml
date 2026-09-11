@@ -1,0 +1,144 @@
+# ============================================================
+#   QweProtectStones — дополнительные функции (features.yml)
+# ============================================================
+#  Рынок, изменение границ, бэкапы, телепорт к привату,
+#  импорт из чужих плагинов и уведомления о рейдах.
+# ============================================================
+
+# --- ИЗМЕНЕНИЕ ГРАНИЦ (/ps expand, /ps move) ---------------------------------------
+resize:
+  # Запрещать expand/move, пока приват под осадой.
+  block-during-siege: true
+  expand:
+    enable: true
+    # Максимальное расширение за одну команду (в блоках).
+    max-step: 10
+    # Потолок полуширины привата после расширения (0 = не ограничено).
+    max-radius: 32
+    # Разрешить расширение по вертикали (направления up/down).
+    vertical: false
+    # Требуемый уровень доступа: access | container | build | manager | owner.
+    required-trust: "manager"
+  move:
+    enable: true
+    # Максимальное расстояние (в блоках) от текущего ядра за один перенос.
+    max-distance: 64
+    # Блоки, на которые можно поставить ядро при переносе.
+    replaceable: [AIR, WATER, SHORT_GRASS, SNOW]
+    # Требуемый уровень доступа (по умолчанию только владелец).
+    required-trust: "owner"
+
+# --- РЫНОК: ПРОДАЖА И АРЕНДА ПРИВАТОВ (/ps sell, /ps buy, /ps rent) -----------------
+# Требуется Vault и любой экономический плагин.
+market:
+  sell:
+    enable: true
+    # Потолок цены в /ps sell.
+    max-price: 1000000
+    # Комиссия при продаже, % от цены (0 = без комиссии).
+    tax-percent: 0
+    # Разрешить сделки с приватами под осадой.
+    allow-during-siege: false
+  rent:
+    enable: true
+    # Потолок цены аренды за один период.
+    max-price: 100000
+    # Границы длительности одного периода (в минутах).
+    min-duration-minutes: 10
+    max-duration-minutes: 4320
+    # Уровень доступа арендатора: access | container | build | manager.
+    trust-level: "manager"
+    # Как часто проверять истёкшие аренды (в минутах).
+    check-interval-minutes: 5
+
+# --- АВТОБЭКАП (плановая выгрузка приватов в JSON) ---------------------------------
+backup:
+  # Выключено по умолчанию: включайте, если копии действительно нужны.
+  enable: false
+  # Период между выгрузками (в минутах, минимум 10).
+  interval-minutes: 720
+  # Сколько последних файлов regions_*.json держать в exports/ (0 = без ротации).
+  keep-count: 10
+
+# --- ТЕЛЕПОРТ К ПРИВАТУ (/ps home) --------------------------------------------------
+home:
+  # Задержка телепорта в секундах (0 = мгновенно). Пока идёт отсчёт,
+  # телепорт срывается движением или уроном.
+  warmup-seconds: 0
+  # Срывать телепорт при движении.
+  cancel-on-move: true
+  # Срывать телепорт при получении урона.
+  cancel-on-damage: true
+  # Перезарядка между телепортами, в секундах (0 = без перезарядки).
+  cooldown-seconds: 0
+
+# --- ИМПОРТ ПРИВАТОВ ИЗ ДРУГИХ ПЛАГИНОВ (/qps import) ------------------------------
+# Чужие файлы только читаются; сами плагины ставить не нужно.
+import:
+  # Тип привата (id из regions.yml), который получают импортированные регионы.
+  type-id: "small"
+  # Создавать ли голограммы у импортированных приватов (ядро виртуальное).
+  create-holograms: false
+  worldguard:
+    # Папка плагина WorldGuard (регионы парсятся из worlds/*/regions.yml).
+    data-folder: "plugins/WorldGuard"
+    # ProtectionStones помечает свои регионы флагом ps-block-material.
+    # При true тип подбирается по материалу блока один в один
+    # (ключ типа в regions.yml = материал), иначе все получают type-id.
+    type-by-material: true
+    # Соответствие флагов WorldGuard нашим (allow -> true, deny -> false).
+    # Значение — имя флага плагина; строковые флаги WorldGuard
+    # (greeting, farewell) не переносятся. Пустое значение или
+    # отсутствие ключа — флаг пропускается.
+    flag-mapping:
+      pvp: "PVP"
+      entry: "ENTRY"
+      mob-spawning: "MONSTER_SPAWNING"
+      mob-griefing: "MOB_GRIEFING"
+      fire-spread: "FIRE_SPREAD"
+      pistons: "PISTONS_FROM_OUTSIDE"
+      tnt: "EXPLOSION_DAMAGE"
+      creeper-explosion: "EXPLOSION_DAMAGE"
+      other-explosion: "EXPLOSION_DAMAGE"
+  protectionstones:
+    # ProtectionStones хранит регионы внутри WorldGuard: берём только ps*.
+    data-folder: "plugins/WorldGuard"
+  griefprevention:
+    # Папка данных GriefPrevention (клеймы читаются из ClaimData/*.yml).
+    data-folder: "plugins/GriefPreventionData"
+
+# --- ПЛЕЙСХОЛДЕРЫ (PlaceholderAPI) --------------------------------------------
+# Экспорт данных плагина для скорбордов, табличек и чат-форматов.
+# Работает при установленном PlaceholderAPI; false — отключает экспорт.
+# Доступные плейсхолдеры (%qps_<имя>%):
+#   regions_count           — сколько приватов у игрока
+#   regions_total           — сколько приватов на сервере всего
+#   regions_area            — суммарная охраняемая площадь игрока (блоков)
+#   standing_id             — короткий id привата под ногами
+#   standing_owner          — владелец привата под ногами
+#   standing_name           — название привата (задаёт владелец)
+#   standing_type           — тип привата
+#   standing_size           — размер, например 33x33
+#   standing_durability     — текущая прочность привата под ногами
+#   standing_max_durability — максимальная прочность
+#   standing_members        — число участников
+#   standing_trust          — ваш уровень доступа (или «нет»)
+#   standing_attacks        — сколько всего атак пережил приват
+#   standing_last_attacker  — кто атаковал последним
+#   standing_penalty        — множитель штрафа починки (0 — штрафа нет)
+#   standing_siege          — идёт ли осада прямо сейчас
+placeholders:
+  enabled: true
+
+# --- УВЕДОМЛЕНИЯ О РЕЙДАХ В МЕССЕНДЖЕРЫ --------------------------------------------
+# Сообщение уходит, когда у привата с эффектом ALERTS снимают прочность.
+# Чтобы не заспамить чат, одинаковые уведомления шлются не чаще раза в 15 сек.
+notifications:
+  discord_webhook: ""
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  discordsrv:
+    # Отправлять те же уведомления через DiscordSRV, если он установлен.
+    enable: true
+    # Имя канала из config DiscordSRV ("Channels"); пусто = главный канал.
+    channel: ""
