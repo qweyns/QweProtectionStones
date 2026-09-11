@@ -158,7 +158,14 @@ public class MarketManager {
         RegionRental rental = rentals.get(region.getId());
         if (rental == null) return false;
 
-        boolean extend = tenant.getUniqueId().equals(rental.tenantId());
+        // Забаненный не снимает и не продлевает — даже если раньше арендовал.
+        if (region.isBanned(tenant.getUniqueId())) return false;
+
+        // Продление доступно только действующему участнику: если владелец
+        // отозвал доступ, бывший арендатор платит как новый клиент — событие
+        // и выдача уровня пройдут заново.
+        boolean extend = tenant.getUniqueId().equals(rental.tenantId())
+                && region.getMember(tenant.getUniqueId()).isPresent();
         if (rental.isRented() && !extend) return false; // занято другим игроком
 
         if (!plugin.getVaultHook().takeMoney(tenant, rental.price())) return false;

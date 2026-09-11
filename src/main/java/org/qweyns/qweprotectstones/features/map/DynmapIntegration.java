@@ -52,7 +52,10 @@ public class DynmapIntegration {
             }
 
             String setId = "qweprotectstones.regions";
-            String label = plugin.getConfigManager().getConfig().getString("map.dynmap.layer_name", "Приваты");
+            String configured = plugin.getConfigManager().getConfig().getString("map.dynmap.layer_name", "");
+            String label = configured == null || configured.isBlank()
+                    ? plugin.getLanguageManager().getRawMessage("map_layer_default")
+                    : configured;
 
             Class<?> markerApiClass = markerApi.getClass();
             Object set = markerApiClass.getMethod("getMarkerSet", String.class).invoke(markerApi, setId);
@@ -170,9 +173,14 @@ public class DynmapIntegration {
     }
 
     private String description(Region region) {
-        return "<b>" + label(region) + "</b><br/>"
-                + "Тип: " + region.getTypeId() + "<br/>"
-                + "Прочность: " + region.getDurability() + "/" + region.getMaxDurability() + "<br/>"
-                + "Участников: " + region.getMemberCount();
+        // Dynmap рендерит подсказку как HTML: экранируем всё, включая
+        // название, которое задаёт владелец привата.
+        return "<b>" + MapText.escapeHtml(label(region)) + "</b><br/>"
+                + MapText.line(plugin, "map_marker_line_type", "%type%", region.getTypeId()) + "<br/>"
+                + MapText.line(plugin, "map_marker_line_durability",
+                        "%durability%", String.valueOf(region.getDurability()),
+                        "%max%", String.valueOf(region.getMaxDurability())) + "<br/>"
+                + MapText.line(plugin, "map_marker_line_members",
+                        "%count%", String.valueOf(region.getMemberCount()));
     }
 }

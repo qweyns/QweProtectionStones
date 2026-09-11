@@ -150,6 +150,15 @@ admin_saved: "%prefix%<#86EFAC>Сохранено приватов: <#FDE68A>%co
 admin_stats: "%prefix%<#F2EFFA>Приватов: <#FDE68A>%regions%<#F2EFFA>, типов: <#FDE68A>%types%<#F2EFFA>, игроков-владельцев: <#FDE68A>%owners%"
 admin_stats_market: "<#A79FC0>Рынок: продаж — <#F2EFFA>%sales%<#A79FC0>, сдано в аренду — <#F2EFFA>%rented% <#A79FC0>из <#F2EFFA>%listings%<#A79FC0> объявлений, штрафов прочности — <#F2EFFA>%penalties%"
 admin_stats_cache: "<#A79FC0>Очередь записи в БД: <#F2EFFA>%pending%<#A79FC0>, последняя запись: <#F2EFFA>%flush% сек назад"
+
+# Подписи веб-карт (Dynmap/BlueMap) и описание команды в списке клиента
+command_description: "Управление приватами"
+map_layer_default: "Приваты"
+map_marker_line_type: "Тип: %type%"
+map_marker_line_durability: "Прочность: %durability%/%max%"
+map_marker_line_members: "Участников: %count%"
+map_marker_line_size: "%type% — %size%"
+map_marker_line_location: "%world%, %x%/%y%/%z%"
 admin_no_action_permission: "%prefix%<#FB7185>Нет права на это действие: <#FDE68A>%permission%"
 admin_action_cancelled: "%prefix%<#FB7185>Действие отменено другим плагином."
 admin_bad_number: "%prefix%<#FB7185>Некорректное число: <#FDE68A>%value%"

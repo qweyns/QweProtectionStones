@@ -50,7 +50,8 @@ public class RegionCommand extends Command {
         this.plugin = plugin;
 
         setAliases(aliases);
-        setDescription("Управление приватами");
+        // Описание видно в списке команд клиента — берём из lang-файла.
+        setDescription(plugin.getLanguageManager().getRawMessage("command_description"));
         setUsage("/" + name + " help");
 
         registerDefaults();

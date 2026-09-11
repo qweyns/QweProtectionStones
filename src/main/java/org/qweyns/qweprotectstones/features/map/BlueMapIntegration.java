@@ -208,8 +208,11 @@ public class BlueMapIntegration {
 
         Object set = markerSets.get(setId());
         if (set == null) {
+            String configured = plugin.getConfigManager().getConfig().getString("map.bluemap.marker_set_label", "");
             set = markerSetCtor.newInstance(
-                    plugin.getConfigManager().getConfig().getString("map.bluemap.marker_set_label", "Приваты"),
+                    configured == null || configured.isBlank()
+                            ? plugin.getLanguageManager().getRawMessage("map_layer_default")
+                            : configured,
                     plugin.getConfigManager().getConfig().getBoolean("map.bluemap.toggleable", true),
                     plugin.getConfigManager().getConfig().getBoolean("map.bluemap.default_hidden", false));
             markerSets.put(setId(), set);
@@ -273,16 +276,21 @@ public class BlueMapIntegration {
 
     private String label(Region region) {
         String name = region.hasDisplayName() ? region.getDisplayName() : region.getOwnerName();
-        return name + " [" + region.getShortId() + "]";
+        return MapText.escapeHtml(name) + " [" + region.getShortId() + "]";
     }
 
     /** Всплывающая подсказка маркера (BlueMap рендерит этот HTML). */
     private String detail(Region region) {
         RegionBounds b = region.getBounds();
         return "<div style=\"font-family:sans-serif;line-height:1.4\">"
-                + "<b>" + region.getOwnerName() + "</b><br>"
-                + region.getTypeId() + " — " + b.sizeX() + "x" + b.sizeZ() + "<br>"
-                + region.getWorldName() + " " + region.getCoreX() + "/" + region.getCoreY() + "/" + region.getCoreZ()
+                + "<b>" + MapText.escapeHtml(region.getOwnerName()) + "</b><br>"
+                + MapText.line(plugin, "map_marker_line_size",
+                        "%type%", region.getTypeId(), "%size%", b.sizeX() + "x" + b.sizeZ()) + "<br>"
+                + MapText.line(plugin, "map_marker_line_location",
+                        "%world%", region.getWorldName(),
+                        "%x%", String.valueOf(region.getCoreX()),
+                        "%y%", String.valueOf(region.getCoreY()),
+                        "%z%", String.valueOf(region.getCoreZ()))
                 + "</div>";
     }
 

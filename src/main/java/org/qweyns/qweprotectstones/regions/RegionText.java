@@ -1,5 +1,9 @@
 package org.qweyns.qweprotectstones.regions;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
+
+import java.util.regex.Pattern;
+
 /**
  * Разбор пользовательских текстов привата — названия, приветствия, прощания.
  *
@@ -15,17 +19,27 @@ public final class RegionText {
     private RegionText() {
     }
 
+    /** Цветовой код, скопированный из чата: § и, возможно, следующий символ-код. */
+    private static final Pattern SECTION_CODE = Pattern.compile("\u00a7([0-9a-fk-orA-FK-OR])?");
+
     /**
-     * Приводит текст к безопасному виду: убирает переводы строк (иначе одна
-     * запись разъезжается на несколько), обрезает пробелы и лишнюю длину.
+     * Приводит текст к безопасному виду: вырезает разметку (иначе название или
+     * приветствие превращаются в кликабельную ловушку для входящих или в скрипт
+     * на веб-карте), убирает переводы строк, обрезает пробелы и лишнюю длину.
+     *
+     * <p>MiniMessage-теги вырезаются вместе с содержимым — от {@code <click:...>жми</click>}
+     * остаётся слово «жми»; обычный текст, не похожий на тег (например, «&lt;3»), не трогается.
+     * Символ § и следующий за ним код цвета удаляются как пара.</p>
      *
      * @return нормализованный текст; пустая строка означает «не задано»
      */
     public static String normalize(String value) {
         if (value == null) return "";
 
+        String cleaned = MiniMessage.miniMessage().stripTags(value);
+        cleaned = SECTION_CODE.matcher(cleaned).replaceAll("");
         // \r\n — это один перевод строки, а не два пробела.
-        String cleaned = value.replace("\r\n", " ")
+        cleaned = cleaned.replace("\r\n", " ")
                 .replace('\n', ' ')
                 .replace('\r', ' ')
                 .trim();

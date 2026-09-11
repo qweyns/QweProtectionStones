@@ -169,9 +169,26 @@ public class LanguageManager {
 
     private String resolve(String path, String... replacements) {
         String msg = langConfig.getString(path);
-        if (msg == null || msg.isEmpty()) return "";
+        if (msg == null) {
+            warnMissing(path);
+            return "";
+        }
+        if (msg.isEmpty()) return "";
 
         return applyReplacements(msg.replace("%prefix%", langConfig.getString("prefix", "")), replacements);
+    }
+
+    /** Ключи, о которых уже жаловались, — чтобы не заспамить лог при каждом сообщении. */
+    private final java.util.Set<String> warnedMissing = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Отсутствующий ключ — почти всегда опечатка в коде или в lang-файле:
+     * молчаливый пустой ответ тратит часы на отладку. Жалуемся один раз.
+     */
+    private void warnMissing(String path) {
+        if (warnedMissing.add(path)) {
+            plugin.getLogger().warning("Языковой ключ '" + path + "' не найден — сообщение не будет показано.");
+        }
     }
 
     /** Пары «плейсхолдер, значение»: непарный хвост игнорируем, чтобы не ловить ArrayIndexOutOfBounds. */

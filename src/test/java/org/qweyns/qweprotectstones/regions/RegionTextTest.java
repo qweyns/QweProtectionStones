@@ -37,6 +37,36 @@ class RegionTextTest {
     }
 
     @Test
+    void normalizeStripsMiniMessageTags() {
+        // Кликабельные ловушки и разметка не должны выживать в пользовательском тексте.
+        assertEquals("жми", RegionText.normalize("<click:run_command:'/ps trust Грифер'>жми</click>"));
+        assertEquals("База", RegionText.normalize("<gradient:#FF0000:#00FF00>База</gradient>"));
+    }
+
+    @Test
+    void normalizeKeepsPlainTextThatLooksLikeNothing() {
+        // Строка, не похожая на тег MiniMessage, остаётся как есть.
+        assertEquals("<3 домой", RegionText.normalize("<3 домой"));
+        assertEquals("R&D", RegionText.normalize("R&D"));
+    }
+
+    @Test
+    void normalizeStripsSectionSignCodes() {
+        // § и следующий символ-код удаляются парой, одиночный § тоже исчезает.
+        assertEquals("Привет", RegionText.normalize("§a§lПривет"));
+        assertEquals("текст", RegionText.normalize("§текст"));
+    }
+
+    @Test
+    void sanitizeAppliesBeforeLengthLimit() {
+        // Теги не занимают место в лимите длины.
+        String evil = "<click:run_command:'/ps delete'>x</click>" + "а".repeat(200);
+        String normalized = RegionText.normalize(evil);
+        assertEquals(RegionText.MAX_LENGTH, normalized.length());
+        assertTrue(normalized.startsWith("x"));
+    }
+
+    @Test
     void labelPrefersDisplayNameThenOwnerThenId() {
         assertEquals("База", RegionText.label("База", "Steve", "a1b2c3d4"));
         assertEquals("Steve", RegionText.label("", "Steve", "a1b2c3d4"));
