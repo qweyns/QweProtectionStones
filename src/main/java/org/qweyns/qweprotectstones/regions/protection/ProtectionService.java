@@ -25,12 +25,21 @@ public class ProtectionService {
     public static final String ADMIN_PERMISSION = "qweprotectstones.admin";
 
     private final QweProtectStones plugin;
-    private final Cache<UUID, Long> denyMessageCooldowns = CacheBuilder.newBuilder()
-            .expireAfterWrite(30, TimeUnit.SECONDS)
-            .build();
+    private Cache<UUID, Long> denyMessageCooldowns = newCooldown(30);
 
     public ProtectionService(QweProtectStones plugin) {
         this.plugin = plugin;
+    }
+
+    /** Пауза между повторными «нельзя» одному игроку — settings.deny-message-cooldown. */
+    public void reloadDenyCooldown() {
+        int seconds = Math.max(1, plugin.getConfigManager().getConfig()
+                .getInt("settings.deny-message-cooldown", 30));
+        denyMessageCooldowns = newCooldown(seconds);
+    }
+
+    private static Cache<UUID, Long> newCooldown(int seconds) {
+        return CacheBuilder.newBuilder().expireAfterWrite(seconds, TimeUnit.SECONDS).build();
     }
 
     // ------------------------------------------------------------------

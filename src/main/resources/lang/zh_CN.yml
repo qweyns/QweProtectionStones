@@ -104,6 +104,7 @@ upgrade_penalty: "%prefix%<#E74C3C>注意：因近期袭击，价格提高了 %m
 purchase_failed: "%prefix%<#E74C3C>购买失败：余额不足。"
 effect_bought: "%prefix%<#2ECC71>已购买增益 <#3498DB>%effect%<#2ECC71>！"
 effect_not_allowed: "%prefix%<#E74C3C>该类型领地不允许效果 <#F1C40F>%effect%<#E74C3C>。"
+effect_unknown: "效果 %effect% 不存在——请联系管理员。"
 effect_alerts: "袭击警报"
 effect_exp_boost: "经验加成"
 damage_indicator: "<#E74C3C><bold>-%damage% ❤"

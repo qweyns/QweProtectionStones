@@ -6,13 +6,13 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
@@ -112,7 +112,12 @@ public class MenuItemFactory {
         }
 
         if (cfg.getBoolean("unbreakable", false)) meta.setUnbreakable(true);
-        if (cfg.contains("custom_model_data")) meta.setCustomModelData(cfg.getInt("custom_model_data"));
+        if (cfg.contains("custom_model_data")) {
+            // С 1.21.5 числовой custom_model_data хранится в компоненте со списком float.
+            CustomModelDataComponent component = meta.getCustomModelDataComponent();
+            component.setFloats(java.util.List.of((float) cfg.getInt("custom_model_data")));
+            meta.setCustomModelDataComponent(component);
+        }
 
         applyEnchantments(cfg, meta);
         applyItemFlags(cfg, meta);
@@ -167,7 +172,8 @@ public class MenuItemFactory {
                 continue;
             }
 
-            Enchantment enchantment = Registry.ENCHANTMENT.get(key);
+            Enchantment enchantment = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT).get(key);
             if (enchantment == null) {
                 plugin.getLogger().warning("Неизвестное зачарование в меню: " + parts[0]);
                 continue;

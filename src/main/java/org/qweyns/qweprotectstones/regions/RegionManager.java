@@ -390,6 +390,11 @@ public class RegionManager {
         if (world == null || !world.getName().equals(region.getWorldName())) return null;
 
         RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
+        if (type == null) {
+            // Без типов regions.yml переносить нечего: не из чего взять радиусы.
+            plugin.getLogger().warning("Перенос привата " + region.getShortId() + " невозможен: типы не настроены.");
+            return null;
+        }
         int radiusY = type.fullHeight() ? world.getMaxHeight() - world.getMinHeight() : type.radiusY();
         RegionBounds newBounds = RegionBounds.around(
                 newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ(),

@@ -113,6 +113,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.bypassManager = new BypassManager();
         this.rateLimiter = new RegionRateLimiter(this);
         this.protectionService = new ProtectionService(this);
+        this.protectionService.reloadDenyCooldown();
 
         this.regionStorage = new RegionStorage(this);
         this.regionManager = new RegionManager(this);
@@ -193,6 +194,7 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(new InteractProtectionListener(this), this);
         pm.registerEvents(new EntityProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
+        pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.BorderProtectionListener(this), this);
 
         this.actionLogger = new RegionActionLogger(this);
         this.previewListener = new RegionPreviewListener(this);
@@ -267,6 +269,7 @@ public final class QweProtectStones extends JavaPlugin {
         regionManager.refreshTypeData();
         menuManager.loadMenus();
         penaltyManager.rebuild();
+        protectionService.reloadDenyCooldown();
 
         hologramManager.restoreHolograms();
         if (dynmapIntegration != null) dynmapIntegration.redrawAll();

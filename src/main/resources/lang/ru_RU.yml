@@ -104,6 +104,7 @@ upgrade_penalty: "%prefix%<#E74C3C>Внимание: цена увеличена
 purchase_failed: "%prefix%<#E74C3C>Покупка не удалась: недостаточно средств."
 effect_bought: "%prefix%<#2ECC71>Улучшение <#3498DB>%effect% <#2ECC71>куплено!"
 effect_not_allowed: "%prefix%<#E74C3C>Эффект <#F1C40F>%effect% <#E74C3C>недоступен для этого типа привата."
+effect_unknown: "Эффект %effect% не существует — сообщите администратору."
 effect_alerts: "Оповещения о рейдах"
 effect_exp_boost: "Буст опыта"
 damage_indicator: "<#E74C3C><bold>-%damage% ❤"

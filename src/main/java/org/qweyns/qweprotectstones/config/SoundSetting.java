@@ -1,6 +1,8 @@
 package org.qweyns.qweprotectstones.config;
 
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -57,13 +59,24 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
                 readFloat(parts, 2, hasFallback ? fallback.pitch() : 1f));
     }
 
-    /** Принимает и {@code BLOCK_ANVIL_USE}, и {@code block.anvil.use}. */
-    private static Sound resolve(String name) {
-        try {
-            return Sound.valueOf(name.trim().toUpperCase(Locale.ROOT).replace('.', '_'));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+    /**
+     * Принимает ключ реестра ({@code block.anvil.use}, {@code myplugin:custom}),
+     * прежний формат имён констант ({@code BLOCK_ANVIL_USE}) и {@code none}.
+     * Возвращает {@code NONE} вместо null, чтобы его можно было безопасно играть.
+     */
+    public static Sound resolve(String name) {
+        String raw = name.trim().toLowerCase(Locale.ROOT);
+
+        Sound sound = byKey(raw);
+        // Старые конфиги писали имена констант: ENTITY_PLAYER_LEVELUP → entity.player.levelup.
+        if (sound == null) sound = byKey(raw.replace('_', '.'));
+        return sound;
+    }
+
+    /** Звук по ключу реестра: заменяет {@code Sound.valueOf}, помеченное к удалению. */
+    private static Sound byKey(String key) {
+        NamespacedKey namespaced = NamespacedKey.fromString(key);
+        return namespaced != null ? Registry.SOUNDS.get(namespaced) : null;
     }
 
     private static float readFloat(String[] parts, int index, float fallback) {

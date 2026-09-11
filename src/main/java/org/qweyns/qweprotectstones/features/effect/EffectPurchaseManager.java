@@ -132,7 +132,11 @@ public class EffectPurchaseManager {
             if (take >= item.getAmount()) {
                 player.getInventory().setItem(i, null);
             } else {
-                item.setAmount(item.getAmount() - take);
+                // Массив из getStorageContents() может быть копией — пишем
+                // через setItem, а не мутируем элемент массива.
+                ItemStack reduced = item.clone();
+                reduced.setAmount(item.getAmount() - take);
+                player.getInventory().setItem(i, reduced);
             }
             amount -= take;
         }

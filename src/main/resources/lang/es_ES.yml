@@ -104,6 +104,7 @@ upgrade_penalty: "%prefix%<#E74C3C>¡Aviso: precio multiplicado por %multiplier%
 purchase_failed: "%prefix%<#E74C3C>Compra fallida: fondos insuficientes."
 effect_bought: "%prefix%<#2ECC71>¡Mejora <#3498DB>%effect% <#2ECC71>comprada!"
 effect_not_allowed: "%prefix%<#E74C3C>El efecto <#F1C40F>%effect% <#E74C3C>no está permitido aquí."
+effect_unknown: "El efecto %effect% no existe — avisa a un administrador."
 effect_alerts: "Alertas de asalto"
 effect_exp_boost: "Bonus de EXP"
 damage_indicator: "<#E74C3C><bold>-%damage% ❤"

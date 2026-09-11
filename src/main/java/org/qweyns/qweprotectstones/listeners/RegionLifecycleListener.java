@@ -154,10 +154,6 @@ public class RegionLifecycleListener implements Listener {
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
-    private void giveOrDrop(Player player, Location location, Material material) {
-        giveOrDrop(player, location, material, null);
-    }
-
     /**
      * Возврат блока ядра. Если включено {@code settings.return-durability},
      * в предмет записывается PDC-тег с текущей прочностью привата — поставив

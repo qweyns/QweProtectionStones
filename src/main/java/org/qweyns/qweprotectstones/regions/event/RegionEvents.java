@@ -3,7 +3,6 @@ package org.qweyns.qweprotectstones.regions.event;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionFlag;
 import org.qweyns.qweprotectstones.regions.TrustLevel;

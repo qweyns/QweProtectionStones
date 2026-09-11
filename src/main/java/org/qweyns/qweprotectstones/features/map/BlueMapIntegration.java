@@ -31,6 +31,11 @@ public class BlueMapIntegration {
 
     private boolean active;
 
+    // Держим ссылки на подписки BlueMap: enable() вызывается и из /qps reload,
+    // и без этого каждый прогон добавлял бы новый consumer в BlueMapAPI.
+    private Consumer<Object> enableListener;
+    private Runnable disableListener;
+
     private Object api;
     private Constructor<?> markerSetCtor;
     private Constructor<?> shapeMarkerCtor;
@@ -77,16 +82,36 @@ public class BlueMapIntegration {
                 return;
             }
 
-            Method onEnable = apiClass.getMethod("onEnable", Consumer.class);
-            Method onDisable = apiClass.getMethod("onDisable", Runnable.class);
-            onEnable.invoke(null, (Consumer<Object>) this::attach);
-            onDisable.invoke(null, (Runnable) this::detach);
+            // Подписка должна быть ровно одна: регистрируем при первом вызове
+            // и снимаем в disable().
+            if (enableListener == null) {
+                enableListener = this::attach;
+                disableListener = this::detach;
+
+                Method onEnable = apiClass.getMethod("onEnable", Consumer.class);
+                Method onDisable = apiClass.getMethod("onDisable", Runnable.class);
+                Method unregister = apiClass.getMethod("unregisterListener", Consumer.class);
+
+                onEnable.invoke(null, enableListener);
+                onDisable.invoke(null, disableListener);
+                this.unregister = unregister;
+            }
         } catch (Throwable t) {
             plugin.getLogger().log(Level.WARNING, "BlueMap найден, но API недоступно — интеграция отключена.", t);
         }
     }
 
+    private Method unregister;
+
     public void disable() {
+        // Снимаем подписки, иначе перезагрузка плагина оставляла бы «зомби»-consumer'ов.
+        if (unregister != null && enableListener != null) {
+            try {
+                unregister.invoke(null, enableListener);
+            } catch (Throwable ignored) {
+                // BlueMap уже выгрузился — ничего снимать не нужно.
+            }
+        }
         detach();
     }
 
@@ -190,8 +215,12 @@ public class BlueMapIntegration {
             markerSets.put(setId(), set);
         }
 
-        Map<String, Object> markers = markerSetsOf(set);
-        if (markers == null) return;
+        // Внимание: у MarkerSet маркеры (getMarkers), у BlueMapMap — наборы
+        // (getMarkerSets); это разные методы, путать нельзя.
+        Object markersRaw = markerSetGetMarkers.invoke(set);
+        if (!(markersRaw instanceof Map)) return;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> markers = (Map<String, Object>) markersRaw;
 
         RegionBounds bounds = region.getBounds();
         String label = label(region);
@@ -214,8 +243,7 @@ public class BlueMapIntegration {
     @SuppressWarnings("unchecked")
     private Map<String, Object> markerSetsOf(Object owner) throws Exception {
         if (owner == null) return null;
-        Object result = owner instanceof java.util.Map ? owner : mapGetMarkerSets.invoke(owner);
-        // Map.getMarkerSets() возвращает Map<String, MarkerSet>, MarkerSet.getMarkers() — Map<String, Marker>.
+        Object result = mapGetMarkerSets.invoke(owner);
         return result instanceof Map ? (Map<String, Object>) result : null;
     }
 

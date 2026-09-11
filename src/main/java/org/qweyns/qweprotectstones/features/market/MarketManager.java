@@ -8,7 +8,6 @@ import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
-import org.qweyns.qweprotectstones.regions.event.RegionTransferEvent;
 
 import java.util.Map;
 import java.util.Optional;

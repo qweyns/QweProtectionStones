@@ -7,8 +7,6 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 import org.qweyns.qweprotectstones.features.invite.InviteManager;
-import org.qweyns.qweprotectstones.regions.event.RegionEvents;
-import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 
 import java.util.ArrayList;
 import java.util.List;

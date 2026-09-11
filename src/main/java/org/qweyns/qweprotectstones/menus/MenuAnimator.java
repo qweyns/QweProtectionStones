@@ -169,13 +169,15 @@ public class MenuAnimator implements Runnable {
                     tasks.add(() -> currentTick = targetTick);
                 }
                 case "sound", "snd" -> {
-                    String soundName = args[1].toUpperCase(Locale.ROOT).replace('.', '_');
                     float volume = args.length > 2 ? Float.parseFloat(args[2]) : 1f;
                     float pitch = args.length > 3 ? Float.parseFloat(args[3]) : 1f;
-                    // Sound.valueOf вызываем при компиляции: опечатка в названии
-                    // роняла бы аниматор каждый тик.
-                    Sound sound = Sound.valueOf(soundName);
-                    tasks.add(() -> player.playSound(player.getLocation(), sound, volume, pitch));
+                    // Опечатка в названии не должна ронять аниматор каждый тик.
+                    Sound sound = org.qweyns.qweprotectstones.config.SoundSetting.resolve(args[1]);
+                    if (sound == null) {
+                        plugin.getLogger().warning("Неизвестный звук в анимации меню: " + args[1]);
+                    } else {
+                        tasks.add(() -> player.playSound(player.getLocation(), sound, volume, pitch));
+                    }
                 }
                 case "cmd", "commands" -> {
                     String command = op.trim().substring(args[0].length()).trim();

@@ -2,7 +2,6 @@ package org.qweyns.qweprotectstones.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -20,9 +19,7 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 import org.qweyns.qweprotectstones.regions.event.RegionDeleteEvent;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
-import org.qweyns.qweprotectstones.regions.event.RegionFlagChangeEvent;
 import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
-import org.qweyns.qweprotectstones.regions.event.RegionTransferEvent;
 
 import java.io.File;
 import java.util.ArrayList;

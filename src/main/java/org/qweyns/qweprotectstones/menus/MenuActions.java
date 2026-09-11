@@ -176,6 +176,15 @@ public class MenuActions {
         // Даём другим плагинам шанс наложить вето (налоги, клановые правила).
         if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return;
 
+        // Проверяем имя эффекта ДО списания: за опечатку в конфиге меню
+        // игрок платить не должен.
+        boolean builtin = effectName.equalsIgnoreCase("ALERTS") || effectName.equalsIgnoreCase("EXP_BOOST");
+        if (!builtin && plugin.getEffectManager().potionType(effectName) == null) {
+            plugin.getLogger().warning("Магазин эффектов: неизвестный эффект '" + effectName + "' (проверьте menus/effects.yml)");
+            player.sendMessage(plugin.getLanguageManager().getMessage("effect_unknown", "%effect%", effectName));
+            return;
+        }
+
         // Оплата: тип и цена настраиваются в effects.purchase (по умолчанию бесплатно).
         var purchase = plugin.getEffectPurchaseManager();
         switch (purchase.charge(player, effectName, amplifier)) {
@@ -206,7 +215,7 @@ public class MenuActions {
         } else if (effectName.equalsIgnoreCase("EXP_BOOST")) {
             translation = plugin.getLanguageManager().getRawMessage("effect_exp_boost");
         } else {
-            var potionType = org.bukkit.potion.PotionEffectType.getByName(effectName.toUpperCase(Locale.ROOT));
+            var potionType = plugin.getEffectManager().potionType(effectName);
             translation = potionType != null ? "<translate:" + potionType.translationKey() + ">" : effectName;
         }
         return amplifier > 0 ? translation + MenuManager.getRomanNumeral(amplifier) : translation;

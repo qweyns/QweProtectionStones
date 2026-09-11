@@ -3,6 +3,8 @@ package org.qweyns.qweprotectstones.features.effect;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -134,7 +136,7 @@ public class EffectManager implements Listener {
         String name = parts[0].toUpperCase(Locale.ROOT);
         if (name.equals(ALERTS) || name.equals(EXP_BOOST)) return;
 
-        PotionEffectType type = PotionEffectType.getByName(name);
+        PotionEffectType type = potionType(name);
         if (type == null) return;
 
         String target = plugin.getConfigManager().getEffectTarget(name);
@@ -165,6 +167,16 @@ public class EffectManager implements Listener {
                     + region.getShortId() + " — использую 0.");
             return 0;
         }
+    }
+
+    /**
+     * Поиск зельного эффекта по ключу реестра: {@code speed}, {@code fire_resistance},
+     * {@code minecraft:speed}. Заменяет устаревший {@code PotionEffectType.getByName}.
+     */
+    public static PotionEffectType potionType(String name) {
+        if (name == null || name.isBlank()) return null;
+        NamespacedKey key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));
+        return key != null ? Registry.POTION_EFFECT_TYPE.get(key) : null;
     }
 
     public void addCustomEffect(Region region, String effectName, int amplifier) {

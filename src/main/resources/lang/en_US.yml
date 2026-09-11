@@ -104,6 +104,7 @@ upgrade_penalty: "%prefix%<#E74C3C>Warning: price multiplied by %multiplier%x du
 purchase_failed: "%prefix%<#E74C3C>Purchase failed: not enough funds."
 effect_bought: "%prefix%<#2ECC71>Upgrade <#3498DB>%effect% <#2ECC71>purchased!"
 effect_not_allowed: "%prefix%<#E74C3C>Effect <#F1C40F>%effect% <#E74C3C>is not allowed for this region type."
+effect_unknown: "Effect %effect% does not exist — please tell an administrator."
 effect_alerts: "Raid Alerts"
 effect_exp_boost: "EXP Boost"
 damage_indicator: "<#E74C3C><bold>-%damage% ❤"

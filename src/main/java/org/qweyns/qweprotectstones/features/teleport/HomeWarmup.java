@@ -44,11 +44,6 @@ public class HomeWarmup implements Listener {
         this.plugin = plugin;
     }
 
-    /** Мгновенный ли телепорт (0 секунд задержки). */
-    public boolean isInstant() {
-        return warmupSeconds() <= 0;
-    }
-
     /**
      * Запускает телепорт с учётом задержки и перезарядки. Сам сообщает игроку
      * обо всех отказах.

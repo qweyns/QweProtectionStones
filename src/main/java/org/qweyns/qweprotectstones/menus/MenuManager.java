@@ -287,7 +287,9 @@ public class MenuManager implements Listener {
             ItemStack item = itemFactory.build(template, player, region, extra);
             if (item == null) continue;
 
-            item.setType(upgradeMaterial);
+            // withType, а не setType: сохраняет метаданные (название, зачарования,
+            // PDC), которые setType терял при переходе на компоненты предметов.
+            item = item.withType(upgradeMaterial);
             item.setAmount(Math.max(1, Math.min(64, targetLevel)));
             contents[slot] = item;
         }
