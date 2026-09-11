@@ -31,6 +31,7 @@ public class RegionStorage {
     private final Map<UUID, Region> pendingSaves = new ConcurrentHashMap<>();
     private final Set<UUID> pendingDeletes = ConcurrentHashMap.newKeySet();
     private final java.util.Queue<RegionLogEntry> pendingLog = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private volatile long lastFlushMillis;
 
     public RegionStorage(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -66,6 +67,11 @@ public class RegionStorage {
         if (region == null) return;
         pendingDeletes.remove(region.getId());
         pendingSaves.put(region.getId(), region);
+    }
+
+    /** Момент последней записи в базу (0 — ещё не было) — для /qps stats. */
+    public long lastFlushMillis() {
+        return lastFlushMillis;
     }
 
     /** Сколько приватов ждёт записи — для /qps debug. */
@@ -132,6 +138,7 @@ public class RegionStorage {
 
     private void flush() {
         if (dao == null) return;
+        lastFlushMillis = System.currentTimeMillis();
 
         if (!pendingSaves.isEmpty()) {
             // Забираем по ключу: изменение во время флаша попадёт в следующий цикл, а не потеряется.

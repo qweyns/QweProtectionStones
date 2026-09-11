@@ -30,6 +30,21 @@ public class MarketManager {
     private final Map<UUID, RegionSale> sales = new ConcurrentHashMap<>();
     private final Map<UUID, RegionRental> rentals = new ConcurrentHashMap<>();
 
+    /** Сколько приватов выставлено на продажу — для /qps stats. */
+    public int salesCount() {
+        return sales.size();
+    }
+
+    /** Сколько объявлений аренды опубликовано — для /qps stats. */
+    public int rentalListingsCount() {
+        return rentals.size();
+    }
+
+    /** Сколько приватов сдано прямо сейчас — для /qps stats. */
+    public int rentedCount() {
+        return (int) rentals.values().stream().filter(RegionRental::isRented).count();
+    }
+
     public MarketManager(QweProtectStones plugin) {
         this.plugin = plugin;
     }

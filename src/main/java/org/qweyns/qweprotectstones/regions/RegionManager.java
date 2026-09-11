@@ -174,6 +174,15 @@ public class RegionManager {
     }
 
 
+    /** Сколько игроков владеет хотя бы одним приватам — для /qps stats. */
+    public int ownersCount() {
+        java.util.Set<UUID> owners = new java.util.HashSet<>();
+        for (Region region : getAllRegions()) {
+            if (region.getOwnerId() != null) owners.add(region.getOwnerId());
+        }
+        return owners.size();
+    }
+
     public int size() {
         return regions.size();
     }

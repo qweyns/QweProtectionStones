@@ -50,6 +50,11 @@ public class PenaltyManager {
         if (regionId != null) activePenalties.invalidate(regionId);
     }
 
+    /** Сколько приватов сейчас под штрафом прочности — для /qps stats. */
+    public int activeCount() {
+        return activePenalties == null ? 0 : activePenalties.asMap().size();
+    }
+
     public int getPenaltyMultiplier() {
         return plugin.getConfigManager().getExplosionPenaltyMultiplier();
     }

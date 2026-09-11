@@ -85,10 +85,15 @@ notifications:
 ```yaml
 # features.yml -> import
 import:
-  type-id: "small"          # тип привата для импортированных
+  type-id: "DIAMOND_BLOCK"  # тип по умолчанию для импортированных
   create-holograms: false   # голограммы у виртуальных ядер
   worldguard:
     data-folder: "plugins/WorldGuard"        # регионы из worlds/*/regions.yml
+    type-by-material: true   # тип PS-региона по материалу его блока
+    flag-mapping:            # флаги WorldGuard -> наши
+      pvp: "PVP"
+      entry: "ENTRY"
+      mob-spawning: "MONSTER_SPAWNING"
   protectionstones:
     data-folder: "plugins/WorldGuard"        # берём только ps*-регионы
   griefprevention:
@@ -101,8 +106,13 @@ import:
 | `/qps import ps` | ProtectionStones (его регионы внутри WorldGuard) |
 | `/qps import gp` | GriefPrevention |
 
-Импортированные приваты получают указанный тип и виртуальное ядро в центре
-границ.
+Импортированные приваты получают виртуальное ядро в центре границ.
+ProtectionStones помечает свои регионы флагом `ps-block-material` —
+при `type-by-material: true` тип подбирается по материалу блока один
+в один (ключ типа в `regions.yml` = материал), а логические флаги
+WorldGuard (`pvp`, `entry`, `tnt`…) переносятся согласно `flag-mapping`
+(`allow` → `true`, `deny` → `false`; строковые флаги вроде `greeting`
+пропускаются).
 
 ## Бэкапы и выгрузки
 

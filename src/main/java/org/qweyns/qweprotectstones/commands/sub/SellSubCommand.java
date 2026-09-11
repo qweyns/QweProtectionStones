@@ -96,6 +96,8 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         }
 
         plugin.getMarketManager().listForSale(region, player, price);
+        plugin.getCriticalFileLogger().log("MARKET_SELL_LIST",
+                "by=" + player.getName() + " region=" + region.getShortId() + " price=" + price);
         player.sendMessage(plugin.getLanguageManager().getMessage("sell_listed",
                 "%id%", region.getShortId(), "%price%", money(price)));
     }
@@ -136,6 +138,9 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
 
+        plugin.getCriticalFileLogger().log("MARKET_BUY",
+                "by=" + player.getName() + " region=" + region.getShortId()
+                        + " seller=" + sale.sellerName() + " price=" + sale.price());
         player.sendMessage(plugin.getLanguageManager().getMessage("buy_success",
                 "%id%", region.getShortId(), "%price%", money(sale.price())));
 

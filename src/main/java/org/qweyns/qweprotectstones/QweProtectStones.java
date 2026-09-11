@@ -89,6 +89,7 @@ public final class QweProtectStones extends JavaPlugin {
     private org.qweyns.qweprotectstones.hooks.DiscordSrvHook discordSrvHook;
     private AbandonedRegionTask abandonedRegionTask;
     private RegionActionLogger actionLogger;
+    private org.qweyns.qweprotectstones.features.log.CriticalFileLogger criticalFileLogger;
     private RegionPreviewListener previewListener;
     private org.qweyns.qweprotectstones.features.recipe.CoreRecipeManager coreRecipeManager;
 
@@ -167,6 +168,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.actionLogger.startPruning();
 
         // Плановые выгрузки всех приватов с ротацией (backup.enable).
+        this.criticalFileLogger = new org.qweyns.qweprotectstones.features.log.CriticalFileLogger(this);
         this.backupTask = new org.qweyns.qweprotectstones.features.backup.BackupTask(this);
         this.backupTask.start();
 
@@ -336,6 +338,8 @@ public final class QweProtectStones extends JavaPlugin {
 
     /** Плановые выгрузки приватов в JSON с ротацией. */
     public org.qweyns.qweprotectstones.features.backup.BackupTask getBackupTask() { return backupTask; }
+
+    public org.qweyns.qweprotectstones.features.log.CriticalFileLogger getCriticalFileLogger() { return criticalFileLogger; }
 
     /** Уведомления через DiscordSRV (рефлексия, работает без зависимости). */
     public org.qweyns.qweprotectstones.hooks.DiscordSrvHook getDiscordSrvHook() { return discordSrvHook; }

@@ -80,6 +80,8 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
         plugin.getRegionLifecycleListener().cleanupVisuals(region);
         returnCoreBlock(region);
 
+        plugin.getCriticalFileLogger().log("PLAYER_DELETE",
+                "by=" + player.getName() + " region=" + region.getShortId() + " owner=" + region.getOwnerName());
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 

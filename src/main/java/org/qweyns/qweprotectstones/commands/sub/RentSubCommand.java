@@ -86,6 +86,9 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
         }
 
         plugin.getMarketManager().offerForRent(region, player, price, minutes);
+        plugin.getCriticalFileLogger().log("MARKET_RENT_LIST",
+                "by=" + player.getName() + " region=" + region.getShortId()
+                        + " price=" + price + " minutes=" + minutes);
         player.sendMessage(plugin.getLanguageManager().getMessage("rent_listed",
                 "%id%", region.getShortId(),
                 "%price%", SellSubCommand.money(price),
@@ -127,6 +130,10 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
+        plugin.getCriticalFileLogger().log(extend ? "MARKET_RENT_EXTEND" : "MARKET_RENT_TAKE",
+                "by=" + player.getName() + " region=" + region.getShortId()
+                        + " owner=" + rental.ownerName() + " price=" + rental.price()
+                        + " minutes=" + rental.durationMinutes());
         player.sendMessage(plugin.getLanguageManager().getMessage(extend ? "rent_extended" : "rent_taken",
                 "%id%", region.getShortId(),
                 "%minutes%", String.valueOf(rental.durationMinutes()),

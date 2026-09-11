@@ -202,6 +202,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         boolean enabled = plugin.getBypassManager().toggle(player);
+        plugin.getCriticalFileLogger().log("BYPASS",
+                "player=" + player.getName() + " enabled=" + enabled + " by=" + sender.getName());
         player.sendMessage(plugin.getLanguageManager().getMessage(enabled ? "bypass_enabled" : "bypass_disabled"));
     }
 
@@ -257,7 +259,24 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     }
 
     /** Ручной запуск очистки заброшенных приватов, не дожидаясь расписания. */
+    /**
+     * Журналирование административного действия: запись в журнал региона
+     * (виден через /ps log с пометкой «админ») и в файл критических операций.
+     */
+    private void auditLog(Region region, CommandSender sender, String action, String detail) {
+        String actor = sender.getName();
+        if (region != null) {
+            plugin.getRegionStorage().log(org.qweyns.qweprotectstones.storage.dao.RegionLogEntry.of(
+                    region.getId(), actor, "admin_" + action, detail));
+        }
+        plugin.getCriticalFileLogger().log("ADMIN_" + action.toUpperCase(Locale.ROOT),
+                "by=" + actor
+                + (region != null ? " region=" + region.getShortId() : "")
+                + (detail == null || detail.isBlank() ? "" : " " + detail));
+    }
+
     private void cleanup(CommandSender sender) {
+        plugin.getCriticalFileLogger().log("ADMIN_CLEANUP", "by=" + sender.getName());
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_cleanup_started"));
         plugin.getAbandonedRegionTask().sweep();
     }
@@ -276,6 +295,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         plugin.getRegionLifecycleListener().cleanupVisuals(region);
+        auditLog(region, sender, "delete", "owner=" + region.getOwnerName());
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_deleted",
                 "%id%", region.getShortId(), "%owner%", region.getOwnerName()));
     }
@@ -287,9 +307,24 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     }
 
     private void stats(CommandSender sender) {
-        sender.sendMessage(plugin.getLanguageManager().getMessage("admin_stats",
+        var lm = plugin.getLanguageManager();
+        sender.sendMessage(lm.getMessage("admin_stats",
                 "%regions%", String.valueOf(plugin.getRegionManager().size()),
-                "%types%", String.valueOf(plugin.getRegionTypes().all().size())));
+                "%types%", String.valueOf(plugin.getRegionTypes().all().size()),
+                "%owners%", String.valueOf(plugin.getRegionManager().ownersCount())));
+
+        var market = plugin.getMarketManager();
+        sender.sendMessage(lm.getMessage("admin_stats_market",
+                "%sales%", String.valueOf(market.salesCount()),
+                "%rented%", String.valueOf(market.rentedCount()),
+                "%listings%", String.valueOf(market.rentalListingsCount()),
+                "%penalties%", String.valueOf(plugin.getPenaltyManager().activeCount())));
+
+        long last = plugin.getRegionStorage().lastFlushMillis();
+        String flushAgo = last == 0 ? "-" : String.valueOf((System.currentTimeMillis() - last) / 1000);
+        sender.sendMessage(lm.getMessage("admin_stats_cache",
+                "%pending%", String.valueOf(plugin.getRegionStorage().pendingCount()),
+                "%flush%", flushAgo));
     }
 
     // ------------------------------------------------------------------
@@ -341,6 +376,9 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         target.getInventory().addItem(core)
                 .forEach((slot, leftover) -> target.getWorld().dropItemNaturally(target.getLocation(), leftover));
 
+        plugin.getCriticalFileLogger().log("ADMIN_GIVE",
+                "by=" + sender.getName() + " player=" + target.getName()
+                        + " type=" + type.id() + " amount=" + amount);
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_give_sent",
                 "%player%", target.getName(), "%type%", type.id(), "%amount%", String.valueOf(amount)));
         target.sendMessage(plugin.getLanguageManager().getMessage("admin_give_received",
@@ -357,6 +395,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         region.setDurability(Math.min(value, region.getMaxDurability()));
         plugin.getRegionStorage().save(region);
+        auditLog(region, sender, "setdurability", "value=" + region.getDurability());
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_setdurability_done",
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
@@ -375,6 +414,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         region.setMaxDurability(value);
         plugin.getRegionStorage().save(region);
+        auditLog(region, sender, "setmax", "value=" + value);
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_setmax_done",
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
@@ -417,6 +457,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
         plugin.getVisualManager().showBoundary(region, "create");
+        auditLog(region, sender, "settype", "type=" + type.id());
 
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_settype_done",
                 "%id%", region.getShortId(), "%type%", type.id(),
@@ -458,6 +499,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         plugin.getVisualManager().showBoundary(region, "create");
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
+        auditLog(region, sender, "setbounds", "size=" + region.getBounds().sizeX() + "x" + region.getBounds().sizeZ());
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_setbounds_done",
                 "%id%", region.getShortId(), "%size%", region.getBounds().sizeX() + "x" + region.getBounds().sizeZ()));
     }
@@ -567,6 +609,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
 
+        auditLog(region, sender, forgetPrevious ? "setowner" : "transfer", "to=" + target.getName());
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 forgetPrevious ? "admin_setowner_done" : "admin_transfer_done",
                 "%id%", region.getShortId(),
@@ -613,6 +656,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         plugin.getRegionStorage().save(region);
+        auditLog(region, sender, add ? "ban" : "unban", "player=" + targetName);
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 add ? "admin_ban_done" : "admin_unban_done",
                 "%id%", region.getShortId(), "%player%", targetName));
@@ -697,6 +741,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         plugin.getRegionStorage().save(region);
+        auditLog(region, sender, grant ? "trust" : "untrust", "player=" + targetName);
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 grant ? "admin_trust_done" : "admin_untrust_done",
                 "%id%", region.getShortId(), "%player%", targetName,

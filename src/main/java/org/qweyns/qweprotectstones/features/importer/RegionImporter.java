@@ -127,8 +127,10 @@ public class RegionImporter {
             }
         }
 
-        Region region = buildRegion(worldName, bounds, ownerId, ownerName);
+        Region region = buildRegion(worldName, bounds, ownerId, ownerName, psMaterial(data));
         if (region == null) return false;
+
+        applyWgFlags(region, data);
 
         if (data.get("members") instanceof Map<?, ?> members && members.get("players") instanceof Map<?, ?> players) {
             for (Map.Entry<?, ?> member : players.entrySet()) {
@@ -226,9 +228,22 @@ public class RegionImporter {
 
     /** Собрать приват с виртуальным ядром в центре границ. */
     private Region buildRegion(String worldName, RegionBounds bounds, UUID ownerId, String ownerName) {
+        return buildRegion(worldName, bounds, ownerId, ownerName, null);
+    }
+
+    /**
+     * @param typeIdOverride тип привата, вычисленный при импорте (например,
+     *                       по материалу блока ProtectionStones); {@code null} —
+     *                       брать общий {@code import.type-id}
+     */
+    private Region buildRegion(String worldName, RegionBounds bounds, UUID ownerId, String ownerName, String typeIdOverride) {
         if (ownerId == null) return null; // административные регионы не переносим
 
-        RegionType type = plugin.getRegionTypes().resolveOrFallback(importTypeId());
+        RegionType type = null;
+        if (typeIdOverride != null) {
+            type = plugin.getRegionTypes().byId(typeIdOverride);
+        }
+        if (type == null) type = plugin.getRegionTypes().resolveOrFallback(importTypeId());
         if (type == null) return null;
 
         int coreX = bounds.centerX();
@@ -255,6 +270,66 @@ public class RegionImporter {
         String raw = plugin.getConfigManager().getConfig().getString(path, fallback);
         if (raw == null || raw.isBlank()) return fallback;
         return raw;
+    }
+
+    // ------------------------------------------------------------------
+    // ProtectionStones: тип блока и флаги
+    // ------------------------------------------------------------------
+
+    /**
+     * ProtectionStones помечает свои регионы WorldGuard флагом
+     * {@code ps-block-material} — по нему подбираем тип один в один
+     * (ключи типов в regions.yml совпадают с материалами). Настраивается
+     * {@code import.worldguard.type-by-material}.
+     */
+    private String psMaterial(Map<?, ?> data) {
+        if (!(data.get("flags") instanceof Map<?, ?> flags)) return null;
+        Object material = flags.get("ps-block-material");
+        if (material == null) return null;
+
+        String raw = String.valueOf(material).trim();
+        if (raw.isEmpty()) return null;
+
+        if (!plugin.getConfigManager().getConfig().getBoolean("import.worldguard.type-by-material", true)) {
+            return null;
+        }
+        return plugin.getRegionTypes().byId(raw) != null ? raw : null;
+    }
+
+    /**
+     * Перенос логических флагов WorldGuard в наши. Соответствие имён —
+     * {@code import.worldguard.flag-mapping} в config.yml, значения по
+     * умолчанию — {@link WgFlags#DEFAULT_MAPPING}. Неизвестные и
+     * не-логические флаги пропускаются.
+     */
+    private void applyWgFlags(Region region, Map<?, ?> data) {
+        if (!(data.get("flags") instanceof Map<?, ?> flags)) return;
+
+        org.bukkit.configuration.ConfigurationSection section =
+                plugin.getConfigManager().getConfig().getConfigurationSection("import.worldguard.flag-mapping");
+        java.util.Map<String, String> mapping;
+        if (section != null) {
+            java.util.Map<String, String> raw = new java.util.HashMap<>();
+            for (String key : section.getKeys(false)) {
+                raw.put(key, section.getString(key));
+            }
+            mapping = WgFlags.normalize(raw);
+        } else {
+            mapping = WgFlags.DEFAULT_MAPPING;
+        }
+
+        for (Map.Entry<?, ?> flag : flags.entrySet()) {
+            String our = mapping.get(String.valueOf(flag.getKey()).trim().toLowerCase(java.util.Locale.ROOT));
+            if (our == null) continue;
+
+            org.qweyns.qweprotectstones.regions.RegionFlag target = WgFlags.resolve(our);
+            if (target == null) continue;
+
+            Boolean value = WgFlags.mapValue(String.valueOf(flag.getValue()));
+            if (value == null) continue;
+
+            region.setFlag(target, value);
+        }
     }
 
     // ------------------------------------------------------------------

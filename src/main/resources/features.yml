@@ -82,6 +82,24 @@ import:
   worldguard:
     # Папка плагина WorldGuard (регионы парсятся из worlds/*/regions.yml).
     data-folder: "plugins/WorldGuard"
+    # ProtectionStones помечает свои регионы флагом ps-block-material.
+    # При true тип подбирается по материалу блока один в один
+    # (ключ типа в regions.yml = материал), иначе все получают type-id.
+    type-by-material: true
+    # Соответствие флагов WorldGuard нашим (allow -> true, deny -> false).
+    # Значение — имя флага плагина; строковые флаги WorldGuard
+    # (greeting, farewell) не переносятся. Пустое значение или
+    # отсутствие ключа — флаг пропускается.
+    flag-mapping:
+      pvp: "PVP"
+      entry: "ENTRY"
+      mob-spawning: "MONSTER_SPAWNING"
+      mob-griefing: "MOB_GRIEFING"
+      fire-spread: "FIRE_SPREAD"
+      pistons: "PISTONS_FROM_OUTSIDE"
+      tnt: "EXPLOSION_DAMAGE"
+      creeper-explosion: "EXPLOSION_DAMAGE"
+      other-explosion: "EXPLOSION_DAMAGE"
   protectionstones:
     # ProtectionStones хранит регионы внутри WorldGuard: берём только ps*.
     data-folder: "plugins/WorldGuard"

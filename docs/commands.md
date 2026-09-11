@@ -94,12 +94,12 @@
 | `/qps info [id]` | Полная карточка + статистика атак |
 | `/qps delete [id]` | Удалить любой приват |
 | `/qps save` | Немедленно сохранить всё в базу |
-| `/qps stats` | Счётчики приватов и типов |
+| `/qps stats` | Приваты, типы, владельцы, рынок (продажи/аренда/штрафы), очередь записи в БД |
 | `/qps export` | Выгрузка всех приватов в `exports/regions_<дата>.json` |
 | `/qps restore <файл>` | Восстановление из выгрузки |
 | `/qps backup` | Внеплановый бэкап |
 | `/qps cleanup` | Удалить заброшенные приваты сейчас |
-| `/qps import <wg\|ps\|gp>` | Импорт из WorldGuard / ProtectionStones / GriefPrevention |
+| `/qps import <wg\|ps\|gp>` | Импорт из WorldGuard / ProtectionStones / GriefPrevention; типы PS — по материалу блока, флаги — по `flag-mapping` |
 | `/qps give <игрок> <тип> [кол-во]` | Выдать блоки-ядра (с тегом типа и оформлением) |
 | `/qps setdurability <число>` | Прочность привата под ногами |
 | `/qps setmax <число>` | Потолок прочности |

@@ -65,6 +65,9 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
         plugin.getHologramManager().createOrUpdateHologram(region);
 
+        plugin.getCriticalFileLogger().log("PLAYER_TRANSFER",
+                "by=" + player.getName() + " region=" + region.getShortId()
+                        + " owner=" + region.getOwnerName() + " to=" + target.getName());
         player.sendMessage(plugin.getLanguageManager().getMessage("transfer_done", "%player%", target.getName()));
         target.sendMessage(plugin.getLanguageManager().getMessage("transfer_received", "%player%", player.getName()));
     }
