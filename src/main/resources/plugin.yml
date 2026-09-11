@@ -23,7 +23,7 @@ softdepend:
 commands:
   qweprotectstones:
     description: Администрирование приватов
-    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust>
+    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|debug>
     permission: qweprotectstones.admin
     aliases: [qps, qpstones]
 

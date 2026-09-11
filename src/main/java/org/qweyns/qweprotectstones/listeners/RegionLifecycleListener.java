@@ -46,7 +46,11 @@ public class RegionLifecycleListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Block block = event.getBlockPlaced();
-        RegionType type = plugin.getRegionTypes().byMaterial(block.getType());
+
+        // Предмет с PDC-тегом типа (выдан /qps give или возвращён при поломке)
+        // создаёт приват именного типа, даже если по материалу он не опознан.
+        RegionType type = taggedType(event.getItemInHand(), block);
+        if (type == null) type = plugin.getRegionTypes().byMaterial(block.getType());
         if (type == null) return;
 
         Player player = event.getPlayer();
@@ -75,6 +79,14 @@ public class RegionLifecycleListener implements Listener {
         Region region = result.region();
         Location coreLocation = block.getLocation();
         plugin.getRateLimiter().markCreated(player);
+
+        // Прочность, сохранённая в предмете (перенос ядра на новое место),
+        // переносится на новый приват — с ограничением по максимуму типа.
+        int carriedDurability = taggedDurability(event.getItemInHand());
+        if (carriedDurability > 0) {
+            region.setDurability(Math.min(carriedDurability, region.getMaxDurability()));
+            plugin.getRegionStorage().save(region);
+        }
 
         plugin.getVisualManager().playEffect(coreLocation, type.id(), "create");
         plugin.getVisualManager().showBoundary(region, "create");
@@ -136,18 +148,74 @@ public class RegionLifecycleListener implements Listener {
         } else if (type != null && player.getGameMode() != GameMode.CREATIVE) {
             // Блок возвращаем сами, чтобы он не потерялся из-за настроек дропа.
             event.setDropItems(false);
-            giveOrDrop(player, block.getLocation(), type.material());
+            giveOrDrop(player, block.getLocation(), type.material(), region);
         }
 
         player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
     private void giveOrDrop(Player player, Location location, Material material) {
+        giveOrDrop(player, location, material, null);
+    }
+
+    /**
+     * Возврат блока ядра. Если включено {@code settings.return-durability},
+     * в предмет записывается PDC-тег с текущей прочностью привата — поставив
+     * ядро заново, владелец не потеряет прокачку.
+     */
+    private void giveOrDrop(Player player, Location location, Material material, Region region) {
         ItemStack stack = new ItemStack(material);
+
+        if (region != null && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
+                && plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true)) {
+            var meta = stack.getItemMeta();
+            if (meta != null) {
+                var pdc = meta.getPersistentDataContainer();
+                pdc.set(typeKey(), org.bukkit.persistence.PersistentDataType.STRING, region.getTypeId());
+                pdc.set(durabilityKey(), org.bukkit.persistence.PersistentDataType.INTEGER, region.getDurability());
+                stack.setItemMeta(meta);
+            }
+        }
+
         var leftovers = player.getInventory().addItem(stack);
 
         // Инвентарь полон — кладём под ноги, а не выбрасываем в пустоту.
         leftovers.values().forEach(item -> location.getWorld().dropItemNaturally(location, item));
+    }
+
+    /** Тип из PDC-тега предмета; null, если тега нет или материал не совпадает. */
+    private RegionType taggedType(ItemStack item, Block block) {
+        String typeId = readTag(item, typeKey());
+        if (typeId == null) return null;
+
+        RegionType type = plugin.getRegionTypes().byId(typeId.toLowerCase(java.util.Locale.ROOT));
+        // Тег валиден только для совпадающего материала: иначе чужой предмет
+        // превращал бы любой блок в чужой тип привата.
+        return type != null && type.material() == block.getType() ? type : null;
+    }
+
+    /** Прочность из PDC-тега предмета или 0. */
+    private int taggedDurability(ItemStack item) {
+        Integer value = getIntTag(item, durabilityKey());
+        return value != null ? value : 0;
+    }
+
+    private String readTag(ItemStack item, org.bukkit.NamespacedKey key) {
+        if (item == null || !item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
+    private Integer getIntTag(ItemStack item, org.bukkit.NamespacedKey key) {
+        if (item == null || !item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.INTEGER);
+    }
+
+    private org.bukkit.NamespacedKey typeKey() {
+        return new org.bukkit.NamespacedKey(plugin, "core-type");
+    }
+
+    private org.bukkit.NamespacedKey durabilityKey() {
+        return new org.bukkit.NamespacedKey(plugin, "core-durability");
     }
 
     /** Общая уборка после удаления привата любым способом. */

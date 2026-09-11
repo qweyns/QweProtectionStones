@@ -73,6 +73,8 @@ public final class QweProtectStones extends JavaPlugin {
     private AutoAddManager autoAddManager;
     private MenuManager menuManager;
     private EffectManager effectManager;
+    private org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager effectPurchaseManager;
+    private org.qweyns.qweprotectstones.features.teleport.HomeWarmup homeWarmup;
     private NotificationManager notificationManager;
     private PenaltyManager penaltyManager;
     private InviteManager inviteManager;
@@ -137,6 +139,8 @@ public final class QweProtectStones extends JavaPlugin {
         this.visualManager = new VisualManager(this);
         this.autoAddManager = new AutoAddManager(this);
         this.effectManager = new EffectManager(this);
+        this.effectPurchaseManager = new org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager(this);
+        this.homeWarmup = new org.qweyns.qweprotectstones.features.teleport.HomeWarmup(this);
         this.notificationManager = new NotificationManager(this);
         this.penaltyManager = new PenaltyManager(this);
         this.menuManager = new MenuManager(this);
@@ -188,6 +192,7 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(new BlockProtectionListener(this), this);
         pm.registerEvents(new InteractProtectionListener(this), this);
         pm.registerEvents(new EntityProtectionListener(this), this);
+        pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
 
         this.actionLogger = new RegionActionLogger(this);
         this.previewListener = new RegionPreviewListener(this);
@@ -195,6 +200,9 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(actionLogger, this);
         pm.registerEvents(previewListener, this);
         pm.registerEvents(new PlayerActivityListener(this), this);
+
+        // Задержка /ps home: слушает движение и урон, чтобы срывать телепорт.
+        pm.registerEvents(homeWarmup, this);
     }
 
     private void registerCommands() {
@@ -295,6 +303,12 @@ public final class QweProtectStones extends JavaPlugin {
     public AutoAddManager getAutoAddManager() { return autoAddManager; }
     public MenuManager getMenuManager() { return menuManager; }
     public EffectManager getEffectManager() { return effectManager; }
+
+    /** Оплата эффектов: деньги, очки или предметы (effects.purchase). */
+    public org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager getEffectPurchaseManager() { return effectPurchaseManager; }
+
+    /** Задержка и перезарядка телепорта /ps home. */
+    public org.qweyns.qweprotectstones.features.teleport.HomeWarmup getHomeWarmup() { return homeWarmup; }
     public NotificationManager getNotificationManager() { return notificationManager; }
     public PenaltyManager getPenaltyManager() { return penaltyManager; }
     public RegionRateLimiter getRateLimiter() { return rateLimiter; }

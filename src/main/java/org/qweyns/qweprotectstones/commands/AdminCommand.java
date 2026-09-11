@@ -24,6 +24,7 @@ import org.qweyns.qweprotectstones.regions.event.RegionFlagChangeEvent;
 import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 import org.qweyns.qweprotectstones.regions.event.RegionTransferEvent;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -45,7 +46,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             "reload", "bypass", "info", "delete", "save", "stats", "export", "cleanup",
             "give", "setdurability", "setmax", "settype", "setbounds", "tp",
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust",
-            "import", "backup", "help");
+            "import", "restore", "backup", "debug", "help");
 
     /** Действия, которым вторым аргументом идёт id привата (или ничего — тогда приват, где стоит админ). */
     private static final Set<String> REGION_ACTIONS = Set.of(
@@ -106,6 +107,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             case "trust" -> trust(sender, player, args, true);
             case "untrust" -> trust(sender, player, args, false);
             case "import" -> importRegions(sender, args);
+            case "restore" -> restore(sender, args);
             case "backup" -> backup(sender);
             case "debug" -> debug(sender);
             default -> sendUsage(sender, label);
@@ -278,7 +280,19 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         }
 
         // Не помещается в инвентарь — выпадает на землю, а не пропадает.
-        target.getInventory().addItem(new ItemStack(type.material(), amount))
+        // Предмет метится PDC-тегом типа: поставленный блок гарантированно
+        // создаёт приват выданного типа (settings.core-item-tags).
+        ItemStack core = new ItemStack(type.material(), amount);
+        if (plugin.getConfigManager().getConfig().getBoolean("settings.core-item-tags", true)) {
+            var meta = core.getItemMeta();
+            if (meta != null) {
+                meta.getPersistentDataContainer().set(
+                        new org.bukkit.NamespacedKey(plugin, "core-type"),
+                        org.bukkit.persistence.PersistentDataType.STRING, type.id());
+                core.setItemMeta(meta);
+            }
+        }
+        target.getInventory().addItem(core)
                 .forEach((slot, leftover) -> target.getWorld().dropItemNaturally(target.getLocation(), leftover));
 
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_give_sent",
@@ -649,6 +663,62 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         plugin.getBackupTask().run();
     }
 
+    /**
+     * /qps restore <файл> — восстановление приватов из JSON-выгрузки
+     * (ручной export или автобэкап из exports/). Существующие id и
+     * пересечения пропускаются, поэтому команду можно перезапускать.
+     */
+    private void restore(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_usage"));
+            File folder = new File(plugin.getDataFolder(), "exports");
+            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            if (files != null && files.length > 0) {
+                StringBuilder list = new StringBuilder();
+                for (int i = 0; i < files.length && i < 10; i++) {
+                    if (i > 0) list.append(", ");
+                    list.append(files[i].getName());
+                }
+                sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_files", "%files%", list.toString()));
+            }
+            return;
+        }
+
+        // Только имя файла: путь с ../ не должен покидать папку exports.
+        String fileName = args[1].replace("..", "").replace('/', '_').replace('\\', '_');
+        File file = new File(new File(plugin.getDataFolder(), "exports"), fileName);
+        if (!file.isFile()) {
+            sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_not_found", "%file%", fileName));
+            return;
+        }
+
+        sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_started", "%file%", fileName));
+
+        // Файл может быть большим — читаем и разбираем вне основного потока.
+        plugin.getSchedulers().runAsync(() -> {
+            var restorer = new org.qweyns.qweprotectstones.features.importer.RegionRestorer(plugin);
+            org.qweyns.qweprotectstones.features.importer.RegionRestorer.Result result;
+            try {
+                result = restorer.restore(file);
+            } catch (java.io.IOException e) {
+                plugin.getSchedulers().runNextTick(() -> sender.sendMessage(
+                        plugin.getLanguageManager().getMessage("admin_restore_failed", "%error%", String.valueOf(e.getMessage()))));
+                return;
+            }
+
+            plugin.getSchedulers().runNextTick(() -> {
+                if (result.restored() > 0) {
+                    if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().redrawAll();
+                    if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().updateAll();
+                }
+                sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_done",
+                        "%restored%", String.valueOf(result.restored()),
+                        "%skipped%", String.valueOf(result.skipped()),
+                        "%errors%", String.valueOf(result.errors())));
+            });
+        });
+    }
+
     /** /qps debug — состояние подсистем: хранилище, интеграции, среда выполнения. */
     private void debug(CommandSender sender) {
         long uptimeMinutes = (System.currentTimeMillis() - enabledAt) / 60_000L;
@@ -797,6 +867,14 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && action.equals("import")) {
             return filter(List.of("worldguard", "protectionstones", "griefprevention"), args[1]);
+        }
+
+        if (args.length == 2 && action.equals("restore")) {
+            List<String> names = new ArrayList<>();
+            File folder = new File(plugin.getDataFolder(), "exports");
+            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            if (files != null) for (File file : files) names.add(file.getName());
+            return filter(names, args[1]);
         }
 
         if (args.length == 3 && (action.equals("give") || action.equals("settype"))) {

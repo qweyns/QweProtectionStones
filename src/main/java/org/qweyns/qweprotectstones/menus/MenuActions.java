@@ -176,6 +176,23 @@ public class MenuActions {
         // Даём другим плагинам шанс наложить вето (налоги, клановые правила).
         if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return;
 
+        // Оплата: тип и цена настраиваются в effects.purchase (по умолчанию бесплатно).
+        var purchase = plugin.getEffectPurchaseManager();
+        switch (purchase.charge(player, effectName, amplifier)) {
+            case NO_ECONOMY -> {
+                player.sendMessage(plugin.getLanguageManager().getMessage("effect_no_economy"));
+                return;
+            }
+            case NOT_ENOUGH -> {
+                player.sendMessage(plugin.getLanguageManager().getMessage("effect_not_enough",
+                        "%price%", org.qweyns.qweprotectstones.features.effect.EffectPurchaseManager.format(
+                                purchase.price(effectName, amplifier)),
+                        "%unit%", purchase.costTypeName()));
+                return;
+            }
+            default -> { /* FREE и SUCCESS: выдаём */ }
+        }
+
         plugin.getEffectManager().addCustomEffect(region, effectName, amplifier);
         player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought",
                 "%effect%", describeEffect(effectName, amplifier)));

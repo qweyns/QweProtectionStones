@@ -56,15 +56,8 @@ public class HomeSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        // Сохраняем направление взгляда, чтобы телепорт не крутил камеру.
-        home.setYaw(player.getLocation().getYaw());
-        home.setPitch(player.getLocation().getPitch());
-
-        player.teleportAsync(home).thenAccept(success -> {
-            if (Boolean.TRUE.equals(success)) {
-                player.sendMessage(plugin.getLanguageManager().getMessage("home_teleported", "%id%", target.getShortId()));
-            }
-        });
+        // Задержка и перезарядка настраиваются в секции home (0 = мгновенно).
+        plugin.getHomeWarmup().teleport(player, target, home);
     }
 
     @Override
