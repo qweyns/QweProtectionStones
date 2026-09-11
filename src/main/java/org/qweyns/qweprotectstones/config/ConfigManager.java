@@ -184,11 +184,14 @@ public class ConfigManager {
 
     /**
      * Строки голограммы. Во время осады показываются
-     * {@code hologram_lines_under_attack}, если они заданы, — так «под атакой»
-     * видно прямо над ядром, а не только в меню.
+     * {@code hologram_lines_under_attack}, если они заданы и включён
+     * переключатель {@code hologram_under_attack}: false — голограмма
+     * при атаке не меняется вовсе.
      */
     public List<String> getHologramLines(String typeId, boolean underSiege) {
-        if (underSiege && regions().has(typeId, "hologram_lines_under_attack")) {
+        if (underSiege
+                && regions().getBoolean(typeId, "hologram_under_attack", true)
+                && regions().has(typeId, "hologram_lines_under_attack")) {
             List<String> siegeLines = regions().getStringList(typeId, "hologram_lines_under_attack");
             if (!siegeLines.isEmpty()) return siegeLines;
         }
