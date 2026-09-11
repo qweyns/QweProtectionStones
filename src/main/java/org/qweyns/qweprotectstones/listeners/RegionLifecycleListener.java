@@ -81,6 +81,7 @@ public class RegionLifecycleListener implements Listener {
         plugin.getHologramManager().createOrUpdateHologram(region);
         plugin.getAutoAddManager().applyToRegion(player, region);
         plugin.getDynmapIntegration().update(region);
+        if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
 
         player.sendMessage(plugin.getLanguageManager().getMessage("region_created",
                 "%size%", type.widthX() + "x" + type.widthZ(),
@@ -156,6 +157,7 @@ public class RegionLifecycleListener implements Listener {
         plugin.getVisualManager().removeGlow(region.getId());
         plugin.getPenaltyManager().removeRegion(region.getId());
         plugin.getDynmapIntegration().remove(region);
+        if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().remove(region);
 
         Location core = region.getCoreLocation();
         if (core != null) plugin.getVisualManager().playEffect(core, region.getTypeId(), "remove");

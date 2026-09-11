@@ -15,13 +15,15 @@ softdepend:
   - PlayerPoints
   - PlaceholderAPI
   - dynmap
+  - BlueMap
+  - DiscordSRV
 
 # Игровая команда (по умолчанию /ps) задаётся в config.yml -> settings.command
 # и регистрируется при запуске. Здесь объявлена только административная.
 commands:
   qweprotectstones:
     description: Администрирование приватов
-    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup>
+    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust>
     permission: qweprotectstones.admin
     aliases: [qps, qpstones]
 

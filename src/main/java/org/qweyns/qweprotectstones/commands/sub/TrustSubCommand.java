@@ -8,6 +8,8 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionMember;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
+import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,10 +103,14 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
     private void revoke(Player player, Region region, OfflinePlayer target) {
         String targetName = target.getName() != null ? target.getName() : target.getUniqueId().toString();
 
-        if (!region.removeMember(target.getUniqueId())) {
+        if (region.getMember(target.getUniqueId()).isEmpty()) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_not_member", "%player%", targetName));
             return;
         }
+        if (RegionEvents.fireMemberChange(region, player, target.getUniqueId(), targetName,
+                RegionMemberChangeEvent.Action.UNTRUST, null)) return;
+
+        region.removeMember(target.getUniqueId());
 
         plugin.getRegionStorage().save(region);
         player.sendMessage(plugin.getLanguageManager().getMessage("trust_revoked", "%player%", targetName));

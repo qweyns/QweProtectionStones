@@ -28,9 +28,11 @@ public final class Region implements Bounded {
 
     private final UUID id;
     private final String world;
-    private final RegionBounds bounds;
-    private final int coreX, coreY, coreZ;
-    private final String typeId;
+    // Границы и тип изменяемы (/ps expand, /ps move, админские setbounds/settype):
+    // при смене RegionManager пересобирает индекс чанков и сохраняет регион.
+    private volatile RegionBounds bounds;
+    private volatile int coreX, coreY, coreZ;
+    private volatile String typeId;
     private final long createdAt;
 
     private volatile UUID ownerId;
@@ -95,7 +97,27 @@ public final class Region implements Bounded {
 
     public RegionBounds getBounds() { return bounds; }
 
+    /**
+     * Новые границы. Вызывать только через {@link RegionManager#updateBounds}:
+     * он проверяет пересечения и пересобирает чанковый индекс.
+     */
+    public void setBounds(RegionBounds bounds) { this.bounds = Objects.requireNonNull(bounds, "bounds"); }
+
     public String getTypeId() { return typeId; }
+
+    /** Смена типа региона (админская команда): влияет на блок ядра и границы. */
+    public void setTypeId(String typeId) { this.typeId = Objects.requireNonNull(typeId, "typeId"); }
+
+    /**
+     * Новое положение ядра (/ps move). Вызывать только через
+     * {@link RegionManager#moveRegion}: он переставляет блок ядра в мире,
+     * пересобирает границы и чанковый индекс.
+     */
+    public void setCore(int coreX, int coreY, int coreZ) {
+        this.coreX = coreX;
+        this.coreY = coreY;
+        this.coreZ = coreZ;
+    }
 
     public long getCreatedAt() { return createdAt; }
 

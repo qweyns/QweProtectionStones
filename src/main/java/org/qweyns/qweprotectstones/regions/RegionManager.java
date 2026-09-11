@@ -265,6 +265,27 @@ public class RegionManager {
         plugin.getRegionStorage().delete(region.getId());
         // Штраф больше не имеет смысла: привата нет, а UUID нового никогда не совпадёт.
         plugin.getPenaltyManager().removeRegion(region.getId());
+        // Объявления рынка тоже теряют смысл без привата.
+        if (plugin.getMarketManager() != null) {
+            plugin.getMarketManager().cancelSale(region);
+            plugin.getMarketManager().cancelRental(region);
+        }
+        return true;
+    }
+
+    /**
+     * Импорт чужого региона (WorldGuard / ProtectionStones / GriefPrevention):
+     * без проверок лимитов и прав — только контроль пересечений с нашими
+     * приватами. Ядро виртуальное: bounds не обязаны быть симметричны вокруг него.
+     *
+     * @return true, если регион принят
+     */
+    public boolean importRegion(Region region) {
+        if (region == null) return false;
+        if (findOverlapping(region.getWorld(), region.getBounds()) != null) return false;
+
+        register(region);
+        plugin.getRegionStorage().save(region);
         return true;
     }
 
@@ -316,6 +337,82 @@ public class RegionManager {
     /** Приват, мешающий занять область, или null. */
     public Region findOverlapping(World world, RegionBounds bounds) {
         return world == null ? null : index.firstIntersecting(world.getName(), bounds);
+    }
+
+    /**
+     * Меняет границы существующего привата (/ps expand, /ps move, setbounds).
+     * Сам приват пересечением не считается. Пересобирает чанковый индекс
+     * и сохраняет регион в базу.
+     *
+     * @return приватов-нарушитель, если новые границы пересекают чужую область, иначе null
+     */
+    public Region updateBounds(Region region, RegionBounds newBounds) {
+        if (region == null || newBounds == null) return null;
+
+        for (Region other : index.intersecting(region.getWorldName(), newBounds)) {
+            if (!other.getId().equals(region.getId())) return other;
+        }
+
+        // Сначала убираем из индекса по СТАРЫМ границам, потом меняем и добавляем заново.
+        index.remove(region);
+        region.setBounds(newBounds);
+        index.add(region);
+
+        plugin.getRegionStorage().save(region);
+        return null;
+    }
+
+    /**
+     * Пересчитывает границы привата по радиусам типа (используется при смене типа).
+     *
+     * @return приватов-нарушитель или null при успехе
+     */
+    public Region reapplyTypeBounds(Region region, RegionType type) {
+        World world = region.getWorld();
+        if (world == null) return null;
+
+        int radiusY = type.fullHeight() ? world.getMaxHeight() - world.getMinHeight() : type.radiusY();
+        RegionBounds bounds = RegionBounds.around(
+                region.getCoreX(), region.getCoreY(), region.getCoreZ(),
+                type.radiusX(), radiusY, type.radiusZ(),
+                world.getMinHeight(), world.getMaxHeight() - 1);
+        return updateBounds(region, bounds);
+    }
+
+    /**
+     * Переносит ядро привата в новую точку (/ps move): переставляет блок ядра,
+     * центрирует границы вокруг нового ядра и пересобирает индекс.
+     *
+     * @return приватов-нарушитель на новом месте или null при успехе
+     */
+    public Region moveRegion(Region region, org.bukkit.Location newCore) {
+        World world = newCore.getWorld();
+        if (world == null || !world.getName().equals(region.getWorldName())) return null;
+
+        RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
+        int radiusY = type.fullHeight() ? world.getMaxHeight() - world.getMinHeight() : type.radiusY();
+        RegionBounds newBounds = RegionBounds.around(
+                newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ(),
+                type.radiusX(), radiusY, type.radiusZ(),
+                world.getMinHeight(), world.getMaxHeight() - 1);
+
+        for (Region other : index.intersecting(world.getName(), newBounds)) {
+            if (!other.getId().equals(region.getId())) return other;
+        }
+
+        index.remove(region);
+
+        // Блок ядра переносится: старое место очищаем, на новом ставим материал типа.
+        org.bukkit.block.Block oldCore = world.getBlockAt(region.getCoreX(), region.getCoreY(), region.getCoreZ());
+        if (oldCore.getType() == type.material()) oldCore.setType(org.bukkit.Material.AIR);
+        world.getBlockAt(newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ()).setType(type.material());
+
+        region.setCore(newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ());
+        region.setBounds(newBounds);
+        index.add(region);
+
+        plugin.getRegionStorage().save(region);
+        return null;
     }
 
     /** Пересчитывает максимум прочности у всех приватов после правки config.yml. */

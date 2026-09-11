@@ -106,7 +106,9 @@ public class NotificationManager {
 
         boolean discordEnabled = discordUrl != null && !discordUrl.isBlank();
         boolean telegramEnabled = tgToken != null && !tgToken.isBlank() && tgChatId != null && !tgChatId.isBlank();
-        if (!discordEnabled && !telegramEnabled) return;
+        boolean srvEnabled = cfg.getBoolean("notifications.discordsrv.enable", true)
+                && plugin.getDiscordSrvHook() != null && plugin.getDiscordSrvHook().isActive();
+        if (!discordEnabled && !telegramEnabled && !srvEnabled) return;
 
         if (webhookRateLimiter.getIfPresent(rateLimitKey) != null) return;
         webhookRateLimiter.put(rateLimitKey, System.currentTimeMillis());
@@ -120,6 +122,10 @@ public class NotificationManager {
         if (telegramEnabled) {
             post("https://api.telegram.org/bot" + tgToken + "/sendMessage",
                     "{\"chat_id\":\"" + escapeJson(tgChatId) + "\",\"text\":\"" + escapeJson(rawMessage) + "\"}");
+        }
+        if (srvEnabled) {
+            String channel = cfg.getString("notifications.discordsrv.channel", "");
+            plugin.getDiscordSrvHook().sendMessage(rawMessage, channel);
         }
     }
 

@@ -68,6 +68,11 @@ public class RegionStorage {
         pendingSaves.put(region.getId(), region);
     }
 
+    /** Сколько приватов ждёт записи — для /qps debug. */
+    public int pendingCount() {
+        return pendingSaves.size() + pendingDeletes.size() + pendingLog.size();
+    }
+
     /** Немедленная запись — после покупок, чтобы не потерять прогресс при краше. */
     public void saveNow(Region region) {
         if (region == null) return;
@@ -156,6 +161,36 @@ public class RegionStorage {
     /** Полное сохранение всех приватов — используется при выключении и /region admin save. */
     public void saveAll(java.util.Collection<Region> regions) {
         if (dao != null) dao.saveAll(regions);
+    }
+
+    // ------------------------------------------------------------------
+    // Рынок: продажа и аренда
+    // ------------------------------------------------------------------
+
+    /** Синхронно при старте: таблицы рынка маленькие, а данные нужны сразу. */
+    public Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> loadSales() {
+        return dao == null ? Map.of() : dao.loadSales();
+    }
+
+    public Map<UUID, org.qweyns.qweprotectstones.features.market.RegionRental> loadRentals() {
+        return dao == null ? Map.of() : dao.loadRentals();
+    }
+
+    /** Запись объявлений — сразу в базу: деньги уже уплачены, терять нельзя. */
+    public void saveSaleNow(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
+        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.saveSale(sale));
+    }
+
+    public void deleteSaleNow(UUID regionId) {
+        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.deleteSale(regionId));
+    }
+
+    public void saveRentalNow(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
+        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.saveRental(rental));
+    }
+
+    public void deleteRentalNow(UUID regionId) {
+        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.deleteRental(regionId));
     }
 
     public void close() {

@@ -9,6 +9,7 @@ import org.qweyns.qweprotectstones.regions.RegionFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 
 /** Просмотр и изменение флагов привата. */
 public class FlagSubCommand extends AbstractRegionSubCommand {
@@ -64,6 +65,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
         String value = rawValue.toLowerCase(Locale.ROOT);
 
         if (value.equals("reset") || value.equals("default") || value.equals("сброс")) {
+            if (RegionEvents.fireFlagChange(region, player, flag, null)) return;
             region.resetFlag(flag);
             plugin.getRegionStorage().save(region);
             player.sendMessage(plugin.getLanguageManager().getMessage("flag_reset",

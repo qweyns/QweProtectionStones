@@ -7,6 +7,7 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 
 import java.util.List;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 
 /** Передача привата другому игроку. Прежний владелец остаётся управляющим. */
 public class TransferSubCommand extends AbstractRegionSubCommand {
@@ -53,7 +54,10 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
+        if (RegionEvents.fireTransfer(region, player, target.getUniqueId(), target.getName())) return;
         plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName());
+        if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
+        if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
         plugin.getHologramManager().createOrUpdateHologram(region);
 
         player.sendMessage(plugin.getLanguageManager().getMessage("transfer_done", "%player%", target.getName()));

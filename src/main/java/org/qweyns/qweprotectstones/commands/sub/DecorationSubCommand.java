@@ -99,6 +99,7 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
 
         plugin.getHologramManager().createOrUpdateHologram(region);
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
+        if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
     }
 
     @Override

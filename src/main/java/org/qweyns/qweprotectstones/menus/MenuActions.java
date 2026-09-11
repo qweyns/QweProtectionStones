@@ -8,6 +8,7 @@ import org.bukkit.inventory.Inventory;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.config.SoundSetting;
 import org.qweyns.qweprotectstones.regions.Region;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.util.List;
@@ -171,6 +172,9 @@ public class MenuActions {
                 plugin.getLogger().warning("Некорректный уровень эффекта в меню: " + argument);
             }
         }
+
+        // Даём другим плагинам шанс наложить вето (налоги, клановые правила).
+        if (RegionEvents.fireEffectPurchase(region, player, effectName.toUpperCase(Locale.ROOT), amplifier)) return;
 
         plugin.getEffectManager().addCustomEffect(region, effectName, amplifier);
         player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought",

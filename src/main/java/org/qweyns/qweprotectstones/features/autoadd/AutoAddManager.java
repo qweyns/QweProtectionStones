@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 
 import java.util.ArrayList;
@@ -143,6 +144,12 @@ public class AutoAddManager implements Listener {
             if (target == null || target.getUniqueId() == null) continue;
             if (region.isOwner(target.getUniqueId())) continue;
 
+            // Системная выдача (авто-вписывание друзей) — actor = null.
+            if (RegionEvents.fireMemberChange(region, null, target.getUniqueId(),
+                    target.getName() != null ? target.getName() : name,
+                    org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.BUILD)) {
+                continue;
+            }
             region.setMember(target.getUniqueId(), target.getName() != null ? target.getName() : name, TrustLevel.BUILD);
             added++;
         }

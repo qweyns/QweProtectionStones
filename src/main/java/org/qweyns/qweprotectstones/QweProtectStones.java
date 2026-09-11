@@ -30,6 +30,8 @@ import org.qweyns.qweprotectstones.features.log.RegionActionLogger;
 import org.qweyns.qweprotectstones.features.maintenance.AbandonedRegionTask;
 import org.qweyns.qweprotectstones.features.maintenance.PlayerActivityListener;
 import org.qweyns.qweprotectstones.features.map.DynmapIntegration;
+import org.qweyns.qweprotectstones.features.map.BlueMapIntegration;
+import org.qweyns.qweprotectstones.features.market.MarketManager;
 import org.qweyns.qweprotectstones.features.effect.EffectManager;
 import org.qweyns.qweprotectstones.features.effect.ExpBoostListener;
 import org.qweyns.qweprotectstones.features.notification.NotificationManager;
@@ -46,6 +48,7 @@ import org.qweyns.qweprotectstones.listeners.RegionLifecycleListener;
 import org.qweyns.qweprotectstones.menus.MenuHolder;
 import org.qweyns.qweprotectstones.menus.MenuManager;
 import org.qweyns.qweprotectstones.scheduler.Schedulers;
+import org.qweyns.qweprotectstones.api.QpsApi;
 import org.qweyns.qweprotectstones.storage.RegionStorage;
 
 import java.util.List;
@@ -75,6 +78,10 @@ public final class QweProtectStones extends JavaPlugin {
     private InviteManager inviteManager;
     private RegionExporter regionExporter;
     private DynmapIntegration dynmapIntegration;
+    private BlueMapIntegration blueMapIntegration;
+    private org.qweyns.qweprotectstones.features.market.MarketManager marketManager;
+    private org.qweyns.qweprotectstones.features.backup.BackupTask backupTask;
+    private org.qweyns.qweprotectstones.hooks.DiscordSrvHook discordSrvHook;
     private AbandonedRegionTask abandonedRegionTask;
     private RegionActionLogger actionLogger;
     private RegionPreviewListener previewListener;
@@ -114,6 +121,13 @@ public final class QweProtectStones extends JavaPlugin {
         this.vaultHook.setup();
         this.playerPointsHook = new PlayerPointsHook();
         this.playerPointsHook.setup(getLogger());
+        this.discordSrvHook = new org.qweyns.qweprotectstones.hooks.DiscordSrvHook(this);
+        this.discordSrvHook.setup();
+
+        // Рынок (продажа/аренда) грузит объявления сразу: без Vault просто
+        // откажется проводить сделки.
+        this.marketManager = new MarketManager(this);
+        this.marketManager.load();
 
         PluginManager pm = getServer().getPluginManager();
         if (pm.isPluginEnabled("PlaceholderAPI")) {
@@ -137,14 +151,26 @@ public final class QweProtectStones extends JavaPlugin {
 
         this.abandonedRegionTask = new AbandonedRegionTask(this);
         this.abandonedRegionTask.start();
+        this.marketManager.startExpiryTask();
         this.actionLogger.startPruning();
+
+        // Плановые выгрузки всех приватов с ротацией (backup.enable).
+        this.backupTask = new org.qweyns.qweprotectstones.features.backup.BackupTask(this);
+        this.backupTask.start();
 
         // Dynmap подключаем последним: к этому моменту приваты уже загружены.
         this.dynmapIntegration = new DynmapIntegration(this);
         this.dynmapIntegration.enable();
 
+        // BlueMap — та же история: подписка на onEnable API, если карта грузится позже.
+        this.blueMapIntegration = new BlueMapIntegration(this);
+        this.blueMapIntegration.enable();
+
         getLogger().info("QweProtectStones v" + getPluginMeta().getVersion() + " запущен"
                 + (schedulers.isFolia() ? " (режим Folia)" : "") + ": приватов — " + regionManager.size());
+
+        // API для сторонних плагинов инициализируем последним: всё уже готово.
+        QpsApi.init(this);
     }
 
     private void registerListeners(PluginManager pm) {
@@ -196,6 +222,10 @@ public final class QweProtectStones extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // API закрываем первым: сторонние плагины не должны получить NPE при выключении.
+        QpsApi.shutdown();
+        if (blueMapIntegration != null) blueMapIntegration.disable();
+
         // Меню закрываем первыми: InventoryCloseEvent снимет задачи анимации.
         for (Player player : Bukkit.getOnlinePlayers()) {
             Inventory topInv = player.getOpenInventory().getTopInventory();
@@ -232,6 +262,8 @@ public final class QweProtectStones extends JavaPlugin {
 
         hologramManager.restoreHolograms();
         if (dynmapIntegration != null) dynmapIntegration.redrawAll();
+        // enable() идемпотентен: перечитывает настройки и перерисовывает маркеры.
+        if (blueMapIntegration != null) blueMapIntegration.enable();
 
         // Имя команды меняется только после перезапуска — переучивать игроков
         // посреди сессии хуже, чем подождать рестарта.
@@ -269,6 +301,18 @@ public final class QweProtectStones extends JavaPlugin {
     public InviteManager getInviteManager() { return inviteManager; }
     public RegionExporter getRegionExporter() { return regionExporter; }
     public DynmapIntegration getDynmapIntegration() { return dynmapIntegration; }
+
+    /** Интеграция с BlueMap (может быть неактивна, если карта не установлена). */
+    public BlueMapIntegration getBlueMapIntegration() { return blueMapIntegration; }
+
+    /** Рынок приватов: продажа и аренда. */
+    public org.qweyns.qweprotectstones.features.market.MarketManager getMarketManager() { return marketManager; }
+
+    /** Плановые выгрузки приватов в JSON с ротацией. */
+    public org.qweyns.qweprotectstones.features.backup.BackupTask getBackupTask() { return backupTask; }
+
+    /** Уведомления через DiscordSRV (рефлексия, работает без зависимости). */
+    public org.qweyns.qweprotectstones.hooks.DiscordSrvHook getDiscordSrvHook() { return discordSrvHook; }
     public AbandonedRegionTask getAbandonedRegionTask() { return abandonedRegionTask; }
 
     /** Идёт ли осада: приват атаковали недавно (окно берётся из настройки штрафа). */

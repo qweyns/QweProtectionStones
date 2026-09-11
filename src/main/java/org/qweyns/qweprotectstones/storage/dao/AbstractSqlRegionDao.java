@@ -3,6 +3,8 @@ package org.qweyns.qweprotectstones.storage.dao;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.qweyns.qweprotectstones.QweProtectStones;
+import org.qweyns.qweprotectstones.features.market.RegionRental;
+import org.qweyns.qweprotectstones.features.market.RegionSale;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionBounds;
 import org.qweyns.qweprotectstones.regions.RegionFlag;
@@ -33,7 +35,7 @@ import java.util.logging.Level;
 public abstract class AbstractSqlRegionDao implements RegionDao {
 
     /** Версия схемы: при изменении структуры увеличиваем и дописываем миграцию. */
-    private static final int SCHEMA_VERSION = 3;
+    private static final int SCHEMA_VERSION = 4;
 
     protected final QweProtectStones plugin;
     protected final String tablePrefix;
@@ -41,7 +43,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
     protected AbstractSqlRegionDao(QweProtectStones plugin) {
         this.plugin = plugin;
-        this.tablePrefix = sanitizePrefix(plugin.getConfigManager().getConfig().getString("database.table_prefix", "qps_"));
+        this.tablePrefix = sanitizePrefix(plugin == null ? "qps_" : plugin.getConfigManager().getConfig().getString("database.table_prefix", "qps_"));
     }
 
     /**
@@ -52,6 +54,21 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         if (raw == null) return "qps_";
         String cleaned = raw.replaceAll("[^A-Za-z0-9_]", "");
         return cleaned.isEmpty() ? "qps_" : cleaned;
+    }
+
+    /**
+     * Логгер: в юнит-тестах DAO создаётся без плагина (plugin == null).
+     */
+    java.util.logging.Logger log() {
+        return plugin != null ? plugin.getLogger() : java.util.logging.Logger.getLogger("QweProtectStones-Test");
+    }
+
+    private int resolvePoolSize() {
+        return plugin != null ? plugin.getConfigManager().getConfig().getInt("database.pool_size", 10) : 1;
+    }
+
+    private int batchSize() {
+        return plugin != null ? plugin.getTunables().dbBatchSize() : 500;
     }
 
     protected abstract void configureHikari(HikariConfig config);
@@ -98,6 +115,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
     protected String logTable() { return tablePrefix + "region_log"; }
 
+    protected String salesTable() { return tablePrefix + "region_sales"; }
+
+    protected String rentalsTable() { return tablePrefix + "region_rentals"; }
+
     // ------------------------------------------------------------------
     // Схема
     // ------------------------------------------------------------------
@@ -106,7 +127,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     public void init() {
         HikariConfig config = new HikariConfig();
         config.setPoolName("QweProtectStones-Pool");
-        config.setMaximumPoolSize(Math.max(1, plugin.getConfigManager().getConfig().getInt("database.pool_size", 10)));
+        config.setMaximumPoolSize(Math.max(1, resolvePoolSize()));
         config.setConnectionTimeout(10_000L);
         config.setMaxLifetime(1_800_000L);
         configureHikari(config);
@@ -178,11 +199,30 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "action VARCHAR(24)," +
                     "detail VARCHAR(128))");
 
+            // Схема 4: рынок — продажа и аренда приватов. Обе таблицы живут
+            // отдельными строками «один приват — одно объявление».
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + salesTable() + " (" +
+                    "region_id VARCHAR(36) PRIMARY KEY," +
+                    "seller_id VARCHAR(36) NOT NULL," +
+                    "seller_name VARCHAR(32)," +
+                    "price DOUBLE NOT NULL," +
+                    "created_at BIGINT NOT NULL)");
+
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + rentalsTable() + " (" +
+                    "region_id VARCHAR(36) PRIMARY KEY," +
+                    "owner_id VARCHAR(36) NOT NULL," +
+                    "owner_name VARCHAR(32)," +
+                    "price DOUBLE NOT NULL," +
+                    "duration_minutes INT NOT NULL," +
+                    "tenant_id VARCHAR(36)," +
+                    "tenant_name VARCHAR(32)," +
+                    "rented_until BIGINT NOT NULL DEFAULT 0)");
+
             // Выборка «все приваты игрока» идёт при каждом /ps list.
             // Синтаксис создания индексов у SQLite и MySQL разный — отдаём диалекту.
             createIndexes(st);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Ошибка создания таблиц БД", e);
+            log().log(Level.SEVERE, "Ошибка создания таблиц БД", e);
             return;
         }
 
@@ -208,7 +248,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             if (!tableExists(conn, entry.getKey()) || tableExists(conn, entry.getValue())) continue;
 
             st.executeUpdate("ALTER TABLE " + entry.getKey() + " RENAME TO " + entry.getValue());
-            plugin.getLogger().info("Таблица " + entry.getKey() + " переименована в " + entry.getValue() + ".");
+            log().info("Таблица " + entry.getKey() + " переименована в " + entry.getValue() + ".");
         }
     }
 
@@ -223,7 +263,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         if (current == SCHEMA_VERSION) return;
 
         if (current > SCHEMA_VERSION) {
-            plugin.getLogger().warning("База создана более новой версией плагина (схема " + current
+            log().warning("База создана более новой версией плагина (схема " + current
                     + " против " + SCHEMA_VERSION + "). Обновите плагин, чтобы избежать потери данных.");
             return;
         }
@@ -245,7 +285,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         }
 
         writeSchemaVersion();
-        if (current > 0) plugin.getLogger().info("Схема базы обновлена: " + current + " -> " + SCHEMA_VERSION);
+        if (current > 0) log().info("Схема базы обновлена: " + current + " -> " + SCHEMA_VERSION);
     }
 
     /**
@@ -259,10 +299,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("ALTER TABLE " + regionsTable() + " ADD COLUMN " + column + " " + definition);
-                plugin.getLogger().info("Добавлена колонка " + regionsTable() + "." + column);
+                log().info("Добавлена колонка " + regionsTable() + "." + column);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось добавить колонку " + column, e);
+            log().log(Level.WARNING, "Не удалось добавить колонку " + column, e);
         }
     }
 
@@ -272,7 +312,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return Integer.parseInt(rs.getString("value"));
         } catch (SQLException | NumberFormatException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось прочитать версию схемы", e);
+            log().log(Level.WARNING, "Не удалось прочитать версию схемы", e);
         }
         return 0;
     }
@@ -284,7 +324,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.setString(2, String.valueOf(SCHEMA_VERSION));
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось записать версию схемы", e);
+            log().log(Level.WARNING, "Не удалось записать версию схемы", e);
         }
     }
 
@@ -304,7 +344,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             loadFlags(conn, regions);
             loadBans(conn, regions);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Не удалось загрузить приваты из базы", e);
+            log().log(Level.SEVERE, "Не удалось загрузить приваты из базы", e);
         }
         return new ArrayList<>(regions.values());
     }
@@ -395,7 +435,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 conn.setAutoCommit(previousAutoCommit);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Не удалось сохранить " + regions.size() + " приват(ов)", e);
+            log().log(Level.SEVERE, "Не удалось сохранить " + regions.size() + " приват(ов)", e);
         }
     }
 
@@ -431,7 +471,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 ps.setString(24, region.getFarewell());
                 ps.addBatch();
 
-                if (++batched % plugin.getTunables().dbBatchSize() == 0) ps.executeBatch();
+                if (++batched % batchSize() == 0) ps.executeBatch();
             }
             ps.executeBatch();
         }
@@ -519,7 +559,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 conn.setAutoCommit(previousAutoCommit);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Не удалось удалить приваты из базы", e);
+            log().log(Level.SEVERE, "Не удалось удалить приваты из базы", e);
         }
     }
 
@@ -570,7 +610,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.setLong(3, lastSeen);
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось обновить время входа " + uuid, e);
+            log().log(Level.WARNING, "Не удалось обновить время входа " + uuid, e);
         }
     }
 
@@ -586,7 +626,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 if (uuid != null) result.put(uuid, rs.getLong("last_seen"));
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось загрузить время последнего входа игроков", e);
+            log().log(Level.WARNING, "Не удалось загрузить время последнего входа игроков", e);
         }
         return result;
     }
@@ -613,7 +653,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     ps.setString(5, entry.detail());
                     ps.addBatch();
 
-                    if (++batched % plugin.getTunables().dbBatchSize() == 0) ps.executeBatch();
+                    if (++batched % batchSize() == 0) ps.executeBatch();
                 }
                 ps.executeBatch();
                 conn.commit();
@@ -624,7 +664,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 conn.setAutoCommit(previousAutoCommit);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось записать журнал действий", e);
+            log().log(Level.WARNING, "Не удалось записать журнал действий", e);
         }
     }
 
@@ -646,7 +686,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось прочитать журнал действий", e);
+            log().log(Level.WARNING, "Не удалось прочитать журнал действий", e);
         }
         return entries;
     }
@@ -658,7 +698,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.setLong(1, olderThan);
             return ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось очистить журнал действий", e);
+            log().log(Level.WARNING, "Не удалось очистить журнал действий", e);
             return 0;
         }
     }
@@ -682,7 +722,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось загрузить авто-добавление для " + uuid, e);
+            log().log(Level.WARNING, "Не удалось загрузить авто-добавление для " + uuid, e);
         }
         callback.accept(friends, toggledOff);
     }
@@ -696,7 +736,117 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.setBoolean(3, toggledOff);
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Не удалось сохранить авто-добавление для " + uuid, e);
+            log().log(Level.WARNING, "Не удалось сохранить авто-добавление для " + uuid, e);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Рынок: продажа и аренда (схема 4)
+    // ------------------------------------------------------------------
+
+    @Override
+    public Map<UUID, RegionSale> loadSales() {
+        Map<UUID, RegionSale> result = new HashMap<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM " + salesTable());
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                RegionSale sale = new RegionSale(
+                        parseUuid(rs.getString("region_id")),
+                        parseUuid(rs.getString("seller_id")),
+                        rs.getString("seller_name"),
+                        rs.getDouble("price"),
+                        rs.getLong("created_at"));
+                if (sale.regionId() != null && sale.sellerId() != null) result.put(sale.regionId(), sale);
+            }
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось прочитать объявления о продаже", e);
+        }
+        return result;
+    }
+
+    @Override
+    public void saveSale(RegionSale sale) {
+        if (sale == null) return;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "REPLACE INTO " + salesTable() + " (region_id, seller_id, seller_name, price, created_at) VALUES (?,?,?,?,?)")) {
+            ps.setString(1, sale.regionId().toString());
+            ps.setString(2, sale.sellerId().toString());
+            ps.setString(3, sale.sellerName());
+            ps.setDouble(4, sale.price());
+            ps.setLong(5, sale.createdAt());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось сохранить объявление о продаже", e);
+        }
+    }
+
+    @Override
+    public void deleteSale(UUID regionId) {
+        if (regionId == null) return;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM " + salesTable() + " WHERE region_id = ?")) {
+            ps.setString(1, regionId.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось удалить объявление о продаже", e);
+        }
+    }
+
+    @Override
+    public Map<UUID, RegionRental> loadRentals() {
+        Map<UUID, RegionRental> result = new HashMap<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM " + rentalsTable());
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                RegionRental rental = new RegionRental(
+                        parseUuid(rs.getString("region_id")),
+                        parseUuid(rs.getString("owner_id")),
+                        rs.getString("owner_name"),
+                        rs.getDouble("price"),
+                        rs.getInt("duration_minutes"),
+                        parseUuid(rs.getString("tenant_id")),
+                        rs.getString("tenant_name"),
+                        rs.getLong("rented_until"));
+                if (rental.regionId() != null && rental.ownerId() != null) result.put(rental.regionId(), rental);
+            }
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось прочитать условия аренды", e);
+        }
+        return result;
+    }
+
+    @Override
+    public void saveRental(RegionRental rental) {
+        if (rental == null) return;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "REPLACE INTO " + rentalsTable() + " (region_id, owner_id, owner_name, price, duration_minutes, tenant_id, tenant_name, rented_until) VALUES (?,?,?,?,?,?,?,?)")) {
+            ps.setString(1, rental.regionId().toString());
+            ps.setString(2, rental.ownerId().toString());
+            ps.setString(3, rental.ownerName());
+            ps.setDouble(4, rental.price());
+            ps.setInt(5, rental.durationMinutes());
+            ps.setString(6, rental.tenantId() == null ? null : rental.tenantId().toString());
+            ps.setString(7, rental.tenantName());
+            ps.setLong(8, rental.rentedUntil());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось сохранить условия аренды", e);
+        }
+    }
+
+    @Override
+    public void deleteRental(UUID regionId) {
+        if (regionId == null) return;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM " + rentalsTable() + " WHERE region_id = ?")) {
+            ps.setString(1, regionId.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось удалить условия аренды", e);
         }
     }
 

@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.storage.dao;
 
+import org.qweyns.qweprotectstones.features.market.RegionRental;
+import org.qweyns.qweprotectstones.features.market.RegionSale;
 import org.qweyns.qweprotectstones.regions.Region;
 
 import java.util.Collection;
@@ -37,6 +39,24 @@ public interface RegionDao {
 
     /** @return сколько записей журнала удалено */
     int pruneLog(long olderThan);
+
+    // ------------------------------------------------------------------
+    // Рынок: продажа и аренда (схема 4)
+    // ------------------------------------------------------------------
+
+    /** Все активные объявления о продаже: ключ — id привата. */
+    Map<UUID, RegionSale> loadSales();
+
+    void saveSale(RegionSale sale);
+
+    void deleteSale(UUID regionId);
+
+    /** Все опубликованные условия аренды: ключ — id привата. */
+    Map<UUID, RegionRental> loadRentals();
+
+    void saveRental(RegionRental rental);
+
+    void deleteRental(UUID regionId);
 
     void close();
 }

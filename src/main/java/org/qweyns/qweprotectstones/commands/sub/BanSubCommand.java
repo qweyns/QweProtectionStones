@@ -7,6 +7,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
+import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,10 +132,14 @@ public class BanSubCommand extends AbstractRegionSubCommand {
         }
 
         UUID targetId = findBannedByName(region, args[0]);
-        if (targetId == null || !region.unban(targetId)) {
+        if (targetId == null || !region.isBanned(targetId)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("ban_not_banned", "%player%", args[0]));
             return;
         }
+
+        if (RegionEvents.fireMemberChange(region, player, targetId, args[0],
+                RegionMemberChangeEvent.Action.UNBAN, null)) return;
+        region.unban(targetId);
 
         plugin.getRegionStorage().save(region);
         player.sendMessage(plugin.getLanguageManager().getMessage("ban_removed", "%player%", args[0]));

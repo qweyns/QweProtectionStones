@@ -3,6 +3,7 @@ package org.qweyns.qweprotectstones.hooks;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
@@ -30,6 +31,18 @@ public class VaultHook {
         if (economy == null || amount <= 0) return false;
 
         EconomyResponse response = economy.withdrawPlayer(player, amount);
+        return response != null && response.transactionSuccess();
+    }
+
+    /**
+     * Перевод игроку (продавец может быть оффлайн в момент покупки).
+     *
+     * @return true, если зачисление прошло успешно
+     */
+    public boolean giveMoney(OfflinePlayer player, double amount) {
+        if (economy == null || amount <= 0 || player == null) return false;
+
+        EconomyResponse response = economy.depositPlayer(player, amount);
         return response != null && response.transactionSuccess();
     }
 }

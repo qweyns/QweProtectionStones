@@ -9,15 +9,31 @@ import java.sql.Statement;
 
 public class SqliteRegionDao extends AbstractSqlRegionDao {
 
+    /** Путь к базе, когда плагина нет (юнит-тесты). */
+    private File testDbFile;
+
     public SqliteRegionDao(QweProtectStones plugin) {
         super(plugin);
     }
 
+    /** Вариант для интеграционных тестов: файл базы задаётся явно, плагина нет. */
+    public SqliteRegionDao(File testDbFile) {
+        super(null);
+        this.testDbFile = testDbFile;
+    }
+
     @Override
     protected void configureHikari(HikariConfig config) {
+        if (testDbFile != null) {
+            config.setJdbcUrl("jdbc:sqlite:" + testDbFile.getAbsolutePath());
+            config.setDriverClassName("org.sqlite.JDBC");
+            config.setMaximumPoolSize(1);
+            return;
+        }
+
         File dataFolder = plugin.getDataFolder();
         if (!dataFolder.isDirectory() && !dataFolder.mkdirs()) {
-            plugin.getLogger().warning("Не удалось создать папку плагина для файла базы данных.");
+            log().warning("Не удалось создать папку плагина для файла базы данных.");
         }
 
         File dbFile = new File(dataFolder, "data.db");

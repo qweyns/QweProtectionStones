@@ -11,6 +11,8 @@ import org.qweyns.qweprotectstones.regions.TrustLevel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.qweyns.qweprotectstones.regions.event.RegionEvents;
+import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
 
 /**
  * Выдача или снятие доступа сразу во всех приватах игрока.
@@ -70,9 +72,14 @@ public class TrustAllSubCommand extends AbstractRegionSubCommand {
 
         for (Region region : owned) {
             if (granting) {
+                if (RegionEvents.fireMemberChange(region, player, target.getUniqueId(), targetName,
+                        RegionMemberChangeEvent.Action.TRUST, level)) continue;
                 region.setMember(target.getUniqueId(), targetName, level);
                 changed++;
-            } else if (region.removeMember(target.getUniqueId())) {
+            } else if (region.getMember(target.getUniqueId()).isPresent()) {
+                if (RegionEvents.fireMemberChange(region, player, target.getUniqueId(), targetName,
+                        RegionMemberChangeEvent.Action.UNTRUST, null)) continue;
+                region.removeMember(target.getUniqueId());
                 changed++;
             }
             plugin.getRegionStorage().save(region);

@@ -27,6 +27,34 @@ public class ConfigManager {
     public FileConfiguration getConfig() { return config; }
 
     // ------------------------------------------------------------------
+    // Административная команда
+    // ------------------------------------------------------------------
+
+    /** База прав для подкоманд /qps: правой каждого действия будет <префикс>.<действие>. */
+    public String getAdminPermissionPrefix() {
+        String prefix = config.getString("admin.permission-prefix", "qweprotectstones.admin");
+        return prefix == null || prefix.isBlank() ? "qweprotectstones.admin" : prefix.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Требовать ли отдельное право <префикс>.<действие> даже при наличии общего
+     * <префикс>. false — общего права достаточно для любой подкоманды.
+     */
+    public boolean isAdminRequirePerAction() {
+        return config.getBoolean("admin.require-per-action", false);
+    }
+
+    /** Максимум блоков привата за одну выдачу (/qps give). */
+    public int getAdminGiveMaxAmount() {
+        return Math.max(1, config.getInt("admin.give.max-amount", 64));
+    }
+
+    /** На сколько блоков выше ядра ставится игрок при /qps tp. */
+    public double getAdminTeleportOffsetY() {
+        return config.getDouble("admin.teleport-offset-y", 1.0);
+    }
+
+    // ------------------------------------------------------------------
     // Команда
     // ------------------------------------------------------------------
 
