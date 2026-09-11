@@ -124,7 +124,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
     }
 
     private String localizedValue(boolean value) {
-        return plugin.getLanguageManager().getRawMessage(value ? "flag_value_on" : "flag_value_off");
+        return plugin.getLanguageManager().rawTemplate(value ? "flag_value_on" : "flag_value_off");
     }
 
     @Override

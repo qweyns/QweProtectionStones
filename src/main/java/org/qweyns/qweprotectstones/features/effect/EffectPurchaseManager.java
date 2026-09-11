@@ -95,8 +95,8 @@ public class EffectPurchaseManager {
     /** Название способа оплаты для сообщений (заполняется командой/меню). */
     public String costTypeName() {
         return switch (costType()) {
-            case "money" -> plugin.getLanguageManager().getRawMessage("effect_cost_money");
-            case "points" -> plugin.getLanguageManager().getRawMessage("effect_cost_points");
+            case "money" -> plugin.getLanguageManager().rawTemplate("effect_cost_money");
+            case "points" -> plugin.getLanguageManager().rawTemplate("effect_cost_points");
             case "item" -> "<translate:" + paymentItem().translationKey() + ">";
             default -> "";
         };

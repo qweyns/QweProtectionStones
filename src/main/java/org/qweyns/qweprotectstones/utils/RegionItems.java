@@ -64,14 +64,22 @@ public final class RegionItems {
         }
 
         if (styled) {
+            // Плейсхолдеры прочности: накопленная (ядро вернулось при поломке
+            // привата) или стартовая для свежего предмета; потолок — из типа.
+            String durability = String.valueOf(carriedDurability != null && carriedDurability > 0
+                    ? carriedDurability : type.startDurability());
+            String maxDurability = String.valueOf(type.maxDurability());
+
             // Имя предмета (MiniMessage); пусто — стандартное имя блока.
             if (!type.itemName().isEmpty()) {
-                meta.displayName(ColorUtil.formatItemComponent(type.itemName()));
+                meta.displayName(ColorUtil.formatItemComponent(
+                        durabilityPlaceholders(type.itemName(), durability, maxDurability)));
             }
             if (!type.itemLore().isEmpty()) {
                 List<Component> lore = new ArrayList<>();
                 for (String line : type.itemLore()) {
-                    lore.add(ColorUtil.formatItemComponent(line));
+                    lore.add(ColorUtil.formatItemComponent(
+                            durabilityPlaceholders(line, durability, maxDurability)));
                 }
                 meta.lore(lore);
             }
@@ -83,6 +91,19 @@ public final class RegionItems {
 
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * Подстановка прочности в имя и описание предмета-ядра.
+     *
+     * <p>{@code %durability%} — накопленная прочность (для возвращённого при
+     * поломке ядра) или стартовая для свежего предмета; {@code %max_durability%} —
+     * потолок прочности типа. Совпадает с плейсхолдерами голограмм.</p>
+     */
+    static String durabilityPlaceholders(String text, String durability, String maxDurability) {
+        if (text == null || text.isEmpty()) return text;
+        return text.replace("%durability%", durability)
+                .replace("%max_durability%", maxDurability);
     }
 
     /**

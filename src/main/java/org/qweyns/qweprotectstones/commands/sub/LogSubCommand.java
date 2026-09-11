@@ -68,7 +68,7 @@ public class LogSubCommand extends AbstractRegionSubCommand {
                 player.sendMessage(plugin.getLanguageManager().getMessage("log_line",
                         "%time%", format.format(new Date(entry.at())),
                         "%player%", entry.playerName() == null ? "?" : entry.playerName(),
-                        "%action%", plugin.getLanguageManager().getRawMessage("log_action_" + entry.action()),
+                        "%action%", plugin.getLanguageManager().rawTemplate("log_action_" + entry.action()),
                         "%detail%", entry.detail() == null ? "" : entry.detail()));
             }
         });

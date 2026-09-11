@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.config.SoundSetting;
+import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -113,8 +114,10 @@ public class NotificationManager {
         if (webhookRateLimiter.getIfPresent(rateLimitKey) != null) return;
         webhookRateLimiter.put(rateLimitKey, System.currentTimeMillis());
 
-        // Текст готовим в основном потоке: getRawMessage читает конфигурацию.
-        String rawMessage = plugin.getLanguageManager().getRawMessage(messageKey, placeholders).replace("\n", " ");
+        // Текст готовим в основном потоке: конфигурация читается из кэша.
+        // Для Discord/Telegram — чистый текст: §-коды там не рендерятся.
+        String rawMessage = ColorUtil.stripFormatting(
+                plugin.getLanguageManager().rawTemplate(messageKey, placeholders)).replace("\n", " ");
 
         if (discordEnabled) {
             post(discordUrl, "{\"content\":\"" + escapeJson(rawMessage) + "\"}");

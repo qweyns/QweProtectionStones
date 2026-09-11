@@ -94,7 +94,7 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         region.setMember(target.getUniqueId(), targetName, level);
         plugin.getRegionStorage().save(region);
 
-        String levelName = plugin.getLanguageManager().getRawMessage("trust_" + level.key());
+        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
         player.sendMessage(plugin.getLanguageManager().getMessage("trust_granted",
                 "%player%", targetName, "%level%", levelName));
 

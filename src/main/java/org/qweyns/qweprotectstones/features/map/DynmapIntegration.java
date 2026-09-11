@@ -54,7 +54,7 @@ public class DynmapIntegration {
             String setId = "qweprotectstones.regions";
             String configured = plugin.getConfigManager().getConfig().getString("map.dynmap.layer_name", "");
             String label = configured == null || configured.isBlank()
-                    ? plugin.getLanguageManager().getRawMessage("map_layer_default")
+                    ? plugin.getLanguageManager().rawTemplate("map_layer_default")
                     : configured;
 
             Class<?> markerApiClass = markerApi.getClass();

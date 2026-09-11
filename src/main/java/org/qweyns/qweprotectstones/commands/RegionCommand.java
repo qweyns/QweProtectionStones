@@ -180,7 +180,9 @@ public class RegionCommand extends Command {
             sender.sendMessage(lm.getMessage("help_line",
                     "%command%", label,
                     "%sub%", sub.name(),
-                    "%description%", lm.getRawMessage(sub.helpKey())));
+                    // Описание — сырой MiniMessage, а не legacy: getRawMessage сериализует
+            // в §x-hex, который внутри шаблона ломается в чёрно-зелёные цвета.
+            "%description%", lm.rawTemplate(sub.helpKey())));
         }
 
         // Кнопки перелистывания — только когда страниц больше одной.

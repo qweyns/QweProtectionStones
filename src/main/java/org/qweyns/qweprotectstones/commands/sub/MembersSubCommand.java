@@ -54,7 +54,7 @@ public class MembersSubCommand extends AbstractRegionSubCommand {
         for (RegionMember member : members) {
             player.sendMessage(plugin.getLanguageManager().getMessage("members_line",
                     "%player%", member.displayName(),
-                    "%level%", plugin.getLanguageManager().getRawMessage("trust_" + member.trust().key())));
+                    "%level%", plugin.getLanguageManager().rawTemplate("trust_" + member.trust().key())));
         }
     }
 }

@@ -389,7 +389,7 @@ public class MenuManager implements Listener {
         // как игрока исключили из привата или сам приват удалили.
         if (region != null && !isStillTrusted(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().getRawMessage("trust_container")));
+                    "%level%", plugin.getLanguageManager().rawTemplate("trust_container")));
             player.closeInventory();
             return;
         }
@@ -438,7 +438,7 @@ public class MenuManager implements Listener {
         // Качать приват может только управляющий: обычный участник — нет.
         if (!plugin.getProtectionService().canManage(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().getRawMessage("trust_manager")));
+                    "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));
             return true;
         }
 

@@ -172,7 +172,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(lm.getMessage("help_line",
                     "%command%", label,
                     "%sub%", action,
-                    "%description%", lm.getRawMessage("admin_help_" + action)));
+                    "%description%", lm.rawTemplate("admin_help_" + action)));
         }
 
         if (total > 1) {
@@ -228,17 +228,17 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         // Статистика осад: сколько раз атаковали, когда и кто последним.
         String lastAttack = region.getLastAttackAt() == 0
-                ? plugin.getLanguageManager().getRawMessage("admin_never")
+                ? plugin.getLanguageManager().rawTemplate("admin_never")
                 : new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm").format(new java.util.Date(region.getLastAttackAt()));
 
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_info_attacks",
                 "%count%", String.valueOf(region.getAttackCount()),
                 "%last%", lastAttack,
                 "%by%", region.getLastAttackerName().isBlank()
-                        ? plugin.getLanguageManager().getRawMessage("unknown_owner")
+                        ? plugin.getLanguageManager().rawTemplate("unknown_owner")
                         : region.getLastAttackerName(),
                 "%siege%", plugin.getLanguageManager()
-                        .getRawMessage(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm")));
+                        .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm")));
     }
 
     /** Выгрузка в JSON выполняется асинхронно: файл может быть большим. */
@@ -677,7 +677,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             for (RegionMember member : region.getMembers()) {
                 sender.sendMessage(plugin.getLanguageManager().getMessage("admin_members_entry",
                         "%player%", member.name(),
-                        "%level%", plugin.getLanguageManager().getRawMessage("trust_" + member.trust().key())));
+                        "%level%", plugin.getLanguageManager().rawTemplate("trust_" + member.trust().key())));
             }
         }
 
@@ -745,7 +745,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 grant ? "admin_trust_done" : "admin_untrust_done",
                 "%id%", region.getShortId(), "%player%", targetName,
-                "%level%", plugin.getLanguageManager().getRawMessage("trust_build")));
+                "%level%", plugin.getLanguageManager().rawTemplate("trust_build")));
     }
 
     /** /qps backup — ручной прогон автобэкапа: выгрузка + ротация. */

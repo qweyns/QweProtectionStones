@@ -211,9 +211,9 @@ public class MenuActions {
         String translation;
 
         if (effectName.equalsIgnoreCase("ALERTS")) {
-            translation = plugin.getLanguageManager().getRawMessage("effect_alerts");
+            translation = plugin.getLanguageManager().rawTemplate("effect_alerts");
         } else if (effectName.equalsIgnoreCase("EXP_BOOST")) {
-            translation = plugin.getLanguageManager().getRawMessage("effect_exp_boost");
+            translation = plugin.getLanguageManager().rawTemplate("effect_exp_boost");
         } else {
             var potionType = plugin.getEffectManager().potionType(effectName);
             translation = potionType != null ? "<translate:" + potionType.translationKey() + ">" : effectName;

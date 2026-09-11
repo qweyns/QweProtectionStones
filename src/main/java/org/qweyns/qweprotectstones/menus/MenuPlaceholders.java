@@ -58,12 +58,12 @@ public class MenuPlaceholders {
             boolean penalised = plugin.getPenaltyManager().hasPenalty(region.getId());
             text = text.replace("%penalty%", penalised
                     ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())
-                    : plugin.getLanguageManager().getRawMessage("no_penalty"));
+                    : plugin.getLanguageManager().rawTemplate("no_penalty"));
         }
 
         if (text.contains("%siege%")) {
             text = text.replace("%siege%", plugin.getLanguageManager()
-                    .getRawMessage(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"));
+                    .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"));
         }
 
         if (text.indexOf('%') >= 0) {

@@ -147,21 +147,29 @@ public class RegionExplosionListener implements Listener {
         if (core == null) return;
 
         String owner = region.getOwnerName().isEmpty()
-                ? plugin.getLanguageManager().getRawMessage("unknown_owner")
+                ? plugin.getLanguageManager().rawTemplate("unknown_owner")
                 : region.getOwnerName();
 
         region.recordAttack(attackerNameNear(core));
-        plugin.getNotificationManager().sendAttackAlert(region, owner, core);
-        plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
-        alertNeighbours(region, core);
 
         if (region.getDurability() > event.getDamage()) {
             region.setDurability(region.getDurability() - event.getDamage());
             plugin.getRegionStorage().save(region);
+
+            // Сообщение об атаке — после списания прочности: %durability%
+            // показывает актуальное значение, а не «до удара».
+            plugin.getNotificationManager().sendAttackAlert(region, owner, core);
+            plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
             plugin.getVisualManager().playEffect(core, region.getTypeId(), "damage");
             plugin.getHologramManager().createOrUpdateHologram(region);
+            alertNeighbours(region, core);
             return;
         }
+
+        // Ядро добито: сообщение о разрушении (внутри destroyRegion) уже
+        // сообщает всем доверенным, отдельное «приват атакован» не нужно.
+        plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
+        alertNeighbours(region, core);
 
         destroyRegion(region, core);
     }

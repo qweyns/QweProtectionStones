@@ -211,7 +211,7 @@ public class BlueMapIntegration {
             String configured = plugin.getConfigManager().getConfig().getString("map.bluemap.marker_set_label", "");
             set = markerSetCtor.newInstance(
                     configured == null || configured.isBlank()
-                            ? plugin.getLanguageManager().getRawMessage("map_layer_default")
+                            ? plugin.getLanguageManager().rawTemplate("map_layer_default")
                             : configured,
                     plugin.getConfigManager().getConfig().getBoolean("map.bluemap.toggleable", true),
                     plugin.getConfigManager().getConfig().getBoolean("map.bluemap.default_hidden", false));

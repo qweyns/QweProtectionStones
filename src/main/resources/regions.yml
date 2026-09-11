@@ -379,7 +379,7 @@ region_types:
       name: "<gradient:#F84747:#DD4141>Огромный приват</gradient>"
       lore:
         - "<#F2EFFA>Территория 97×97, высота 192"
-        - "<#F2EFFA>Прочность: 8 (прокачка до 48)"
+        - "<#F2EFFA>Прочность: %durability% (прокачка до %max_durability%)"
         - "<#A79FC0>Продаётся в магазине сервера"
       glow: true
     spawn-egg-use: true
@@ -420,7 +420,7 @@ region_types:
   #     name: "<gradient:#8B5CF6:#A78BFA:#F472B6>Элитный приват</gradient>"
   #     lore:
   #       - "<#F2EFFA>Радиус: 64 × 64, высота: 128"
-  #       - "<#F2EFFA>Прочность: 16 (до 64)"
+  #       - "<#F2EFFA>Прочность: %durability% (до %max_durability%)"
   #       - "<#A79FC0>Продаётся в магазине сервера"
   #     glow: true
   #   radius: 64

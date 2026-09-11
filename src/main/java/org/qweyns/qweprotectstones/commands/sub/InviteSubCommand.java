@@ -98,7 +98,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        String levelName = plugin.getLanguageManager().getRawMessage("trust_" + level.key());
+        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
         player.sendMessage(plugin.getLanguageManager().getMessage("invite_sent",
                 "%player%", target.getName(), "%level%", levelName));
         plugin.getLanguageManager().sendList(target, "invite_received",
@@ -137,7 +137,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
         region.setMember(player.getUniqueId(), player.getName(), invite.level());
         plugin.getRegionStorage().save(region);
 
-        String levelName = plugin.getLanguageManager().getRawMessage("trust_" + invite.level().key());
+        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + invite.level().key());
         player.sendMessage(plugin.getLanguageManager().getMessage("invite_accepted",
                 "%owner%", region.getOwnerName(), "%level%", levelName));
 

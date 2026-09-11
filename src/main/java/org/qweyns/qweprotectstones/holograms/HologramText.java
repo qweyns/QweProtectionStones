@@ -28,10 +28,10 @@ final class HologramText {
                 .replace("%id%", region.getShortId())
                 .replace("%item%", plugin.getMenuManager().upgradeItemFor(region).name())
                 .replace("%siege%", plugin.getLanguageManager()
-                        .getRawMessage(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"))
+                        .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"))
                 .replace("%penalty%", plugin.getPenaltyManager().hasPenalty(region.getId())
                         ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())
-                        : plugin.getLanguageManager().getRawMessage("no_penalty"))
+                        : plugin.getLanguageManager().rawTemplate("no_penalty"))
                 .replace("%attacks%", String.valueOf(region.getAttackCount()));
     }
 }

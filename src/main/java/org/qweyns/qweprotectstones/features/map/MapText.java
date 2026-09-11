@@ -38,6 +38,6 @@ public final class MapText {
      * HTML: локализация тоже не должна открывать разметку на странице карты.
      */
     public static String line(QweProtectStones plugin, String key, String... replacements) {
-        return escapeHtml(plugin.getLanguageManager().getRawMessage(key, replacements));
+        return escapeHtml(plugin.getLanguageManager().rawTemplate(key, replacements));
     }
 }

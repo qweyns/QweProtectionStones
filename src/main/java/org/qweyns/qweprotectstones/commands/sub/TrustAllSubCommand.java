@@ -95,7 +95,7 @@ public class TrustAllSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        String levelName = plugin.getLanguageManager().getRawMessage("trust_" + level.key());
+        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
         player.sendMessage(plugin.getLanguageManager().getMessage(granting ? "trustall_done" : "untrustall_done",
                 "%player%", targetName, "%count%", String.valueOf(changed), "%level%", levelName));
 

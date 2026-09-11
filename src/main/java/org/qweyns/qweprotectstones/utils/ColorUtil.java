@@ -74,6 +74,17 @@ public final class ColorUtil {
         return formatComponent(text).decoration(TextDecoration.ITALIC, false);
     }
 
+    /**
+     * Чистый текст без разметки: MiniMessage-теги и §-коды (включая §x-hex)
+     * вырезаются. Для мест, где цвета невозможны в принципе: вебхуки Discord
+     * и Telegram, файловые журналы.
+     */
+    public static String stripFormatting(String text) {
+        if (text == null || text.isEmpty()) return "";
+        return MiniMessage.miniMessage().stripTags(text)
+                .replaceAll("\u00a7.", "");
+    }
+
     public static String formatLegacyString(String text) {
         if (text == null || text.isBlank()) return "";
         return SECTION_SERIALIZER.serialize(formatComponent(text));

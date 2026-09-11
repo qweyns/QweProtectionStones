@@ -36,7 +36,7 @@ abstract class AbstractRegionSubCommand implements SubCommand {
 
         if (!plugin.getProtectionService().has(region, player, required)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().getRawMessage("trust_" + required.key())));
+                    "%level%", plugin.getLanguageManager().rawTemplate("trust_" + required.key())));
             return null;
         }
         return region;
