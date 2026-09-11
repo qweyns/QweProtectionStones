@@ -31,7 +31,7 @@ class MiniMessageSmokeTest {
             "siege.yml", "effects.yml", "features.yml"
     };
 
-    public static List<String> strings() {
+    public static List<String> strings() throws Exception {
         List<String> all = new ArrayList<>();
         Yaml yaml = new Yaml();
         for (String name : FILES) {
