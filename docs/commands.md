@@ -40,7 +40,7 @@
 | Команда | Описание |
 | --- | --- |
 | `/ps` · `/ps menu` | Меню привата |
-| `/ps info` | Карточка привата + подсветка границ |
+| `/ps info` | Карточка привата + подсветка границ. Свой — по праву `info`; **чужой** — только с `info.others` (по умолчанию op), показывается развёрнутая карточка: границы, участники с уровнями, история атак |
 | `/ps list` | Свои приваты и те, куда вписали |
 | `/ps flag [флаг] [значение]` | Флаги: просмотр (`true`/`false`/`reset`) |
 | `/ps log [страница]` | Журнал действий доверенных |
@@ -79,7 +79,7 @@
 | `/ps name <текст>` | Название привата (`clear` — убрать); алиасы `rename`, `title` |
 | `/ps greeting <текст>` · `/ps farewell <текст>` | Сообщения входа/выхода (`clear` — сброс) |
 | `/ps upgrade` · `/ps effects` | Меню прокачки и эффектов |
-| `/ps help` | Справка |
+| `/ps help [страница]` | Постраничная справка — только команды, доступные вам |
 
 ## Административная команда
 
@@ -112,17 +112,56 @@
 | `/qps ban <id> <ник>` · `unban` | Чёрный список любого привата |
 | `/qps members <id>` · `trust` · `untrust` | Управление чужим приватом |
 | `/qps debug` | Диагностика: типы, счётчики, подробный режим |
+| `/qps help [страница]` | Постраничная справка по административным командам |
 
 ## Права
 
+Модель повторяет ProtectionStones: каждая игровая команда закрыта своим
+правом. Отличие — по умолчанию они **разрешены всем** (плагин работает из
+коробки без LuckPerms), а запрещаются сознательно. Справка `/ps help`
+показывает только те команды, на которые у игрока есть право.
+
+### Права игроков
+
+| Право | Команды | По умолчанию |
+| --- | --- | --- |
+| `qweprotectstones.create` | Установка блока-ядра | все |
+| `qweprotectstones.destroy` | Поломка собственного ядра | все |
+| `qweprotectstones.info` | `/ps info` своего привата | все |
+| `qweprotectstones.info.others` | `/ps info` **чужого** привата (развёрнутая карточка: границы, участники, атаки — как `/rg info` в WorldGuard) | **op** |
+| `qweprotectstones.list` | `/ps list` | все |
+| `qweprotectstones.members` | `/ps members` | все |
+| `qweprotectstones.trust` | `/ps trust`, `untrust`, `trustall`, `untrustall` | все |
+| `qweprotectstones.invite` | `/ps invite`, `accept`, `deny` | все |
+| `qweprotectstones.ban` | `/ps ban`, `unban`, `banlist` | все |
+| `qweprotectstones.flags` | `/ps flag` | все |
+| `qweprotectstones.name` | `/ps name`, `greeting`, `farewell` | все |
+| `qweprotectstones.home` | `/ps home` | все |
+| `qweprotectstones.log` | `/ps log` | все |
+| `qweprotectstones.findspot` | `/ps findspot` | все |
+| `qweprotectstones.glow` | `/ps glow` | все |
+| `qweprotectstones.expand` | `/ps expand` | все |
+| `qweprotectstones.move` | `/ps move` | все |
+| `qweprotectstones.buysell` | `/ps sell`, `/ps buy` | все |
+| `qweprotectstones.rent` | `/ps rent` | все |
+| `qweprotectstones.transfer` | `/ps transfer` | все |
+| `qweprotectstones.delete` | `/ps delete` | все |
+| `qweprotectstones.autoadd` | `/ps autoadd`, `autoremove`, `autolist` | все |
+
+### Служебные права
+
 | Право | Назначение | По умолчанию |
 | --- | --- | --- |
-| `qweprotectstones.admin` | Административная команда | op |
-| `qweprotectstones.bypass` | Включение обхода защиты | op |
-| `qweprotectstones.limit.<тип>.<число>` | Лимит приватов типа (у игрока берётся максимум из всех) | — |
+| `qweprotectstones.admin` | Административная команда (включает `bypass`) | op |
+| `qweprotectstones.bypass` | Обход защиты (`/qps bypass`) | op |
+| `qweprotectstones.limit.<тип>.<число>` | Лимит приватов типа (берётся максимум из всех) | — |
 | `qweprotectstones.limit.unlimited` | Без лимитов | false |
 | `qweprotectstones.region.<тип>` | Установка ядра, если тип требует право (`place_permission` в regions.yml) | — |
 | `qweprotectstones.admin.<действие>` | Право на конкретную подкоманду — только при `admin.require-per-action: true` | — |
+
+Примеры: продавать «приваты только для VIP» — снять `create` у группы
+default; отключить рынок — снять `buysell` и `rent`; модераторам — выдать
+`info.others`, чтобы смотрели чужие карточки.
 
 Пример: выдать модератору только `/qps tp` и `/qps info`:
 

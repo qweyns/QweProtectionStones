@@ -193,6 +193,11 @@ public class RegionManager {
         if (!type.isWorldAllowed(world.getName().toLowerCase(java.util.Locale.ROOT))) {
             return CreateResult.failure(CreateStatus.WORLD_DISABLED);
         }
+        // Право на создание приватов вообще (qweprotectstones.create) и право
+        // на конкретный тип (place_permission из regions.yml) — разные вещи.
+        if (!owner.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".create")) {
+            return CreateResult.failure(CreateStatus.NO_PERMISSION);
+        }
         if (!type.placePermission().isBlank() && !owner.hasPermission(type.placePermission())) {
             return CreateResult.failure(CreateStatus.NO_PERMISSION);
         }

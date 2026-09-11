@@ -44,6 +44,12 @@ public class ResizeSubCommand extends AbstractRegionSubCommand implements SubCom
     }
 
     @Override
+    public String permission() {
+        // expand и move — разные права: расширение доступнее переноса.
+        return QweProtectStones.PERMISSION_PREFIX + (mode == Mode.EXPAND ? ".expand" : ".move");
+    }
+
+    @Override
     public String name() { return mode.key(); }
 
     @Override

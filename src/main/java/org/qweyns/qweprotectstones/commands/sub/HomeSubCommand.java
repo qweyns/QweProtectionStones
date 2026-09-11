@@ -17,6 +17,11 @@ public class HomeSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".home";
+    }
+
+    @Override
     public String name() {
         return "home";
     }

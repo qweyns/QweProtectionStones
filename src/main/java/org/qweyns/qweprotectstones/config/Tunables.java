@@ -54,6 +54,10 @@ public final class Tunables {
     // --- частицы ---
     private ParticleSetting particles;
 
+    // --- справка (/ps help и /qps help) ---
+    private int helpPageSize;
+    private int adminHelpPageSize;
+
     // --- защита: горячие ключи, читаемые на каждое событие (кэш, а не YAML) ---
     private boolean hoppersEnabled;
     private boolean hoppersBlockOutflow;
@@ -216,6 +220,10 @@ public final class Tunables {
         trustEditLevel = TrustLevel.parse(cfg.getString("trust.member_edit_level")).orElse(TrustLevel.MANAGER);
 
         Set<RegionFlag> locked = EnumSet.noneOf(RegionFlag.class);
+        // Справка постраничная: сколько команд на страницу.
+        helpPageSize = Math.max(1, cfg.getInt("help.page-size", 8));
+        adminHelpPageSize = Math.max(1, cfg.getInt("help.admin-page-size", 10));
+
         // Воронки и трюки через границу: InventoryMoveItemEvent срабатывает
         // сотни раз в секунду — ключи читаются здесь один раз, не из YAML.
         hoppersEnabled = cfg.getBoolean("protection.hoppers.enable", true);
@@ -271,6 +279,10 @@ public final class Tunables {
     public SoundSetting raidAttack() { return raidAttack; }
     public SoundSetting raidDestroyed() { return raidDestroyed; }
     public SoundSetting raidNearby() { return raidNearby; }
+
+    // --- справка ---
+    public int helpPageSize() { return helpPageSize; }
+    public int adminHelpPageSize() { return adminHelpPageSize; }
 
     // --- горячие ключи защиты (см. reload) ---
 

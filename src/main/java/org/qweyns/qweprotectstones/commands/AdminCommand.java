@@ -107,6 +107,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             case "restore" -> restore(sender, args);
             case "backup" -> backup(sender);
             case "debug" -> debug(sender);
+            case "help" -> sendHelp(sender, label, parseHelpPage(args));
             default -> sendUsage(sender, label);
         }
         return true;
@@ -133,6 +134,60 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_hint",
                 "%command%", label,
                 "%player_command%", plugin.getConfigManager().getCommandName()));
+    }
+
+    /** Номер страницы справки из аргументов; мусор трактуется как первая. */
+    private static int parseHelpPage(String[] args) {
+        if (args.length < 2) return 1;
+        try {
+            return Math.max(1, Integer.parseInt(args[1]));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    /**
+     * Постраничная справка по административным командам. Фильтруется по
+     * правам действий (require-per-action), оформление — в lang-файле.
+     */
+    private void sendHelp(CommandSender sender, String label, int requestedPage) {
+        var lm = plugin.getLanguageManager();
+
+        List<String> actions = new ArrayList<>();
+        for (String action : ACTIONS) {
+            if (!action.equals("help") && allowed(sender, action)) actions.add(action);
+        }
+
+        int pageSize = Math.max(1, plugin.getTunables().adminHelpPageSize());
+        int total = Math.max(1, (actions.size() + pageSize - 1) / pageSize);
+        int page = Math.min(Math.max(1, requestedPage), total);
+
+        sender.sendMessage(lm.getMessage("admin_help_header",
+                "%page%", String.valueOf(page), "%total%", String.valueOf(total)));
+
+        int from = (page - 1) * pageSize;
+        int to = Math.min(actions.size(), from + pageSize);
+        for (int i = from; i < to; i++) {
+            String action = actions.get(i);
+            sender.sendMessage(lm.getMessage("help_line",
+                    "%command%", label,
+                    "%sub%", action,
+                    "%description%", lm.getRawMessage("admin_help_" + action)));
+        }
+
+        if (total > 1) {
+            // Кнопки берутся raw-строкой: подстановки в footer выполняются
+            // до разбора MiniMessage, поэтому <click> внутри кнопок работает.
+            String prev = page > 1
+                    ? lm.rawTemplate("help_button_prev", "%command%", label, "%page%", String.valueOf(page - 1))
+                    : "";
+            String next = page < total
+                    ? lm.rawTemplate("help_button_next", "%command%", label, "%page%", String.valueOf(page + 1))
+                    : "";
+            sender.sendMessage(lm.getMessage("help_footer",
+                    "%button-prev%", prev, "%button-next%", next,
+                    "%page%", String.valueOf(page), "%total%", String.valueOf(total)));
+        }
     }
 
     private void reload(CommandSender sender) {

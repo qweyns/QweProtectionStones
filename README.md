@@ -189,7 +189,7 @@ region_types:
 | `/ps greeting <текст>` · `/ps farewell <текст>` | Свои сообщения при входе и выходе |
 | `/ps upgrade` · `/ps effects` | Меню прокачки и магазин эффектов |
 | `/ps autoadd [ник]` · `autoremove` · `autolist` | Авто-вписывание друзей в новые приваты |
-| `/ps help` | Справка по всем подкомандам |
+| `/ps help [страница]` | Постраничная справка — только команды, доступные вам |
 
 ### Для администрации
 
@@ -218,17 +218,33 @@ region_types:
 | `/qps transfer <id> <ник>` · `setowner <ник>` | Передача и смена владельца |
 | `/qps ban <id> <ник>` · `unban` · `members` · `trust` · `untrust` | Управление чужим приватом |
 | `/qps debug` | Диагностика: типы, счётчики, подробный режим |
+| `/qps help [страница]` | Постраничная справка по административным командам |
 
 ### Права
 
-| Право | Назначение |
-| --- | --- |
-| `qweprotectstones.admin` | Административная команда и служебные флаги |
-| `qweprotectstones.bypass` | Возможность включить обход защиты (`/qps bypass`) |
-| `qweprotectstones.limit.<тип>.<число>` | Лимит приватов данного типа (берётся максимальное значение) |
-| `qweprotectstones.limit.unlimited` | Снимает лимиты полностью |
-| `qweprotectstones.region.<тип>` | Право на установку блока-ядра (если задано в типе) |
-| `qweprotectstones.admin.<действие>` | Отдельное право на подкоманду (при `require-per-action: true`) |
+Модель как в ProtectionStones: каждая команда закрыта своим узлом, чтобы
+владельцам серверов не пришлось переучиваться. Отличие — по умолчанию
+игровые права **разрешены** (плагин работает из коробки), а запрещать их
+нужно сознательно, через LuckPerms (`-qweprotectstones.rent` и т.п.).
+
+| Право | Назначение | По умолчанию |
+| --- | --- | --- |
+| `qweprotectstones.create` | Создание приватов установкой ядра | все |
+| `qweprotectstones.destroy` | Поломка собственного ядра | все |
+| `qweprotectstones.info` | `/ps info` своего привата | все |
+| `qweprotectstones.info.others` | `/ps info` **чужого** привата — развёрнутая карточка (границы, участники, атаки) | только op |
+| `qweprotectstones.list` · `members` · `log` · `findspot` · `glow` · `home` | Информационные команды | все |
+| `qweprotectstones.trust` · `invite` · `ban` | Управление доступом | все |
+| `qweprotectstones.flags` · `name` | Настройка привата | все |
+| `qweprotectstones.expand` · `move` | Изменение границ | все |
+| `qweprotectstones.buysell` · `rent` · `transfer` · `delete` | Рынок и передача | все |
+| `qweprotectstones.autoadd` | Авто-вписывание друзей | все |
+| `qweprotectstones.admin` | Административная команда и служебные флаги | op |
+| `qweprotectstones.bypass` | Обход защиты (`/qps bypass`) | op |
+| `qweprotectstones.limit.<тип>.<число>` | Лимит приватов типа (берётся максимум) | — |
+| `qweprotectstones.limit.unlimited` | Снимает лимиты полностью | — |
+| `qweprotectstones.region.<тип>` | Установка ядра, если тип требует право | — |
+| `qweprotectstones.admin.<действие>` | Право на подкоманду (при `require-per-action: true`) | — |
 
 ---
 

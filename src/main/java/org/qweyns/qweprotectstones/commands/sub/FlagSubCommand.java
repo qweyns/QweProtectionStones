@@ -19,6 +19,11 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".flags";
+    }
+
+    @Override
     public String name() {
         return "flag";
     }

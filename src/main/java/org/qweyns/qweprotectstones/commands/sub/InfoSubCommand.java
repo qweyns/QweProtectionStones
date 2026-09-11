@@ -20,6 +20,11 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".info";
+    }
+
+    @Override
     public String name() {
         return "info";
     }
@@ -34,9 +39,17 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
         Region region = regionUnderFeet(player);
         if (region == null) return;
 
+        TrustLevel trust = plugin.getProtectionService().trustOf(region, player);
+
+        // Чужой приват (нет доступа): просмотр чужих территорий — отдельное
+        // право, по умолчанию только у операторов (как /rg info в WorldGuard).
+        if (trust == null && !player.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".info.others")) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
+            return;
+        }
+
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         RegionBounds bounds = region.getBounds();
-        TrustLevel trust = plugin.getProtectionService().trustOf(region, player);
 
         String trustName = trust == null
                 ? plugin.getLanguageManager().getRawMessage("trust_none")
@@ -62,6 +75,25 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
         if (plugin.getPenaltyManager().hasPenalty(region.getId())) {
             player.sendMessage(plugin.getLanguageManager().getMessage("info_penalty",
                     "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
+        }
+
+        // Развёрнутая карточка чужого привата: границы, участники с уровнями
+        // доступа и история атак — всё, что нужно модератору.
+        if (trust == null) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("info_bounds",
+                    "%min%", bounds.minX() + ", " + bounds.minY() + ", " + bounds.minZ(),
+                    "%max%", bounds.maxX() + ", " + bounds.maxY() + ", " + bounds.maxZ()));
+            for (var member : region.getMembers()) {
+                player.sendMessage(plugin.getLanguageManager().getMessage("info_member_entry",
+                        "%name%", member.displayName(),
+                        "%level%", plugin.getLanguageManager().getRawMessage("trust_" + member.trust().key())));
+            }
+            if (region.getAttackCount() > 0) {
+                player.sendMessage(plugin.getLanguageManager().getMessage("info_attacks",
+                        "%count%", String.valueOf(region.getAttackCount()),
+                        "%date%", new SimpleDateFormat("dd.MM.yyyy HH:mm").format(new Date(region.getLastAttackAt())),
+                        "%attacker%", region.getLastAttackerName()));
+            }
         }
 
         // Заодно подсвечиваем границы — так игрок сразу видит, где заканчивается приват.

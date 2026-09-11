@@ -19,6 +19,11 @@ public class MembersSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".members";
+    }
+
+    @Override
     public String name() {
         return "members";
     }

@@ -17,6 +17,11 @@ public class ListSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".list";
+    }
+
+    @Override
     public String name() {
         return "list";
     }

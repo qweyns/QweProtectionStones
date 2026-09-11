@@ -28,6 +28,11 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".rent";
+    }
+
+    @Override
     public String name() { return "rent"; }
 
     @Override

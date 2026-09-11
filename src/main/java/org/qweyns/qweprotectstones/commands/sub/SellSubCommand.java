@@ -37,6 +37,11 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".buysell";
+    }
+
+    @Override
     public String name() { return mode.key(); }
 
     @Override

@@ -110,7 +110,7 @@ public class RegionCommand extends Command {
 
         String key = args[0].toLowerCase(Locale.ROOT);
         if (key.equals("help") || key.equals("?")) {
-            sendHelp(sender, label);
+            sendHelp(sender, label, parsePage(args));
             return true;
         }
 
@@ -152,17 +152,70 @@ public class RegionCommand extends Command {
         plugin.getMenuManager().openMenu(player, plugin.getMenuManager().defaultMenuFor(region), region);
     }
 
-    private void sendHelp(CommandSender sender, String label) {
-        plugin.getLanguageManager().sendList(sender, "help_header");
+    /**
+     * Постраничная справка: игрок видит только команды, на которые у него есть
+     * право. Оформление (шапка, строки, кнопки перелистывания) — в lang-файле,
+     * здесь только нарезка по страницам.
+     */
+    private void sendHelp(CommandSender sender, String label, int requestedPage) {
+        var lm = plugin.getLanguageManager();
 
+        List<SubCommand> visible = new ArrayList<>();
         for (SubCommand sub : ordered) {
-            if (sub.permission() != null && !sender.hasPermission(sub.permission())) continue;
+            if (sub.permission() == null || sender.hasPermission(sub.permission())) visible.add(sub);
+        }
 
-            sender.sendMessage(plugin.getLanguageManager().getMessage("help_line",
+        int pageSize = Math.max(1, plugin.getTunables().helpPageSize());
+        int total = Math.max(1, (visible.size() + pageSize - 1) / pageSize);
+        int page = Math.min(Math.max(1, requestedPage), total);
+
+        sender.sendMessage(lm.getMessage("help_header",
+                "%page%", String.valueOf(page), "%total%", String.valueOf(total)));
+
+        int from = (page - 1) * pageSize;
+        int to = Math.min(visible.size(), from + pageSize);
+        for (int i = from; i < to; i++) {
+            SubCommand sub = visible.get(i);
+            sender.sendMessage(lm.getMessage("help_line",
                     "%command%", label,
                     "%sub%", sub.name(),
-                    "%description%", plugin.getLanguageManager().getRawMessage(sub.helpKey())));
+                    "%description%", lm.getRawMessage(sub.helpKey())));
         }
+
+        // Кнопки перелистывания — только когда страниц больше одной.
+        if (total > 1) {
+            // Кнопки берутся raw-строкой: подстановки в footer выполняются
+            // до разбора MiniMessage, поэтому <click> внутри кнопок работает.
+            String prev = page > 1
+                    ? lm.rawTemplate("help_button_prev", "%command%", label, "%page%", String.valueOf(page - 1))
+                    : "";
+            String next = page < total
+                    ? lm.rawTemplate("help_button_next", "%command%", label, "%page%", String.valueOf(page + 1))
+                    : "";
+            sender.sendMessage(lm.getMessage("help_footer",
+                    "%button-prev%", prev, "%button-next%", next,
+                    "%page%", String.valueOf(page), "%total%", String.valueOf(total)));
+        }
+    }
+
+    /** Номер страницы из аргументов команды; мусор трактуется как первая. */
+    private static int parsePage(String[] args) {
+        if (args.length < 2) return 1;
+        try {
+            return Math.max(1, Integer.parseInt(args[1]));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    /** Сколько страниц справки доступно отправителю (для Tab-подсказки). */
+    private int helpPages(CommandSender sender) {
+        int visible = 0;
+        for (SubCommand sub : ordered) {
+            if (sub.permission() == null || sender.hasPermission(sub.permission())) visible++;
+        }
+        int pageSize = Math.max(1, plugin.getTunables().helpPageSize());
+        return Math.max(1, (visible + pageSize - 1) / pageSize);
     }
 
     @Override
@@ -179,6 +232,14 @@ public class RegionCommand extends Command {
             }
             if ("help".startsWith(prefix)) result.add("help");
             return result;
+        }
+
+        // /ps help <страница> — подсказываем номера доступных страниц.
+        String key = args[0].toLowerCase(Locale.ROOT);
+        if ((key.equals("help") || key.equals("?")) && args.length == 2) {
+            List<String> pages = new ArrayList<>();
+            for (int i = 1; i <= helpPages(sender); i++) pages.add(String.valueOf(i));
+            return pages;
         }
 
         SubCommand sub = subCommands.get(args[0].toLowerCase(Locale.ROOT));

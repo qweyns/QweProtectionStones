@@ -30,6 +30,11 @@ public class TrustAllSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".trust";
+    }
+
+    @Override
     public String name() {
         return granting ? "trustall" : "untrustall";
     }

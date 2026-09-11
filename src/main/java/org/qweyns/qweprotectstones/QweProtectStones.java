@@ -55,6 +55,9 @@ import java.util.List;
 
 public final class QweProtectStones extends JavaPlugin {
 
+    /** Префикс прав плагина; узлы объявлены в plugin.yml. */
+    public static final String PERMISSION_PREFIX = "qweprotectstones";
+
     private ConfigManager configManager;
     private RegionConfig regionConfig;
     private Tunables tunables;

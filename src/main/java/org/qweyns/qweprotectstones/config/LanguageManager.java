@@ -157,6 +157,16 @@ public class LanguageManager {
         return ColorUtil.formatComponent(applyReplacements(text, replacements));
     }
 
+    /**
+     * Сырая строка шаблона с подстановками — без разбора MiniMessage и без
+     * конвертации в legacy. Нужна, когда фрагмент (например, кнопку справки)
+     * вставляют в другой шаблон: тот разбирается целиком, и теги клика
+     * внутри вставленного фрагмента работают.
+     */
+    public String rawTemplate(String path, String... replacements) {
+        return resolve(path, replacements);
+    }
+
     private String resolve(String path, String... replacements) {
         String msg = langConfig.getString(path);
         if (msg == null || msg.isEmpty()) return "";

@@ -79,6 +79,18 @@ database:
 `autoadd_friends` (50), `db_batch_size` (500), `log_page_size` (15),
 `log_max_page_size` (50), `findspot_rings` (24).
 
+### help
+
+Справка `/ps help` и `/qps help` постраничная, с кнопками перелистывания.
+Каждая строка подсказывает команду по клику; игрок видит только команды,
+на которые у него есть право.
+
+```yaml
+help:
+  page-size: 8        # команд на страницу в /ps help
+  admin-page-size: 10 # команд на страницу в /qps help
+```
+
 ### region-messages
 
 Куда писать приветствие/прощание. Порядок текста: строка владельца

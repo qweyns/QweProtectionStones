@@ -133,10 +133,18 @@ public class RegionLifecycleListener implements Listener {
         Player player = event.getPlayer();
 
         // Ядро сносит только владелец: даже управляющий не должен удалять чужой приват.
-        boolean allowed = region.isOwner(player.getUniqueId()) || plugin.getProtectionService().bypasses(player);
+        // Владельцу дополнительно нужно право qweprotectstones.destroy — так можно
+        // продавать «приваты без удаления» или запретить снос ядра совсем.
+        boolean allowed = (region.isOwner(player.getUniqueId())
+                && player.hasPermission(QweProtectStones.PERMISSION_PREFIX + ".destroy"))
+                || plugin.getProtectionService().bypasses(player);
         if (!allowed) {
             event.setCancelled(true);
-            plugin.getProtectionService().notifyDenied(player, region);
+            if (region.isOwner(player.getUniqueId())) {
+                player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
+            } else {
+                plugin.getProtectionService().notifyDenied(player, region);
+            }
             return;
         }
 

@@ -28,6 +28,75 @@ commands:
     aliases: [qps, qpstones]
 
 permissions:
+  # --- Права игроков (по умолчанию разрешены; снимаются через LuckPerms) ---
+  qweprotectstones.create:
+    description: Создание приватов установкой блока-ядра
+    default: true
+  qweprotectstones.destroy:
+    description: Поломка собственного блока-ядра (снос привата)
+    default: true
+  qweprotectstones.info:
+    description: Просмотр своего привата через /ps info
+    default: true
+  qweprotectstones.info.others:
+    description: Просмотр ЧУЖИХ приватов (/ps info с развёрнутой карточкой — границы, участники, атаки)
+    default: op
+  qweprotectstones.list:
+    description: Список своих приватов (/ps list)
+    default: true
+  qweprotectstones.members:
+    description: Список участников привата (/ps members)
+    default: true
+  qweprotectstones.trust:
+    description: Выдача и отзыв доступа (/ps trust, untrust, trustall, untrustall)
+    default: true
+  qweprotectstones.invite:
+    description: Приглашения (/ps invite, accept, deny)
+    default: true
+  qweprotectstones.ban:
+    description: Чёрный список привата (/ps ban, unban, banlist)
+    default: true
+  qweprotectstones.flags:
+    description: Изменение флагов привата (/ps flag)
+    default: true
+  qweprotectstones.name:
+    description: Название и тексты входа/выхода (/ps name, greeting, farewell)
+    default: true
+  qweprotectstones.home:
+    description: Телепорт к своему привату (/ps home)
+    default: true
+  qweprotectstones.log:
+    description: Журнал действий в привате (/ps log)
+    default: true
+  qweprotectstones.findspot:
+    description: Поиск свободного места под приват (/ps findspot)
+    default: true
+  qweprotectstones.glow:
+    description: Постоянная подсветка границ (/ps glow)
+    default: true
+  qweprotectstones.expand:
+    description: Расширение границ привата (/ps expand)
+    default: true
+  qweprotectstones.move:
+    description: Перенос ядра привата (/ps move)
+    default: true
+  qweprotectstones.buysell:
+    description: Рынок приватов (/ps sell, /ps buy)
+    default: true
+  qweprotectstones.rent:
+    description: Аренда приватов (/ps rent)
+    default: true
+  qweprotectstones.transfer:
+    description: Передача привата другому игроку (/ps transfer)
+    default: true
+  qweprotectstones.delete:
+    description: Удаление своего привата (/ps delete)
+    default: true
+  qweprotectstones.autoadd:
+    description: Авто-вписывание друзей в новые приваты (/ps autoadd, autoremove, autolist)
+    default: true
+
+  # --- Служебные права ---
   qweprotectstones.admin:
     description: Доступ к административной команде и служебным флагам
     default: op

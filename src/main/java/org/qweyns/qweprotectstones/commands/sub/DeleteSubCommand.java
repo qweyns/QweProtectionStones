@@ -29,6 +29,11 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".delete";
+    }
+
+    @Override
     public String name() {
         return "delete";
     }

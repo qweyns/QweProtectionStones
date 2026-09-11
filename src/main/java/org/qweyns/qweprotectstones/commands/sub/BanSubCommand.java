@@ -43,6 +43,11 @@ public class BanSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".ban";
+    }
+
+    @Override
     public String name() {
         return mode.commandName;
     }

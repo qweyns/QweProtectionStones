@@ -35,6 +35,11 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".invite";
+    }
+
+    @Override
     public String name() {
         return mode.commandName;
     }

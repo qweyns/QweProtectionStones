@@ -24,6 +24,11 @@ public class FindSpotSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".findspot";
+    }
+
+    @Override
     public String name() {
         return "findspot";
     }

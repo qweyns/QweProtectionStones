@@ -16,6 +16,11 @@ public class GlowSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".glow";
+    }
+
+    @Override
     public String name() {
         return "glow";
     }

@@ -17,6 +17,11 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".transfer";
+    }
+
+    @Override
     public String name() {
         return "transfer";
     }

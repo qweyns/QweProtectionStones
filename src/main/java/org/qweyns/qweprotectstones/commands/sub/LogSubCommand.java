@@ -19,6 +19,11 @@ public class LogSubCommand extends AbstractRegionSubCommand {
     }
 
     @Override
+    public String permission() {
+        return QweProtectStones.PERMISSION_PREFIX + ".log";
+    }
+
+    @Override
     public String name() {
         return "log";
     }
