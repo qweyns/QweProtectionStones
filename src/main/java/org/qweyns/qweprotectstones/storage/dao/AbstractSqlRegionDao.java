@@ -428,10 +428,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 ps.setInt(19, region.getAttackCount());
                 ps.setLong(20, region.getLastAttackAt());
                 ps.setString(21, region.getLastAttackerName());
-                ps.setString(22, region.getDisplayName());
-                ps.setString(23, region.getGreeting());
-                ps.setString(24, region.getFarewell());
-                ps.setLong(25, region.getPenaltyUntil());
+                ps.setLong(22, region.getPenaltyUntil());
+                ps.setString(23, region.getDisplayName());
+                ps.setString(24, region.getGreeting());
+                ps.setString(25, region.getFarewell());
                 ps.addBatch();
 
                 if (++batched % batchSize() == 0) ps.executeBatch();
