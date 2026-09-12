@@ -23,6 +23,21 @@ jobs:
       - name: Build and test
         run: mvn -B -ntp clean package
 
+      - name: Check shaded jar contents
+        # классы зависимостей должны попасть в jar после релокации:
+        # NoClassDefFoundError при загрузке плагина ловится только так
+        run: |
+          JAR=$(ls target/QweProtectStones-*.jar)
+          for cls in \
+            org/qweyns/qweprotectstones/libs/bstats/charts/CustomChart.class \
+            org/qweyns/qweprotectstones/libs/bstats/bukkit/Metrics.class \
+            org/qweyns/qweprotectstones/libs/hikari/HikariDataSource.class; do
+            if ! unzip -l "$JAR" | grep -q "$cls"; then
+              echo "В jar нет $cls — shading сломан"; exit 1
+            fi
+          done
+          echo "Shading проверен: bstats и HikariCP на месте"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
