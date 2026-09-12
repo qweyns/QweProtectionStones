@@ -32,9 +32,11 @@ import java.util.List;
 
 public class BlockProtectionListener implements Listener {
 
+    private final QweProtectStones plugin;
     private final ProtectionService protection;
 
     public BlockProtectionListener(QweProtectStones plugin) {
+        this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
@@ -151,16 +153,34 @@ public class BlockProtectionListener implements Listener {
         if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)) event.setCancelled(true);
     }
 
+    // разрешённый поршнем ход ядра переносим в данные привата — после всех, кто мог отменить событие
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonExtendApplied(BlockPistonExtendEvent event) {
+        relocateCore(event.getBlocks(), event.getDirection(), true);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPistonRetractApplied(BlockPistonRetractEvent event) {
+        relocateCore(event.getBlocks(), event.getDirection(), false);
+    }
+
     private boolean pistonBlocked(Block piston, List<Block> blocks, BlockFace direction, boolean extend) {
         Region pistonRegion = protection.regionAt(piston.getLocation());
+        // при втягивании блоки едут к поршню, то есть против его направления
+        BlockFace movement = extend ? direction : direction.getOppositeFace();
 
         // голова поршня занимает блок перед собой
         if (extend && violates(pistonRegion, piston.getRelative(direction).getLocation())) return true;
 
-        // и текущие позиции блоков, и те, куда их сместит поршень
         for (Block block : blocks) {
+            // и текущие позиции блоков, и те, куда их сместит поршень
             if (violates(pistonRegion, block.getLocation())) return true;
-            if (violates(pistonRegion, block.getRelative(direction).getLocation())) return true;
+            if (violates(pistonRegion, block.getRelative(movement).getLocation())) return true;
+
+            // ядро двигать можно, но только внутри его же привата
+            Region region = protection.regionAt(block.getLocation());
+            if (region != null && region.isCore(block.getLocation())
+                    && !region.contains(block.getRelative(movement).getLocation())) return true;
         }
         return false;
     }
@@ -169,9 +189,26 @@ public class BlockProtectionListener implements Listener {
         Region region = protection.regionAt(location);
         if (region == null) return false;
 
-        if (region.isCore(location)) return true;
+        // без настройки ядро намертво; с ней — обычный блок привата
+        if (region.isCore(location) && !plugin.getTunables().pistonsCanMoveCore()) return true;
         if (region.equals(pistonRegion)) return false;
         return !protection.flag(region, RegionFlag.PISTONS_FROM_OUTSIDE);
+    }
+
+    private void relocateCore(List<Block> blocks, BlockFace direction, boolean extend) {
+        if (!plugin.getTunables().pistonsCanMoveCore()) return;
+
+        BlockFace movement = extend ? direction : direction.getOppositeFace();
+        for (Block block : blocks) {
+            Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
+            if (region == null || !region.isCore(block.getLocation())) continue;
+
+            plugin.getRegionManager().updateCore(region,
+                    block.getX() + movement.getModX(),
+                    block.getY() + movement.getModY(),
+                    block.getZ() + movement.getModZ());
+            return;
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

@@ -48,6 +48,7 @@ public final class Tunables {
     private boolean hoppersEnabled;
     private boolean hoppersBlockOutflow;
     private boolean hoppersBlockInflow;
+    private boolean pistonsCanMoveCore;
     private boolean borderFrostWalker;
     private boolean borderMobTrails;
     private boolean borderBonemeal;
@@ -200,6 +201,7 @@ public final class Tunables {
         hoppersEnabled = cfg.getBoolean("protection.hoppers.enable", true);
         hoppersBlockOutflow = cfg.getBoolean("protection.hoppers.block-outflow", true);
         hoppersBlockInflow = cfg.getBoolean("protection.hoppers.block-inflow", false);
+        pistonsCanMoveCore = cfg.getBoolean("protection.pistons.move-core", false);
         borderFrostWalker = cfg.getBoolean("protection.border.frost-walker", true);
         borderMobTrails = cfg.getBoolean("protection.border.mob-trails", true);
         borderBonemeal = cfg.getBoolean("protection.border.bonemeal", true);
@@ -252,6 +254,8 @@ public final class Tunables {
     public int adminHelpPageSize() { return adminHelpPageSize; }
 
     public boolean hoppersEnabled() { return hoppersEnabled; }
+
+    public boolean pistonsCanMoveCore() { return pistonsCanMoveCore; }
     public boolean hoppersBlockOutflow() { return hoppersBlockOutflow; }
     public boolean hoppersBlockInflow() { return hoppersBlockInflow; }
     public boolean borderFrostWalker() { return borderFrostWalker; }

@@ -311,6 +311,16 @@ public class RegionManager {
         return null;
     }
 
+    /** Ядро переехало (поршень при protection.pistons.move-core). Границы привата не меняются. */
+    public void updateCore(Region region, int x, int y, int z) {
+        region.setCore(x, y, z);
+        region.touch();
+        plugin.getRegionStorage().save(region);
+        plugin.getHologramManager().createOrUpdateHologram(region);
+        plugin.getDynmapIntegration().update(region);
+        if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
+    }
+
     public Region reapplyTypeBounds(Region region, RegionType type) {
         World world = region.getWorld();
         if (world == null) return null;
