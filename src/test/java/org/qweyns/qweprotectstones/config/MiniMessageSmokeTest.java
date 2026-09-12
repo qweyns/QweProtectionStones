@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -68,11 +69,49 @@ class MiniMessageSmokeTest {
         assertTrue(hasEvent(component, false), "hover-событие потерялось при разборе MiniMessage");
     }
 
+    @Test
+    void hoverTooltipsAreNotEmptyInLangFiles() throws Exception {
+        for (String file : new String[]{"ru_RU", "en_US", "es_ES", "zh_CN"}) {
+            try (InputStream in = MiniMessageSmokeTest.class.getResourceAsStream("/lang/" + file + ".yml")) {
+                if (in == null) continue;
+                Map<String, Object> root = new Yaml()
+                        .load(new InputStreamReader(in, StandardCharsets.UTF_8));
+                List<String> strings = new ArrayList<>();
+                collect(root, strings);
+                for (String line : strings) {
+                    if (!line.contains("<hover:")) continue;
+
+                    Component hovered = findHovered(ColorUtil.formatComponent(line));
+                    assertTrue(hovered != null, file + ": hover-событие потерялось: " + line);
+
+                    StringBuilder tooltip = new StringBuilder();
+                    collectText((Component) hovered.hoverEvent().value(), tooltip);
+                    assertFalse(tooltip.toString().isBlank(),
+                            file + ": hover-подсказка пустая: " + line);
+                }
+            }
+        }
+    }
+
     private static boolean hasEvent(Component component, boolean click) {
         if (click ? component.clickEvent() != null : component.hoverEvent() != null) return true;
         for (Component child : component.children()) {
             if (hasEvent(child, click)) return true;
         }
         return false;
+    }
+
+    private static Component findHovered(Component component) {
+        if (component.hoverEvent() != null) return component;
+        for (Component child : component.children()) {
+            Component found = findHovered(child);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private static void collectText(Component component, StringBuilder out) {
+        if (component instanceof net.kyori.adventure.text.TextComponent text) out.append(text.content());
+        for (Component child : component.children()) collectText(child, out);
     }
 }
