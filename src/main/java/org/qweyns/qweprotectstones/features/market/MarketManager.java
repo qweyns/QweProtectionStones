@@ -130,12 +130,24 @@ public class MarketManager {
                 && region.getMember(tenant.getUniqueId()).isPresent();
         if (rental.isRented() && !extend) return false;
 
+        TrustLevel level = rentTrustLevel();
+
+        // вето чужих плагинов слушаем до оплаты: после неё пришлось бы забирать
+        // деньги уже у получившего их владельца
+        if (!extend && RegionEvents.fireMemberChange(region, null, tenant.getUniqueId(), tenant.getName(),
+                RegionMemberChangeEvent.Action.TRUST, level)) {
+            return false;
+        }
+
         if (!plugin.getVaultHook().takeMoney(tenant, rental.price())) return false;
 
         OfflinePlayer owner = Bukkit.getOfflinePlayer(rental.ownerId());
-        plugin.getVaultHook().giveMoney(owner, rental.price());
-
-        TrustLevel level = rentTrustLevel();
+        if (!plugin.getVaultHook().giveMoney(owner, rental.price())) {
+            plugin.getVaultHook().giveMoney(tenant, rental.price());
+            plugin.getLogger().warning("Аренда привата " + region.getShortId()
+                    + ": не удалось зачислить " + rental.price() + " владельцу. Арендатору возвращены деньги.");
+            return false;
+        }
 
         long until;
         if (extend) {
@@ -144,12 +156,6 @@ public class MarketManager {
                     + TimeUnit.MINUTES.toMillis(rental.durationMinutes());
         } else {
             until = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(rental.durationMinutes());
-            if (RegionEvents.fireMemberChange(region, null, tenant.getUniqueId(), tenant.getName(),
-                    RegionMemberChangeEvent.Action.TRUST, level)) {
-                // событие отменили, возвращаем деньги
-                plugin.getVaultHook().giveMoney(tenant, rental.price());
-                return false;
-            }
             region.setMember(tenant.getUniqueId(), tenant.getName(), level);
         }
 
