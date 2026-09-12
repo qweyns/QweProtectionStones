@@ -1,6 +1,7 @@
 package org.qweyns.qweprotectstones.features.backup;
 
 import org.qweyns.qweprotectstones.QweProtectStones;
+import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,14 +19,20 @@ public class BackupTask {
         this.plugin = plugin;
     }
 
+    private Schedulers.Task task;
+
     public void start() {
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
         if (!plugin.getConfigManager().getConfig().getBoolean("backup.enable", false)) return;
 
         long intervalMinutes = Math.max(10, plugin.getConfigManager().getConfig()
                 .getLong("backup.interval-minutes", 720L));
         long intervalTicks = TimeUnit.MINUTES.toSeconds(intervalMinutes) * 20L;
 
-        plugin.getSchedulers().runTimer(this::run, intervalTicks, intervalTicks);
+        task = plugin.getSchedulers().runTimer(this::run, intervalTicks, intervalTicks);
         plugin.getLogger().info("Автобэкап включён: каждые " + intervalMinutes + " мин., хранится копий — "
                 + keepCount() + ".");
     }

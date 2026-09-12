@@ -12,12 +12,26 @@ public class RegionRateLimiter {
 
     private final QweProtectStones plugin;
 
-    private final Cache<UUID, Long> lastCreation = CacheBuilder.newBuilder()
-            .expireAfterWrite(1, TimeUnit.HOURS)
-            .build();
+    // срок жизни записи не короче кулдауна, иначе лимит молча отключался
+    private Cache<UUID, Long> lastCreation;
 
     public RegionRateLimiter(QweProtectStones plugin) {
         this.plugin = plugin;
+        rebuildCache();
+    }
+
+    private void rebuildCache() {
+        long ttl = Math.max(TimeUnit.MINUTES.toMillis(5), cooldownMillis() * 2);
+        lastCreation = CacheBuilder.newBuilder()
+                .expireAfterWrite(ttl, TimeUnit.MILLISECONDS)
+                .build();
+    }
+
+    /** Период кулдауна мог измениться в конфиге — при /reload строим кеш заново. */
+    public void reload() {
+        Cache<UUID, Long> previous = lastCreation;
+        rebuildCache();
+        previous.invalidateAll();
     }
 
     private long cooldownMillis() {

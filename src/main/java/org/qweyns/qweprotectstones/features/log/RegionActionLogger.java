@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.storage.dao.RegionLogEntry;
+import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,13 +31,19 @@ public class RegionActionLogger implements Listener {
         return plugin.getConfigManager().getConfig().getBoolean("settings.action_log.log_containers", true);
     }
 
+    private Schedulers.Task pruneTask;
+
     public void startPruning() {
+        if (pruneTask != null) {
+            pruneTask.cancel();
+            pruneTask = null;
+        }
         if (!isEnabled()) return;
 
-        int keepDays = Math.max(1, plugin.getConfigManager().getConfig().getInt("settings.action_log.keep_days", 14));
         long dayTicks = 20L * 60 * 60 * 24;
-
-        plugin.getSchedulers().runAsyncTimer(() -> {
+        pruneTask = plugin.getSchedulers().runAsyncTimer(() -> {
+            // срок читаем каждый раз — переживает /reload без рестарта задачи
+            int keepDays = Math.max(1, plugin.getConfigManager().getConfig().getInt("settings.action_log.keep_days", 14));
             int removed = plugin.getRegionStorage().pruneLog(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(keepDays));
             if (removed > 0) plugin.getLogger().info("Журнал действий: удалено старых записей — " + removed);
         }, 20L * 120, dayTicks);

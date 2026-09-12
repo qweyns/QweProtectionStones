@@ -21,8 +21,18 @@ public class RegionLifecycleListener implements Listener {
 
     private final QweProtectStones plugin;
 
+    // ключи PDC неизменяемы — создаём один раз, а не на каждое событие
+    private final org.bukkit.NamespacedKey typeKey;
+    private final org.bukkit.NamespacedKey durabilityKey;
+    private final org.bukkit.NamespacedKey penaltyUntilKey;
+    private final org.bukkit.NamespacedKey lastAttackKey;
+
     public RegionLifecycleListener(QweProtectStones plugin) {
         this.plugin = plugin;
+        this.typeKey = org.qweyns.qweprotectstones.utils.RegionItems.typeKey(plugin);
+        this.durabilityKey = org.qweyns.qweprotectstones.utils.RegionItems.durabilityKey(plugin);
+        this.penaltyUntilKey = org.qweyns.qweprotectstones.utils.RegionItems.penaltyUntilKey(plugin);
+        this.lastAttackKey = org.qweyns.qweprotectstones.utils.RegionItems.lastAttackKey(plugin);
     }
 
     @EventHandler
@@ -77,11 +87,11 @@ public class RegionLifecycleListener implements Listener {
 
         // штраф и момент последней атаки едут с предметом: «сломал-поставил» осаду не обнуляет
 
-        long carriedAttack = taggedLong(event.getItemInHand(), lastAttackKey());
+        long carriedAttack = taggedLong(event.getItemInHand(), lastAttackKey);
         if (carriedAttack > 0) {
             region.restoreStats(region.getAttackCount(), carriedAttack, region.getLastAttackerName());
         }
-        long carriedPenalty = taggedLong(event.getItemInHand(), penaltyUntilKey());
+        long carriedPenalty = taggedLong(event.getItemInHand(), penaltyUntilKey);
         if (carriedPenalty > System.currentTimeMillis()) {
             region.setPenaltyUntil(carriedPenalty);
         }
@@ -181,7 +191,7 @@ public class RegionLifecycleListener implements Listener {
     }
 
     private RegionType taggedType(ItemStack item, Block block) {
-        String typeId = readTag(item, typeKey());
+        String typeId = readTag(item, typeKey);
         if (typeId == null) return null;
 
         RegionType type = plugin.getRegionTypes().byId(typeId.toLowerCase(java.util.Locale.ROOT));
@@ -191,7 +201,7 @@ public class RegionLifecycleListener implements Listener {
     }
 
     private int taggedDurability(ItemStack item) {
-        Integer value = getIntTag(item, durabilityKey());
+        Integer value = getIntTag(item, durabilityKey);
         return value != null ? value : 0;
     }
 
@@ -210,22 +220,6 @@ public class RegionLifecycleListener implements Listener {
         Long value = item.getItemMeta().getPersistentDataContainer()
                 .get(key, org.bukkit.persistence.PersistentDataType.LONG);
         return value != null ? value : 0L;
-    }
-
-    private org.bukkit.NamespacedKey penaltyUntilKey() {
-        return org.qweyns.qweprotectstones.utils.RegionItems.penaltyUntilKey(plugin);
-    }
-
-    private org.bukkit.NamespacedKey lastAttackKey() {
-        return org.qweyns.qweprotectstones.utils.RegionItems.lastAttackKey(plugin);
-    }
-
-    private org.bukkit.NamespacedKey typeKey() {
-        return org.qweyns.qweprotectstones.utils.RegionItems.typeKey(plugin);
-    }
-
-    private org.bukkit.NamespacedKey durabilityKey() {
-        return org.qweyns.qweprotectstones.utils.RegionItems.durabilityKey(plugin);
     }
 
     public void cleanupVisuals(Region region) {

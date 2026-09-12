@@ -131,6 +131,12 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
+        // вето на принятие приглашения — как и на прямую выдачу доверия
+        if (org.qweyns.qweprotectstones.regions.event.RegionEvents.fireMemberChange(region, inviter,
+                player.getUniqueId(), player.getName(),
+                org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST,
+                invite.level())) return;
+
         region.setMember(player.getUniqueId(), player.getName(), invite.level());
         plugin.getRegionStorage().save(region);
 

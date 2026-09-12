@@ -17,6 +17,7 @@ import org.qweyns.qweprotectstones.config.SoundSetting;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,9 +134,26 @@ public class VisualManager {
                 return;
             }
 
-            plugin.getTunables().particles().spawnIn(world, points, color);
+            spawnBoundaryParticles(world, points, color);
             elapsed[0] += period;
         }, 0L, period);
+    }
+
+    // Folia: точки каркаса раскиданы по чужим регионам — частицу в каждом
+    // чанке показывает поток-хозяин этого чанка
+    private void spawnBoundaryParticles(World world, List<Location> points, Color color) {
+        if (points.isEmpty()) return;
+
+        Map<Long, List<Location>> byChunk = new HashMap<>();
+        for (Location point : points) {
+            long key = ((long) (point.getBlockX() >> 4) << 32) | (point.getBlockZ() >> 4 & 0xFFFFFFFFL);
+            byChunk.computeIfAbsent(key, k -> new ArrayList<>()).add(point);
+        }
+
+        ParticleSetting particles = plugin.getTunables().particles();
+        for (List<Location> group : byChunk.values()) {
+            plugin.getSchedulers().runAtLocation(group.get(0), () -> particles.spawnIn(world, group, color));
+        }
     }
 
     private Color borderColorOf(Region region, String animationType, FileConfiguration cfg) {

@@ -40,12 +40,22 @@ public class EffectManager implements Listener {
             .expireAfterWrite(1, TimeUnit.MINUTES)
             .build();
 
+    private org.qweyns.qweprotectstones.scheduler.Schedulers.Task refreshTask;
+
     public EffectManager(QweProtectStones plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        start();
+    }
 
+    /** Период из конфига — вызывается и при /reload. */
+    public void start() {
+        if (refreshTask != null) {
+            refreshTask.cancel();
+            refreshTask = null;
+        }
         long period = plugin.getTunables().effectRefreshTicks();
-        plugin.getSchedulers().runTimer(this::refreshAll, period, period);
+        refreshTask = plugin.getSchedulers().runTimer(this::refreshAll, period, period);
     }
 
     private void refreshAll() {
@@ -202,8 +212,4 @@ public class EffectManager implements Listener {
         refreshAll();
     }
 
-    public void clear() {
-        currentRegions.clear();
-        lastMoveCheck.clear();
-    }
 }

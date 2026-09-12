@@ -273,9 +273,14 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
     }
 
     private void save(CommandSender sender) {
-        plugin.getRegionStorage().saveAll(plugin.getRegionManager().getAllRegions());
-        sender.sendMessage(plugin.getLanguageManager().getMessage("admin_saved",
-                "%count%", String.valueOf(plugin.getRegionManager().size())));
+        // запись всей базы — не в главном потоке
+        java.util.List<org.qweyns.qweprotectstones.regions.Region> regions =
+                java.util.List.copyOf(plugin.getRegionManager().getAllRegions());
+        plugin.getSchedulers().runAsync(() -> {
+            plugin.getRegionStorage().saveAll(regions);
+            plugin.getSchedulers().runNextTick(() -> sender.sendMessage(
+                    plugin.getLanguageManager().getMessage("admin_saved", "%count%", String.valueOf(regions.size()))));
+        });
     }
 
     private void stats(CommandSender sender) {

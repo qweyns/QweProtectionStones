@@ -44,6 +44,11 @@ public class NativeHologramProvider implements IHologramProvider {
         String typeId = region.getTypeId();
         Location loc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
+        // спавн и правки сущности — из потока-хозяина региона (Folia)
+        plugin.getSchedulers().runAtLocation(loc, () -> spawnOrUpdate(region, typeId, world, loc, config));
+    }
+
+    private void spawnOrUpdate(Region region, String typeId, World world, Location loc, ConfigManager config) {
         TextDisplay display = active.get(region.getId());
         // после выгрузки чанка сущность недействительна, а перенос ядра проще
         // пережить пересозданием, чем телепортом из чужого потока
@@ -123,7 +128,9 @@ public class NativeHologramProvider implements IHologramProvider {
     @Override
     public void remove(UUID regionId) {
         TextDisplay display = active.remove(regionId);
-        if (display != null && display.isValid()) display.remove();
+        if (display == null || !display.isValid()) return;
+
+        plugin.getSchedulers().runAtEntity(display, display::remove);
     }
 
     @Override

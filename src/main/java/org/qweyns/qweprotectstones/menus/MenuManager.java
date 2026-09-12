@@ -107,10 +107,24 @@ public class MenuManager implements Listener {
             String name = file.getName().substring(0, file.getName().length() - ".yml".length());
             FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
             menus.put(name, cfg);
-            if (cfg.saveToString().indexOf('%') >= 0) menusWithPercent.add(name);
+            if (hasPlaceholder(cfg)) menusWithPercent.add(name);
             validateEffectNames(name, cfg);
         }
         plugin.getLogger().info("Загружено меню: " + menus.size());
+    }
+
+    // плейсхолдеры есть в строках или списках меню — без полной сериализации в строку
+    private boolean hasPlaceholder(FileConfiguration cfg) {
+        for (String key : cfg.getKeys(true)) {
+            Object value = cfg.get(key);
+            if (value instanceof String s && s.indexOf('%') >= 0) return true;
+            if (value instanceof List<?> list) {
+                for (Object entry : list) {
+                    if (entry instanceof String s && s.indexOf('%') >= 0) return true;
+                }
+            }
+        }
+        return false;
     }
 
     // опечатка в имени эффекта всплыла бы только у игрока на кнопке — ловим при загрузке

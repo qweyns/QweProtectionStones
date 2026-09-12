@@ -32,16 +32,31 @@ public class UpdateChecker implements Listener {
     // замеченная новая версия; null — обновлений нет или ещё не проверяли
     private volatile String newerVersion;
 
+    private org.qweyns.qweprotectstones.scheduler.Schedulers.Task checkTask;
+    private boolean eventsRegistered;
+
     public UpdateChecker(QweProtectStones plugin) {
         this.plugin = plugin;
     }
 
     public void start() {
+        if (checkTask != null) {
+            checkTask.cancel();
+            checkTask = null;
+        }
         if (!plugin.getConfigManager().getConfig().getBoolean("updates.enabled", true)) return;
 
         long hours = Math.max(1, plugin.getConfigManager().getConfig().getLong("updates.period-hours", 12L));
-        plugin.getSchedulers().runTimer(this::check, 100L, hours * 3600L * 20L);
-        Bukkit.getPluginManager().registerEvents(this, plugin);
+        checkTask = plugin.getSchedulers().runTimer(this::check, 100L, hours * 3600L * 20L);
+        if (!eventsRegistered) {
+            Bukkit.getPluginManager().registerEvents(this, plugin);
+            eventsRegistered = true;
+        }
+    }
+
+    /** При выключении плагина — иначе селектор-поток переживает /reload. */
+    public void close() {
+        http.close();
     }
 
     private void check() {

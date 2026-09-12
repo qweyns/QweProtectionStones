@@ -24,6 +24,8 @@ public class LanguageManager {
 
     private final QweProtectStones plugin;
     private FileConfiguration langConfig = new YamlConfiguration();
+    // сообщения без плейсхолдеров парсим один раз
+    private final java.util.Map<String, Component> componentCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public LanguageManager(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -56,6 +58,7 @@ public class LanguageManager {
                 .ifPresent(loaded::setDefaults);
 
         this.langConfig = loaded;
+        componentCache.clear();
     }
 
     private Optional<YamlConfiguration> loadBundled(String language) {
@@ -78,6 +81,16 @@ public class LanguageManager {
     }
 
     public Component getMessage(String path, String... replacements) {
+        if (replacements.length == 0 && !langConfig.isList(path)) {
+            Component cached = componentCache.get(path);
+            if (cached != null) return cached;
+
+            String raw = resolve(path);
+            Component message = raw.isEmpty() ? Component.empty() : ColorUtil.formatComponent(raw);
+            componentCache.put(path, message);
+            return message;
+        }
+
         if (langConfig.isList(path)) {
             List<Component> lines = getMessageList(path, replacements);
             if (lines.isEmpty()) return Component.empty();
@@ -127,11 +140,6 @@ public class LanguageManager {
             return joined.toString();
         }
         return ColorUtil.formatLegacyString(resolve(path, replacements));
-    }
-
-    public Component format(String text, String... replacements) {
-        if (text == null || text.isEmpty()) return Component.empty();
-        return ColorUtil.formatComponent(applyReplacements(text, replacements));
     }
 
     public String rawTemplate(String path, String... replacements) {

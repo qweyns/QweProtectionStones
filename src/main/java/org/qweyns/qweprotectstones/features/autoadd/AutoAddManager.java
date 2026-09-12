@@ -49,7 +49,7 @@ public class AutoAddManager implements Listener {
 
     private void loadPlayer(UUID uuid) {
         plugin.getRegionStorage().loadAutoAddAsync(uuid, (friends, isToggledOff) -> {
-            // колбэк из потока БД, не перетираем а дополняем
+            // колбэк приходит на главном потоке, не перетираем, а дополняем
 
             if (Bukkit.getPlayer(uuid) == null) return;
 

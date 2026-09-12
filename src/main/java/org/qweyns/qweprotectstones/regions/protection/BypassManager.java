@@ -25,10 +25,6 @@ public class BypassManager implements Listener {
         return true;
     }
 
-    public void disable(Player player) {
-        enabled.remove(player.getUniqueId());
-    }
-
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         enabled.remove(event.getPlayer().getUniqueId());

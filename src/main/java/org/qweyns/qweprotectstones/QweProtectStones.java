@@ -100,6 +100,7 @@ public final class QweProtectStones extends JavaPlugin {
 
     private VaultHook vaultHook;
     private PlayerPointsHook playerPointsHook;
+    private org.bukkit.event.Listener papiFallbackListener;
 
     @Override
     public void onEnable() {
@@ -144,15 +145,18 @@ public final class QweProtectStones extends JavaPlugin {
                 papiExpansion = new PAPIExpansion(this);
                 papiExpansion.register();
             } else {
-                // PlaceholderAPI может подняться позже нас
-                pm.registerEvents(new org.bukkit.event.Listener() {
+                // PlaceholderAPI может подняться позже нас; после регистрации фолбэк снимаем
+                papiFallbackListener = new org.bukkit.event.Listener() {
                     @org.bukkit.event.EventHandler
                     public void onPluginEnable(org.bukkit.event.server.PluginEnableEvent event) {
                         if (!event.getPlugin().getName().equals("PlaceholderAPI") || papiExpansion != null) return;
                         papiExpansion = new PAPIExpansion(QweProtectStones.this);
                         papiExpansion.register();
+                        org.bukkit.event.HandlerList.unregisterAll(papiFallbackListener);
+                        papiFallbackListener = null;
                     }
-                }, this);
+                };
+                pm.registerEvents(papiFallbackListener, this);
             }
         }
 
@@ -263,6 +267,8 @@ public final class QweProtectStones extends JavaPlugin {
         }
 
         if (regionCommand != null) CommandRegistrar.unregister(this, regionCommand);
+        if (notificationManager != null) notificationManager.close();
+        if (updateChecker != null) updateChecker.close();
         if (visualManager != null) visualManager.shutdown();
         if (bypassManager != null) bypassManager.clear();
         if (rateLimiter != null) rateLimiter.clear();
@@ -289,6 +295,15 @@ public final class QweProtectStones extends JavaPlugin {
         coreRecipeManager.reload();
         menuManager.loadMenus();
         protectionService.reloadDenyCooldown();
+
+        // таймеры перечитывают периоды из конфига
+        regionStorage.restartFlushTask();
+        effectManager.start();
+        abandonedRegionTask.start();
+        marketManager.startExpiryTask();
+        backupTask.start();
+        updateChecker.start();
+        rateLimiter.reload();
 
         hologramManager.restoreHolograms();
         if (dynmapIntegration != null) dynmapIntegration.redrawAll();

@@ -86,6 +86,11 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         }
 
         String targetName = target.getName() != null ? target.getName() : args[0];
+
+        // чужие плагины могут наложить вето и на прямую выдачу доверия
+        if (RegionEvents.fireMemberChange(region, player, target.getUniqueId(), targetName,
+                RegionMemberChangeEvent.Action.TRUST, level)) return;
+
         region.setMember(target.getUniqueId(), targetName, level);
         plugin.getRegionStorage().save(region);
 

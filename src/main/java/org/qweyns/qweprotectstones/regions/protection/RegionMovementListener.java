@@ -93,23 +93,16 @@ public class RegionMovementListener implements Listener {
         else currentRegion.put(playerId, newId);
 
         Region previous = previousId == null ? null : plugin.getRegionManager().getById(previousId);
-        if (previous != null && protection.flag(previous, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(previous, "region_leave"), false);
-        }
-        if (to != null && protection.flag(to, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(to, "region_enter"), true);
-        }
-    }
-
-    private void sendTransition(Player player, Component message, boolean entering) {
-
         var tunables = plugin.getTunables();
-        if (entering) {
-            if (!tunables.regionEnterEnabled()) return;
-            if (tunables.regionEnterChannel().equals("CHAT")) player.sendMessage(message);
-        } else {
-            if (!tunables.regionLeaveEnabled()) return;
-            if (tunables.regionLeaveChannel().equals("CHAT")) player.sendMessage(message);
+
+        // шаблон не парсится, если канал выключен (NONE)
+        if (previous != null && protection.flag(previous, RegionFlag.GREETING)
+                && tunables.regionLeaveEnabled() && tunables.regionLeaveChannel().equals("CHAT")) {
+            player.sendMessage(transitionText(previous, "region_leave"));
+        }
+        if (to != null && protection.flag(to, RegionFlag.GREETING)
+                && tunables.regionEnterEnabled() && tunables.regionEnterChannel().equals("CHAT")) {
+            player.sendMessage(transitionText(to, "region_enter"));
         }
     }
 
@@ -135,9 +128,5 @@ public class RegionMovementListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         currentRegion.remove(event.getPlayer().getUniqueId());
-    }
-
-    public void clear() {
-        currentRegion.clear();
     }
 }

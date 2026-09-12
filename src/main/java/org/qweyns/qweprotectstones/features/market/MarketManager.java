@@ -8,6 +8,7 @@ import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
 import org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent;
+import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,8 @@ public class MarketManager {
 
     private final Map<UUID, RegionSale> sales = new ConcurrentHashMap<>();
     private final Map<UUID, RegionRental> rentals = new ConcurrentHashMap<>();
+
+    private Schedulers.Task expiryTask;
 
     public int salesCount() {
         return sales.size();
@@ -46,11 +49,15 @@ public class MarketManager {
     }
 
     public void startExpiryTask() {
+        if (expiryTask != null) {
+            expiryTask.cancel();
+            expiryTask = null;
+        }
         long intervalMinutes = Math.max(1, plugin.getConfigManager().getConfig()
                 .getInt("market.rent.check-interval-minutes", 5));
         long intervalTicks = TimeUnit.MINUTES.toSeconds(intervalMinutes) * 20L;
 
-        plugin.getSchedulers().runTimer(this::expireRentals, intervalTicks, intervalTicks);
+        expiryTask = plugin.getSchedulers().runTimer(this::expireRentals, intervalTicks, intervalTicks);
     }
 
     public RegionSale getSale(Region region) {
@@ -61,29 +68,39 @@ public class MarketManager {
         RegionSale sale = new RegionSale(region.getId(), seller.getUniqueId(), seller.getName(),
                 price, System.currentTimeMillis());
         sales.put(region.getId(), sale);
-        plugin.getRegionStorage().saveSaleNow(sale);
+        plugin.getRegionStorage().saveSale(sale);
     }
 
     public boolean cancelSale(Region region) {
         if (region == null || sales.remove(region.getId()) == null) return false;
-        plugin.getRegionStorage().deleteSaleNow(region.getId());
+        plugin.getRegionStorage().deleteSale(region.getId());
         return true;
     }
 
     /** Смена владельца: продажа снимается, аренда перепривязывается к новому. Возвращает true, если продажа была активна. */
     public boolean handleOwnershipChange(Region region, UUID newOwnerId, String newOwnerName) {
         boolean hadSale = cancelSale(region);
-
-        rentals.computeIfPresent(region.getId(), (id, rental) -> {
-            RegionRental rebound = new RegionRental(rental.regionId(), newOwnerId, newOwnerName,
-                    rental.price(), rental.durationMinutes(), rental.tenantId(), rental.tenantName(), rental.rentedUntil());
-            plugin.getRegionStorage().saveRentalNow(rebound);
-            return rebound;
-        });
+        rebindRentalOwner(region, newOwnerId, newOwnerName);
         return hadSale;
     }
 
+    private void rebindRentalOwner(Region region, UUID newOwnerId, String newOwnerName) {
+        rentals.computeIfPresent(region.getId(), (id, rental) -> {
+            RegionRental rebound = new RegionRental(rental.regionId(), newOwnerId, newOwnerName,
+                    rental.price(), rental.durationMinutes(), rental.tenantId(), rental.tenantName(), rental.rentedUntil());
+            plugin.getRegionStorage().saveRental(rebound);
+            return rebound;
+        });
+    }
+
     public boolean buy(Player buyer, Region region) {
+        // на Folia покупатели могут прийти из разных потоков — серия атомарна
+        synchronized (sales) {
+            return buyLocked(buyer, region);
+        }
+    }
+
+    private boolean buyLocked(Player buyer, Region region) {
         RegionSale sale = sales.get(region.getId());
         if (sale == null) return false;
 
@@ -109,7 +126,10 @@ public class MarketManager {
         if (previousOwner != null) region.removeMember(previousOwner);
         plugin.getRegionStorage().save(region);
 
-        handleOwnershipChange(region, buyer.getUniqueId(), buyer.getName());
+        // объявление уходит атомарно вместе с деньгами, аренда — за новым владельцем
+        sales.remove(region.getId());
+        plugin.getRegionStorage().deleteSale(region.getId());
+        rebindRentalOwner(region, buyer.getUniqueId(), buyer.getName());
         return true;
     }
 
@@ -121,16 +141,22 @@ public class MarketManager {
         RegionRental rental = new RegionRental(region.getId(), owner.getUniqueId(), owner.getName(),
                 price, durationMinutes, null, null, 0L);
         rentals.put(region.getId(), rental);
-        plugin.getRegionStorage().saveRentalNow(rental);
+        plugin.getRegionStorage().saveRental(rental);
     }
 
     public boolean cancelRental(Region region) {
         if (region == null || rentals.remove(region.getId()) == null) return false;
-        plugin.getRegionStorage().deleteRentalNow(region.getId());
+        plugin.getRegionStorage().deleteRental(region.getId());
         return true;
     }
 
     public boolean takeRent(Player tenant, Region region) {
+        synchronized (rentals) {
+            return takeRentLocked(tenant, region);
+        }
+    }
+
+    private boolean takeRentLocked(Player tenant, Region region) {
         RegionRental rental = rentals.get(region.getId());
         if (rental == null) return false;
 
@@ -175,7 +201,7 @@ public class MarketManager {
         RegionRental updated = new RegionRental(rental.regionId(), rental.ownerId(), rental.ownerName(),
                 rental.price(), rental.durationMinutes(), tenant.getUniqueId(), tenant.getName(), until);
         rentals.put(region.getId(), updated);
-        plugin.getRegionStorage().saveRentalNow(updated);
+        plugin.getRegionStorage().saveRental(updated);
         plugin.getRegionStorage().save(region);
         return true;
     }
@@ -187,7 +213,12 @@ public class MarketManager {
     }
 
     public void expireRentals() {
-        long now = System.currentTimeMillis();
+        synchronized (rentals) {
+            expireRentalsLocked(System.currentTimeMillis());
+        }
+    }
+
+    private void expireRentalsLocked(long now) {
         for (RegionRental rental : rentals.values()) {
             if (rental.tenantId() == null || rental.rentedUntil() > now) continue;
 
@@ -204,12 +235,14 @@ public class MarketManager {
             RegionRental freed = new RegionRental(rental.regionId(), rental.ownerId(), rental.ownerName(),
                     rental.price(), rental.durationMinutes(), null, null, 0L);
             rentals.put(rental.regionId(), freed);
-            plugin.getRegionStorage().saveRentalNow(freed);
+            plugin.getRegionStorage().saveRental(freed);
 
             Player tenant = Bukkit.getPlayer(rental.tenantId());
             if (tenant != null) {
-                tenant.sendMessage(plugin.getLanguageManager().getMessage("rent_expired",
-                        "%id%", region != null ? region.getShortId() : rental.regionId().toString().substring(0, 8)));
+                // таймер тикает в глобальном потоке — сообщение через планировщик игрока
+                plugin.getSchedulers().runAtEntity(tenant, () -> tenant.sendMessage(
+                        plugin.getLanguageManager().getMessage("rent_expired",
+                                "%id%", region != null ? region.getShortId() : rental.regionId().toString().substring(0, 8))));
             }
         }
     }

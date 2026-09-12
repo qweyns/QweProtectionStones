@@ -42,6 +42,7 @@ public class SqliteRegionDao extends AbstractSqlRegionDao {
         config.setMaximumPoolSize(1);
         config.addDataSourceProperty("journal_mode", "WAL");
         config.addDataSourceProperty("synchronous", "NORMAL");
+        config.addDataSourceProperty("busy_timeout", "5000");
         config.addDataSourceProperty("foreign_keys", "ON");
     }
 

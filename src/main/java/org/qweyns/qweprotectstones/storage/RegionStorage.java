@@ -26,6 +26,10 @@ public class RegionStorage {
     private final Map<UUID, Region> pendingSaves = new ConcurrentHashMap<>();
     private final Set<UUID> pendingDeletes = ConcurrentHashMap.newKeySet();
     private final java.util.Queue<RegionLogEntry> pendingLog = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> pendingSales = new ConcurrentHashMap<>();
+    private final Set<UUID> pendingSaleDeletes = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionRental> pendingRentals = new ConcurrentHashMap<>();
+    private final Set<UUID> pendingRentalDeletes = ConcurrentHashMap.newKeySet();
     private volatile long lastFlushMillis;
 
     public RegionStorage(QweProtectStones plugin) {
@@ -51,9 +55,18 @@ public class RegionStorage {
         List<Region> loaded = dao.loadAll();
 
         plugin.getLogger().info("Загружено приватов: " + loaded.size() + " (база " + dbType + ").");
+        restartFlushTask();
+        return loaded;
+    }
+
+    /** Период флаша из конфига — вызывается и при /reload. */
+    public void restartFlushTask() {
+        if (flushTask != null) {
+            flushTask.cancel();
+            flushTask = null;
+        }
         long flushPeriod = plugin.getTunables().dbFlushTicks();
         flushTask = plugin.getSchedulers().runAsyncTimer(this::flush, flushPeriod, flushPeriod);
-        return loaded;
     }
 
     public void save(Region region) {
@@ -67,7 +80,9 @@ public class RegionStorage {
     }
 
     public int pendingCount() {
-        return pendingSaves.size() + pendingDeletes.size() + pendingLog.size();
+        return pendingSaves.size() + pendingDeletes.size() + pendingLog.size()
+                + pendingSales.size() + pendingSaleDeletes.size()
+                + pendingRentals.size() + pendingRentalDeletes.size();
     }
 
     public void saveNow(Region region) {
@@ -84,7 +99,9 @@ public class RegionStorage {
     }
 
     public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
-        plugin.getSchedulers().runAsync(() -> dao.loadAutoAdd(uuid, callback));
+        // колбэк прыгает на главный поток: в нём трогают игроков
+        plugin.getSchedulers().runAsync(() -> dao.loadAutoAdd(uuid,
+                (friends, toggledOff) -> plugin.getSchedulers().runNextTick(() -> callback.accept(friends, toggledOff))));
     }
 
     public void saveAutoAddAsync(UUID uuid, Set<String> friends, boolean toggledOff) {
@@ -147,6 +164,26 @@ public class RegionStorage {
             }
             dao.appendLog(entries);
         }
+
+        for (UUID id : List.copyOf(pendingSales.keySet())) {
+            org.qweyns.qweprotectstones.features.market.RegionSale sale = pendingSales.remove(id);
+            if (sale != null) dao.saveSale(sale);
+        }
+        if (!pendingSaleDeletes.isEmpty()) {
+            List<UUID> toDelete = List.copyOf(pendingSaleDeletes);
+            pendingSaleDeletes.removeAll(toDelete);
+            for (UUID id : toDelete) dao.deleteSale(id);
+        }
+
+        for (UUID id : List.copyOf(pendingRentals.keySet())) {
+            org.qweyns.qweprotectstones.features.market.RegionRental rental = pendingRentals.remove(id);
+            if (rental != null) dao.saveRental(rental);
+        }
+        if (!pendingRentalDeletes.isEmpty()) {
+            List<UUID> toDelete = List.copyOf(pendingRentalDeletes);
+            pendingRentalDeletes.removeAll(toDelete);
+            for (UUID id : toDelete) dao.deleteRental(id);
+        }
     }
 
     public void saveAll(java.util.Collection<Region> regions) {
@@ -161,20 +198,31 @@ public class RegionStorage {
         return dao == null ? Map.of() : dao.loadRentals();
     }
 
-    public void saveSaleNow(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
-        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.saveSale(sale));
+    // рынок пишется той же очередью, что и приваты: fire-and-forget задачи
+    // терялись при выключении (cancelAll убивал их до записи в базу)
+
+    public void saveSale(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
+        if (sale == null) return;
+        pendingSaleDeletes.remove(sale.regionId());
+        pendingSales.put(sale.regionId(), sale);
     }
 
-    public void deleteSaleNow(UUID regionId) {
-        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.deleteSale(regionId));
+    public void deleteSale(UUID regionId) {
+        if (regionId == null) return;
+        pendingSales.remove(regionId);
+        pendingSaleDeletes.add(regionId);
     }
 
-    public void saveRentalNow(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
-        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.saveRental(rental));
+    public void saveRental(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
+        if (rental == null) return;
+        pendingRentalDeletes.remove(rental.regionId());
+        pendingRentals.put(rental.regionId(), rental);
     }
 
-    public void deleteRentalNow(UUID regionId) {
-        if (dao != null) plugin.getSchedulers().runAsync(() -> dao.deleteRental(regionId));
+    public void deleteRental(UUID regionId) {
+        if (regionId == null) return;
+        pendingRentals.remove(regionId);
+        pendingRentalDeletes.add(regionId);
     }
 
     public void close() {

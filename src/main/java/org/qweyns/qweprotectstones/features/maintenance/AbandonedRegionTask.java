@@ -7,6 +7,7 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionType;
 import org.qweyns.qweprotectstones.regions.event.RegionDeleteEvent;
+import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +23,18 @@ public class AbandonedRegionTask {
         this.plugin = plugin;
     }
 
+    private Schedulers.Task task;
+
     public void start() {
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
         if (!isEnabled()) return;
 
         long intervalTicks = TimeUnit.MINUTES.toSeconds(checkIntervalMinutes()) * 20L;
 
-        plugin.getSchedulers().runTimer(this::sweep, 20L * 60, intervalTicks);
+        task = plugin.getSchedulers().runTimer(this::sweep, 20L * 60, intervalTicks);
 
         plugin.getLogger().info("Автоочистка заброшенных приватов включена: срок "
                 + inactiveDays() + " дн., проверка каждые " + checkIntervalMinutes() + " мин.");

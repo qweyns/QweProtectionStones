@@ -53,6 +53,7 @@ final class BukkitSchedulers implements Schedulers {
 
     @Override
     public void runAtLocationLater(Location location, Runnable action, long delayTicks) {
+        // Paper однопоточный: задержка у локации неотличима от глобальной
         runLater(action, delayTicks);
     }
 

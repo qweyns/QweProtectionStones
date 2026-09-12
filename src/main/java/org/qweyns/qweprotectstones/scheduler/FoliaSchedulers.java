@@ -7,6 +7,8 @@ import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -29,12 +31,16 @@ final class FoliaSchedulers implements Schedulers {
 
     private final Method asyncRunNow;
     private final Method asyncRunAtFixedRate;
+    private final Method asyncCancel;
 
     private final Method entityGetScheduler;
     private final Method entityRun;
     private final Method entityRunDelayed;
     private final Method entityRunAtFixedDelay;
     private final Method taskCancel;
+
+    // повторяющиеся задачи: их нельзя отменить через планировщики сервера разом
+    private final java.util.Set<Task> repeatingTasks = ConcurrentHashMap.newKeySet();
 
     static boolean isFoliaServer() {
         try {
@@ -66,6 +72,7 @@ final class FoliaSchedulers implements Schedulers {
             Class<?> asyncClass = asyncScheduler.getClass();
             asyncRunNow = findMethod(asyncClass, "runNow", Plugin.class, Consumer.class);
             asyncRunAtFixedRate = findMethod(asyncClass, "runAtFixedRate", Plugin.class, Consumer.class, long.class, long.class, TimeUnit.class);
+            asyncCancel = findMethod(asyncClass, "cancelTasks", Plugin.class);
 
             entityGetScheduler = Entity.class.getMethod("getScheduler");
             Class<?> entitySchedulerClass = Class.forName("io.papermc.paper.threadedregions.scheduler.EntityScheduler");
@@ -83,9 +90,7 @@ final class FoliaSchedulers implements Schedulers {
 
     private static Method findMethod(Class<?> owner, String name, Class<?>... params) throws NoSuchMethodException {
         try {
-            Method method = owner.getMethod(name, params);
-            method.setAccessible(true);
-            return method;
+            return owner.getMethod(name, params);
         } catch (NoSuchMethodException e) {
             for (Class<?> iface : owner.getInterfaces()) {
                 try {
@@ -107,6 +112,22 @@ final class FoliaSchedulers implements Schedulers {
                 plugin.getLogger().log(Level.WARNING, "Не удалось отменить задачу Folia", e);
             }
         };
+    }
+
+    /** Обёртка повторяющейся задачи: cancelAll снимает её из трекинга. */
+    private Task wrapRepeating(Object foliaTask) {
+        if (foliaTask == null) return () -> { };
+
+        Task plain = wrap(foliaTask);
+        Task tracked = new Task() {
+            @Override
+            public void cancel() {
+                repeatingTasks.remove(this);
+                plain.cancel();
+            }
+        };
+        repeatingTasks.add(tracked);
+        return tracked;
     }
 
     private Object invoke(Method method, Object target, Object... args) {
@@ -135,7 +156,7 @@ final class FoliaSchedulers implements Schedulers {
 
     @Override
     public Task runTimer(Runnable action, long delayTicks, long periodTicks) {
-        return wrap(invoke(globalRunAtFixedRate, globalScheduler, plugin, ignoreTask(action),
+        return wrapRepeating(invoke(globalRunAtFixedRate, globalScheduler, plugin, ignoreTask(action),
                 Math.max(1L, delayTicks), Math.max(1L, periodTicks)));
     }
 
@@ -149,7 +170,7 @@ final class FoliaSchedulers implements Schedulers {
         // Асинхронный планировщик Folia работает во времени, а не в тиках.
         long delayMs = Math.max(1L, delayTicks) * 50L;
         long periodMs = Math.max(1L, periodTicks) * 50L;
-        return wrap(invoke(asyncRunAtFixedRate, asyncScheduler, plugin, ignoreTask(action),
+        return wrapRepeating(invoke(asyncRunAtFixedRate, asyncScheduler, plugin, ignoreTask(action),
                 delayMs, periodMs, TimeUnit.MILLISECONDS));
     }
 
@@ -187,13 +208,16 @@ final class FoliaSchedulers implements Schedulers {
         if (entityScheduler == null) return () -> { };
 
         // таймеры меню обязаны тикать в потоке игрока, а не в глобальном
-        return wrap(invoke(entityRunAtFixedDelay, entityScheduler, plugin, ignoreTask(action),
+        return wrapRepeating(invoke(entityRunAtFixedDelay, entityScheduler, plugin, ignoreTask(action),
                 (Runnable) () -> { }, Math.max(1L, delayTicks), Math.max(1L, periodTicks)));
     }
 
     @Override
     public void cancelAll() {
         invoke(globalCancel, globalScheduler, plugin);
+        invoke(asyncCancel, asyncScheduler, plugin);
+        for (Task task : new ArrayList<>(repeatingTasks)) task.cancel();
+        repeatingTasks.clear();
     }
 
     @Override

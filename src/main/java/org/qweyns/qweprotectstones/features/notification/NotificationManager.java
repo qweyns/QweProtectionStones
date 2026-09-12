@@ -39,6 +39,11 @@ public class NotificationManager {
         this.plugin = plugin;
     }
 
+    /** При выключении плагина — иначе селектор-поток переживает /reload. */
+    public void close() {
+        httpClient.close();
+    }
+
     public void sendAttackAlert(Region region, String ownerName, Location coreLocation) {
         if (!region.hasEffect("ALERTS")) return;
 
