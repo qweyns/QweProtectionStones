@@ -13,9 +13,7 @@ import java.util.function.Function;
 public class DecorationSubCommand extends AbstractRegionSubCommand {
 
     public enum Mode {
-        NAME("name", "region_name", Region::getDisplayName, Region::setDisplayName),
-        GREETING("greeting", "region_greeting", Region::getGreeting, Region::setGreeting),
-        FAREWELL("farewell", "region_farewell", Region::getFarewell, Region::setFarewell);
+        NAME("name", "region_name", Region::getDisplayName, Region::setDisplayName);
 
         private final String commandName;
         private final String messagePrefix;
@@ -50,7 +48,7 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public List<String> aliases() {
-        return mode == Mode.NAME ? List.of("rename", "title") : List.of();
+        return List.of("rename", "title");
     }
 
     @Override
@@ -93,8 +91,6 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
     }
 
     private void refreshViews(Region region) {
-        if (mode != Mode.NAME) return;
-
         plugin.getHologramManager().createOrUpdateHologram(region);
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);

@@ -74,7 +74,6 @@
 | `/ps home [id]` | Телепорт к привату |
 | `/ps transfer <ник>` | Передать приват (вы остаётесь управляющим) |
 | `/ps name <текст>` | Название привата (`clear` — убрать); алиасы `rename`, `title` |
-| `/ps greeting <текст>` · `/ps farewell <текст>` | Сообщения входа/выхода (`clear` — сброс) |
 | `/ps upgrade` · `/ps effects` | Меню прокачки и эффектов |
 | `/ps help [страница]` | Постраничная справка — только команды, доступные вам |
 
@@ -132,7 +131,7 @@
 | `qweprotectstones.invite` | `/ps invite`, `accept`, `deny` | все |
 | `qweprotectstones.ban` | `/ps ban`, `unban`, `banlist` | все |
 | `qweprotectstones.flags` | `/ps flag` | все |
-| `qweprotectstones.name` | `/ps name`, `greeting`, `farewell` | все |
+| `qweprotectstones.name` | `/ps name` | все |
 | `qweprotectstones.home` | `/ps home` | все |
 | `qweprotectstones.log` | `/ps log` | все |
 | `qweprotectstones.findspot` | `/ps findspot` | все |

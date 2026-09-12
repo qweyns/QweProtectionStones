@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -19,6 +20,7 @@ import org.qweyns.qweprotectstones.features.effect.EffectManager;
 import org.qweyns.qweprotectstones.config.Tunables;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionType;
+import org.qweyns.qweprotectstones.regions.event.RegionDeleteEvent;
 import org.qweyns.qweprotectstones.regions.UpgradeCost;
 import org.qweyns.qweprotectstones.utils.ColorUtil;
 
@@ -409,6 +411,21 @@ public class MenuManager implements Listener {
         clickCooldowns.remove(event.getPlayer().getUniqueId());
     }
 
+    // приват уничтожен — никто не должен остаться в его меню
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onRegionDelete(RegionDeleteEvent event) {
+        UUID regionId = event.getRegion().getId();
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) continue;
+            if (holder.getRegion() == null || !holder.getRegion().getId().equals(regionId)) continue;
+
+            plugin.getSchedulers().runAtEntity(viewer, () -> {
+                viewer.closeInventory();
+                viewer.sendMessage(plugin.getLanguageManager().getMessage("menu_region_gone"));
+            });
+        }
+    }
+
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
         if (event.getInventory().getHolder() instanceof MenuHolder) event.setCancelled(true);
@@ -420,6 +437,16 @@ public class MenuManager implements Listener {
 
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)) return;
+
+        // регион могли уничтожить, пока меню было открыто
+        if (holder.getRegion() != null
+                && plugin.getRegionManager().getById(holder.getRegion().getId()) == null) {
+            plugin.getSchedulers().runAtEntity(player, () -> {
+                player.closeInventory();
+                player.sendMessage(plugin.getLanguageManager().getMessage("menu_region_gone"));
+            });
+            return;
+        }
 
         Inventory clicked = event.getClickedInventory();
         if (clicked == null || !clicked.equals(event.getView().getTopInventory())) return;

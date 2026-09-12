@@ -105,15 +105,14 @@ help:
 
 ### region-messages
 
-Куда писать приветствие/прощание. Порядок текста: строка владельца
-(`/ps greeting`, `/ps farewell`) → текст типа из `regions.yml` → шаблон
-`region_enter` / `region_leave` из lang-файла.
+Тексты входа/выхода — шаблоны `region_enter` / `region_leave` из
+lang-файла; игроки их менять не могут.
 
 ```yaml
 region-messages:
   enter:
     enabled: true
-    channel: "CHAT"   # CHAT | ACTIONBAR | NONE
+    channel: "CHAT"   # CHAT | NONE
   leave:
     enabled: true
     channel: "CHAT"

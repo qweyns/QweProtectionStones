@@ -39,8 +39,6 @@ public final class Region implements Bounded {
     private final Map<UUID, String> bannedPlayers = new ConcurrentHashMap<>();
 
     private volatile String displayName = "";
-    private volatile String greeting = "";
-    private volatile String farewell = "";
 
     private volatile int attackCount;
     private volatile long lastAttackAt;
@@ -275,24 +273,8 @@ public final class Region implements Bounded {
         touch();
     }
 
-    public String getGreeting() { return greeting; }
-
-    public void setGreeting(String value) {
-        this.greeting = RegionText.normalize(value);
-        touch();
-    }
-
-    public String getFarewell() { return farewell; }
-
-    public void setFarewell(String value) {
-        this.farewell = RegionText.normalize(value);
-        touch();
-    }
-
-    public void restoreDecoration(String displayName, String greeting, String farewell) {
+    public void restoreDecoration(String displayName) {
         this.displayName = RegionText.normalize(displayName);
-        this.greeting = RegionText.normalize(greeting);
-        this.farewell = RegionText.normalize(farewell);
     }
 
     public int getAttackCount() { return attackCount; }

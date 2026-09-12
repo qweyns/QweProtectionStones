@@ -85,7 +85,7 @@ public class BorderProtectionListener implements Listener {
             if (protection.has(region, fisher, protection.requiredFor(Tunables.TrustAction.ENTITY))) return;
         }
 
-        protection.notifyDenied(fisher, region);
+        protection.notifyDenied(fisher, region, "interact");
         event.setCancelled(true);
     }
 }

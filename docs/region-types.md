@@ -52,7 +52,6 @@ upgrade:                # переопределение оплаты для т�
 | `spawn-egg-use` | false | Разрешить доверенным яйцо призыва прямо на ядре |
 | `menu` | "" | Какое меню открывает клик (`main`, `upgrade`, `effects`); пусто — авто |
 | `border_color` | "" | Свой цвет каркаса, например "#F9A8D4" |
-| `greeting` / `farewell` | "" | Тексты входа/выхода типа; важнее — тексты владельца |
 
 ## Предмет-ядро: получение и внешний вид
 
@@ -190,7 +189,7 @@ remove:
 
 ## Плейсхолдеры для строк
 
-Работают в `hologram_lines`, `greeting`, `farewell` и текстах меню:
+Работают в `hologram_lines` и текстах меню:
 
 `%type%` (display_name с цветами) · `%owner%` · `%name%` · `%members%` ·
 `%size%` · `%durability%` · `%max_durability%` · `%id%` · `%item%` ·

@@ -41,7 +41,7 @@ public class RegionMovementListener implements Listener {
         if (to != null && !canEnter(player, to)) {
 
             event.setCancelled(true);
-            player.sendActionBar(plugin.getLanguageManager().getMessage("region_entry_denied", "%owner%", to.getOwnerName()));
+            player.sendMessage(plugin.getLanguageManager().getMessage("region_entry_denied"));
             return;
         }
 
@@ -61,7 +61,7 @@ public class RegionMovementListener implements Listener {
 
         if (!trusted && (!protection.flag(to, RegionFlag.TELEPORT_IN) || !canEnter(player, to))) {
             event.setCancelled(true);
-            player.sendActionBar(plugin.getLanguageManager().getMessage("region_teleport_denied", "%owner%", to.getOwnerName()));
+            player.sendMessage(plugin.getLanguageManager().getMessage("region_teleport_denied"));
             return;
         }
 
@@ -94,10 +94,10 @@ public class RegionMovementListener implements Listener {
 
         Region previous = previousId == null ? null : plugin.getRegionManager().getById(previousId);
         if (previous != null && protection.flag(previous, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(previous, previous.getFarewell(), false, "region_leave"), false);
+            sendTransition(player, transitionText(previous, "region_leave"), false);
         }
         if (to != null && protection.flag(to, RegionFlag.GREETING)) {
-            sendTransition(player, transitionText(to, to.getGreeting(), true, "region_enter"), true);
+            sendTransition(player, transitionText(to, "region_enter"), true);
         }
     }
 
@@ -106,46 +106,24 @@ public class RegionMovementListener implements Listener {
         var tunables = plugin.getTunables();
         if (entering) {
             if (!tunables.regionEnterEnabled()) return;
-            switch (tunables.regionEnterChannel()) {
-                case "CHAT" -> player.sendMessage(message);
-                case "ACTIONBAR" -> player.sendActionBar(message);
-                default -> {  }
-            }
+            if (tunables.regionEnterChannel().equals("CHAT")) player.sendMessage(message);
         } else {
             if (!tunables.regionLeaveEnabled()) return;
-            switch (tunables.regionLeaveChannel()) {
-                case "CHAT" -> player.sendMessage(message);
-                case "ACTIONBAR" -> player.sendActionBar(message);
-                default -> {  }
-            }
+            if (tunables.regionLeaveChannel().equals("CHAT")) player.sendMessage(message);
         }
     }
 
-    private Component transitionText(Region region, String custom, boolean entering, String fallbackKey) {
-        String text = custom;
-        if (text.isEmpty()) {
-            RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
-            if (type != null) text = entering ? type.greeting() : type.farewell();
-        }
-        return renderTransition(region, text, fallbackKey);
+    private Component transitionText(Region region, String fallbackKey) {
+        return plugin.getLanguageManager().getMessage(fallbackKey,
+                "%owner%", region.getOwnerName(),
+                "%name%", region.getLabel(),
+                "%player%", region.getOwnerName(),
+                "%type%", typeName(region));
     }
 
     private String typeName(Region region) {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         return type != null ? type.displayName() : region.getTypeId();
-    }
-
-    private Component renderTransition(Region region, String custom, String fallbackKey) {
-        String[] placeholders = {
-                "%owner%", region.getOwnerName(),
-                "%name%", region.getLabel(),
-                "%player%", region.getOwnerName(),
-                "%type%", typeName(region)
-        };
-
-        return custom.isEmpty()
-                ? plugin.getLanguageManager().getMessage(fallbackKey, placeholders)
-                : plugin.getLanguageManager().format(custom, placeholders);
     }
 
     @EventHandler

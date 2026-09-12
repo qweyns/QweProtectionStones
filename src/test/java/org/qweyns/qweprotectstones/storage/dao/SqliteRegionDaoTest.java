@@ -46,7 +46,6 @@ class SqliteRegionDaoTest {
         region.setFlag(RegionFlag.PVP, true);
         region.ban(UUID.randomUUID(), "Griefer");
         region.setDisplayName("База");
-        region.setGreeting("Добро пожаловать");
         region.setPenaltyUntil(System.currentTimeMillis() + 3_600_000L);
         return region;
     }
@@ -72,7 +71,6 @@ class SqliteRegionDaoTest {
         assertEquals(50, restored.getDurability());
         assertEquals(100, restored.getMaxDurability());
         assertEquals("База", restored.getDisplayName());
-        assertEquals("Добро пожаловать", restored.getGreeting());
         assertEquals(region.getPenaltyUntil(), restored.getPenaltyUntil());
     }
 

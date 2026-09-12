@@ -111,8 +111,7 @@ public class RegionTypeRegistry {
                 readInt(section, defaults, "upgrade.tax", -1),
                 readString(section, defaults, "border_color", ""),
                 readString(section, defaults, "menu", ""),
-                readString(section, defaults, "greeting", ""),
-                readString(section, defaults, "farewell", ""),
+
                 readBoolean(section, defaults, "full_height", false),
 
                 readBoolean(section, defaults, "restrict-obtaining", false),

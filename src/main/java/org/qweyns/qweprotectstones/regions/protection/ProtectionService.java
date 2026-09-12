@@ -96,7 +96,7 @@ public class ProtectionService {
         return flag(regionAt(location), flag);
     }
 
-    public void notifyDenied(Player player, Region region) {
+    public void notifyDenied(Player player, Region region, String verbKey) {
         if (player == null) return;
 
         Long last = denyMessageCooldowns.getIfPresent(player.getUniqueId());
@@ -104,8 +104,13 @@ public class ProtectionService {
         if (last != null && now - last < plugin.getTunables().denyMessageCooldownMs()) return;
         denyMessageCooldowns.put(player.getUniqueId(), now);
 
-        String owner = region != null ? region.getOwnerName() : "";
-        player.sendActionBar(plugin.getLanguageManager().getMessage("protection_denied", "%owner%", owner));
+        // стиль WorldGuard: короткое «Эй!» и причина — но в чат
+        player.sendMessage(plugin.getLanguageManager().getMessage("protection_denied",
+                "%what%", plugin.getLanguageManager().rawTemplate("deny_verb_" + verbKey)));
+    }
+
+    public void notifyDenied(Player player, Region region) {
+        notifyDenied(player, region, "build");
     }
 
     public boolean denyBuild(Player player, Location location) {

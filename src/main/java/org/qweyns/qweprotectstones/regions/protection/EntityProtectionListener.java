@@ -47,7 +47,7 @@ public class EntityProtectionListener implements Listener {
 
         if (victim instanceof Player) {
             if (!protection.flag(region, RegionFlag.PVP)) {
-                protection.notifyDenied(attacker, region);
+                protection.notifyDenied(attacker, region, "interact");
                 event.setCancelled(true);
             }
             return;
@@ -61,7 +61,7 @@ public class EntityProtectionListener implements Listener {
         boolean protectedVictim = victim instanceof Animals || victim instanceof Villager || victim instanceof Tameable;
         if (protectedVictim && !protection.flag(region, RegionFlag.ANIMAL_PROTECTION)) return;
 
-        protection.notifyDenied(attacker, region);
+        protection.notifyDenied(attacker, region, "interact");
         event.setCancelled(true);
     }
 
@@ -103,7 +103,7 @@ public class EntityProtectionListener implements Listener {
         }
 
         if (!protection.has(region, remover, protection.requiredFor(Tunables.TrustAction.ENTITY))) {
-            protection.notifyDenied(remover, region);
+            protection.notifyDenied(remover, region, "interact");
             event.setCancelled(true);
         }
     }

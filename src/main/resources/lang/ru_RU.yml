@@ -26,9 +26,12 @@ region_not_found: "%prefix%<#FB7185>Приват <#FDE68A>%id% <#FB7185>не н�
 region_world_not_loaded: "%prefix%<#FB7185>Мир <#FDE68A>%world% <#FB7185>не загружен."
 
 # --- Защита ---
-protection_denied: "<#FB7185>Это приват игрока <#FDE68A>%owner%"
-region_entry_denied: "<#FB7185>Вход в приват игрока <#FDE68A>%owner% <#FB7185>закрыт"
-region_teleport_denied: "<#FB7185>Телепорт в приват игрока <#FDE68A>%owner% <#FB7185>запрещён"
+protection_denied: "<bold><#FB7185>Эй!</bold> <#A79FC0>Извини, но здесь нельзя <#FDE68A>%what%<#A79FC0>."
+region_entry_denied: "<bold><#FB7185>Эй!</bold> <#A79FC0>Извини, но вход сюда закрыт."
+region_teleport_denied: "<bold><#FB7185>Эй!</bold> <#A79FC0>Извини, но телепортироваться сюда нельзя."
+deny_verb_build: "строить"
+deny_verb_interact: "пользоваться"
+menu_region_gone: "%prefix%<#FB7185>Приват уничтожен — меню закрыто."
 region_enter:
   - "%prefix%<#86EFAC>Вы вошли в приват игрока <#FDE68A>%owner%<#86EFAC>."
   - "<#A79FC0>Территория защищена."
@@ -365,10 +368,8 @@ help_untrustall: "<#FDE68A><ник> <#A79FC0>— <#F2EFFA>отозвать до�
 help_findspot: "<#FDE68A>[тип] <#A79FC0>— <#F2EFFA>найти свободное место"
 help_log: "<#FDE68A>[строк] <#A79FC0>— <#F2EFFA>журнал действий"
 
-# Название привата и собственные тексты входа/выхода
+# Название привата
 help_name: "<#FDE68A><текст> <#A79FC0>— <#F2EFFA>название привата"
-help_greeting: "<#FDE68A><текст> <#A79FC0>— <#F2EFFA>сообщение при входе"
-help_farewell: "<#FDE68A><текст> <#A79FC0>— <#F2EFFA>сообщение при выходе"
 admin_help_header: "%prefix%<#DDD6FE>Справка администратора <#A79FC0>· <#A79FC0>страница <#FDE68A>%page% <#A79FC0>из <#FDE68A>%total%"
 admin_help_reload: "<#A79FC0>— <#F2EFFA>перезагрузить конфиги, языки и меню"
 admin_help_bypass: "<#A79FC0>— <#F2EFFA>режим обхода защиты"
@@ -400,11 +401,3 @@ region_name_usage: "%prefix%<#F2EFFA>Использование: <#C4B5FD>/ps na
 region_name_current: "%prefix%<#F2EFFA>Название привата: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Название привата: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Название привата убрано."
-region_greeting_usage: "%prefix%<#F2EFFA>Использование: <#C4B5FD>/ps greeting <текст><#F2EFFA>, до <#C4B5FD>%limit%<#F2EFFA> символов. <#C4B5FD>clear<#F2EFFA> — убрать."
-region_greeting_current: "%prefix%<#F2EFFA>Приветствие: <#C4B5FD>%value%"
-region_greeting_set: "%prefix%<#86EFAC>Приветствие: <#C4B5FD>%value%"
-region_greeting_cleared: "%prefix%<#86EFAC>Приветствие убрано — будет показываться стандартное."
-region_farewell_usage: "%prefix%<#F2EFFA>Использование: <#C4B5FD>/ps farewell <текст><#F2EFFA>, до <#C4B5FD>%limit%<#F2EFFA> символов. <#C4B5FD>clear<#F2EFFA> — убрать."
-region_farewell_current: "%prefix%<#F2EFFA>Прощание: <#C4B5FD>%value%"
-region_farewell_set: "%prefix%<#86EFAC>Прощание: <#C4B5FD>%value%"
-region_farewell_cleared: "%prefix%<#86EFAC>Прощание убрано — будет показываться стандартное."

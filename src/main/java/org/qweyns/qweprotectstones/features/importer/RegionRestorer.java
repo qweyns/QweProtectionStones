@@ -85,10 +85,7 @@ public class RegionRestorer {
                 core[0], core[1], core[2], type.id(),
                 ownerId, ownerName(data), durability, maxDurability, createdAt);
 
-        region.restoreDecoration(
-                string(data.get("name")),
-                string(data.get("greeting")),
-                string(data.get("farewell")));
+        region.restoreDecoration(string(data.get("name")));
 
         if (data.get("attacks") instanceof Map<?, ?> attacks) {
             region.restoreStats(

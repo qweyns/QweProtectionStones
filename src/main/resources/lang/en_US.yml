@@ -26,9 +26,12 @@ region_not_found: "%prefix%<#FB7185>Region <#FDE68A>%id% <#FB7185>not found."
 region_world_not_loaded: "%prefix%<#FB7185>World <#FDE68A>%world% <#FB7185>is not loaded."
 
 # --- Защита ---
-protection_denied: "<#FB7185>This land belongs to <#FDE68A>%owner%"
-region_entry_denied: "<#FB7185>Entry to <#FDE68A>%owner%<#FB7185>'s region is closed"
-region_teleport_denied: "<#FB7185>Teleporting into <#FDE68A>%owner%<#FB7185>'s region is blocked"
+protection_denied: "<bold><#FB7185>Hey!</bold> <#A79FC0>Sorry, but you can't <#FDE68A>%what%<#A79FC0> here."
+region_entry_denied: "<bold><#FB7185>Hey!</bold> <#A79FC0>Sorry, but entry here is closed."
+region_teleport_denied: "<bold><#FB7185>Hey!</bold> <#A79FC0>Sorry, but you can't teleport here."
+deny_verb_build: "build"
+deny_verb_interact: "interact"
+menu_region_gone: "%prefix%<#FB7185>The region was destroyed — menu closed."
 region_enter:
   - "%prefix%<#86EFAC>You entered the region of <#FDE68A>%owner%<#86EFAC>."
   - "<#A79FC0>The territory is protected."
@@ -365,10 +368,8 @@ help_untrustall: "<#FDE68A><name> <#A79FC0>— <#F2EFFA>revoke access everywhere
 help_findspot: "<#FDE68A>[type] <#A79FC0>— <#F2EFFA>find a free spot"
 help_log: "<#FDE68A>[lines] <#A79FC0>— <#F2EFFA>action log"
 
-# Название привата и собственные тексты входа/выхода
+# Название привата
 help_name: "<#FDE68A><text> <#A79FC0>— <#F2EFFA>region title"
-help_greeting: "<#FDE68A><text> <#A79FC0>— <#F2EFFA>entry message"
-help_farewell: "<#FDE68A><text> <#A79FC0>— <#F2EFFA>exit message"
 admin_help_header: "%prefix%<#DDD6FE>Admin help <#A79FC0>· <#A79FC0>page <#FDE68A>%page% <#A79FC0>of <#FDE68A>%total%"
 admin_help_reload: "<#A79FC0>— <#F2EFFA>reload configs, languages and menus"
 admin_help_bypass: "<#A79FC0>— <#F2EFFA>protection bypass mode"
@@ -400,11 +401,3 @@ region_name_usage: "%prefix%<#F2EFFA>Usage: <#C4B5FD>/ps name <text><#F2EFFA>, u
 region_name_current: "%prefix%<#F2EFFA>Region name: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Region name: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Region name removed."
-region_greeting_usage: "%prefix%<#F2EFFA>Usage: <#C4B5FD>/ps greeting <text><#F2EFFA>, up to <#C4B5FD>%limit%<#F2EFFA> characters. <#C4B5FD>clear<#F2EFFA> removes it."
-region_greeting_current: "%prefix%<#F2EFFA>Greeting: <#C4B5FD>%value%"
-region_greeting_set: "%prefix%<#86EFAC>Greeting: <#C4B5FD>%value%"
-region_greeting_cleared: "%prefix%<#86EFAC>Greeting removed — the default one will be shown."
-region_farewell_usage: "%prefix%<#F2EFFA>Usage: <#C4B5FD>/ps farewell <text><#F2EFFA>, up to <#C4B5FD>%limit%<#F2EFFA> characters. <#C4B5FD>clear<#F2EFFA> removes it."
-region_farewell_current: "%prefix%<#F2EFFA>Farewell: <#C4B5FD>%value%"
-region_farewell_set: "%prefix%<#86EFAC>Farewell: <#C4B5FD>%value%"
-region_farewell_cleared: "%prefix%<#86EFAC>Farewell removed — the default one will be shown."

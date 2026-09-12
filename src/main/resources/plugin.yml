@@ -60,7 +60,7 @@ permissions:
     description: Изменение флагов привата (/ps flag)
     default: true
   qweprotectstones.name:
-    description: Название и тексты входа/выхода (/ps name, greeting, farewell)
+    description: Название привата (/ps name)
     default: true
   qweprotectstones.home:
     description: Телепорт к своему привату (/ps home)

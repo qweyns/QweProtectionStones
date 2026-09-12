@@ -206,8 +206,9 @@ public final class Tunables {
         borderFishing = cfg.getBoolean("protection.border.fishing", true);
         regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
         regionLeaveEnabled = cfg.getBoolean("region-messages.leave.enabled", true);
-        regionEnterChannel = cfg.getString("region-messages.enter.channel", "CHAT").trim().toUpperCase(Locale.ROOT);
-        regionLeaveChannel = cfg.getString("region-messages.leave.channel", "CHAT").trim().toUpperCase(Locale.ROOT);
+        // канал ACTIONBAR выпилен: старые конфиги читаем как CHAT
+        regionEnterChannel = channelValue(cfg.getString("region-messages.enter.channel", "CHAT"));
+        regionLeaveChannel = channelValue(cfg.getString("region-messages.leave.channel", "CHAT"));
 
         List<String> rawLocked = cfg.getStringList("flags.locked");
         for (String raw : rawLocked) {
@@ -261,6 +262,11 @@ public final class Tunables {
     public boolean regionLeaveEnabled() { return regionLeaveEnabled; }
 
     public String regionEnterChannel() { return regionEnterChannel; }
+
+    private static String channelValue(String raw) {
+        String value = raw == null ? "CHAT" : raw.trim().toUpperCase(Locale.ROOT);
+        return value.equals("ACTIONBAR") ? "CHAT" : value;
+    }
 
     public String regionLeaveChannel() { return regionLeaveChannel; }
     public SoundSetting intruderAlert() { return intruderAlert; }

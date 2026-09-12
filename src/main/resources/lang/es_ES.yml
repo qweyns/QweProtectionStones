@@ -26,9 +26,12 @@ region_not_found: "%prefix%<#FB7185>Parcela <#FDE68A>%id% <#FB7185>no encontrada
 region_world_not_loaded: "%prefix%<#FB7185>El mundo <#FDE68A>%world% <#FB7185>no está cargado."
 
 # --- Защита ---
-protection_denied: "<#FB7185>Esta tierra pertenece a <#FDE68A>%owner%"
-region_entry_denied: "<#FB7185>La entrada a la parcela de <#FDE68A>%owner% <#FB7185>está cerrada"
-region_teleport_denied: "<#FB7185>Teletransporte a la parcela de <#FDE68A>%owner% <#FB7185>bloqueado"
+protection_denied: "<bold><#FB7185>¡Eh!</bold> <#A79FC0>Lo siento, pero aquí no se puede <#FDE68A>%what%<#A79FC0>."
+region_entry_denied: "<bold><#FB7185>¡Eh!</bold> <#A79FC0>Lo siento, la entrada está cerrada."
+region_teleport_denied: "<bold><#FB7185>¡Eh!</bold> <#A79FC0>Lo siento, no puedes teletransportarte aquí."
+deny_verb_build: "construir"
+deny_verb_interact: "interactuar"
+menu_region_gone: "%prefix%<#FB7185>La parcela fue destruida — menú cerrado."
 region_enter:
   - "%prefix%<#86EFAC>Has entrado en la parcela de <#FDE68A>%owner%<#86EFAC>."
   - "<#A79FC0>El territorio está protegido."
@@ -365,10 +368,8 @@ help_untrustall: "<#FDE68A><nick> <#A79FC0>— <#F2EFFA>quitar acceso en todas"
 help_findspot: "<#FDE68A>[tipo] <#A79FC0>— <#F2EFFA>buscar un sitio libre"
 help_log: "<#FDE68A>[líneas] <#A79FC0>— <#F2EFFA>registro de acciones"
 
-# Название привата и собственные тексты входа/выхода
+# Название привата
 help_name: "<#FDE68A><texto> <#A79FC0>— <#F2EFFA>título de la región"
-help_greeting: "<#FDE68A><texto> <#A79FC0>— <#F2EFFA>mensaje de entrada"
-help_farewell: "<#FDE68A><texto> <#A79FC0>— <#F2EFFA>mensaje de salida"
 admin_help_header: "%prefix%<#DDD6FE>Ayuda de administración <#A79FC0>· <#A79FC0>página <#FDE68A>%page% <#A79FC0>de <#FDE68A>%total%"
 admin_help_reload: "<#A79FC0>— <#F2EFFA>recargar configuraciones, idiomas y menús"
 admin_help_bypass: "<#A79FC0>— <#F2EFFA>modo de bypass de protección"
@@ -400,11 +401,3 @@ region_name_usage: "%prefix%<#F2EFFA>Uso: <#C4B5FD>/ps name <texto><#F2EFFA>, ha
 region_name_current: "%prefix%<#F2EFFA>Nombre de la parcela: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Nombre de la parcela: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Nombre de la parcela eliminado."
-region_greeting_usage: "%prefix%<#F2EFFA>Uso: <#C4B5FD>/ps greeting <texto><#F2EFFA>, hasta <#C4B5FD>%limit%<#F2EFFA> caracteres. <#C4B5FD>clear<#F2EFFA> lo quita."
-region_greeting_current: "%prefix%<#F2EFFA>Saludo: <#C4B5FD>%value%"
-region_greeting_set: "%prefix%<#86EFAC>Saludo: <#C4B5FD>%value%"
-region_greeting_cleared: "%prefix%<#86EFAC>Saludo eliminado — se mostrará el predeterminado."
-region_farewell_usage: "%prefix%<#F2EFFA>Uso: <#C4B5FD>/ps farewell <texto><#F2EFFA>, hasta <#C4B5FD>%limit%<#F2EFFA> caracteres. <#C4B5FD>clear<#F2EFFA> lo quita."
-region_farewell_current: "%prefix%<#F2EFFA>Despedida: <#C4B5FD>%value%"
-region_farewell_set: "%prefix%<#86EFAC>Despedida: <#C4B5FD>%value%"
-region_farewell_cleared: "%prefix%<#86EFAC>Despedida eliminada — se mostrará la predeterminada."

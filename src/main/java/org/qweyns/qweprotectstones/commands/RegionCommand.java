@@ -74,8 +74,6 @@ public class RegionCommand extends Command {
         register(new DeleteSubCommand(plugin));
         register(new GlowSubCommand(plugin));
         register(new DecorationSubCommand(plugin, DecorationSubCommand.Mode.NAME));
-        register(new DecorationSubCommand(plugin, DecorationSubCommand.Mode.GREETING));
-        register(new DecorationSubCommand(plugin, DecorationSubCommand.Mode.FAREWELL));
         register(new FindSpotSubCommand(plugin));
         register(new SellSubCommand(plugin, SellSubCommand.Mode.SELL));
         register(new SellSubCommand(plugin, SellSubCommand.Mode.BUY));

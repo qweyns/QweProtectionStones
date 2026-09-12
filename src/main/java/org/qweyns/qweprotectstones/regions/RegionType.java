@@ -38,8 +38,6 @@ public record RegionType(
         int upgradeTax,
         String borderColor,
         String menuName,
-        String greeting,
-        String farewell,
         boolean fullHeight,
 
         boolean restrictObtaining,
@@ -55,8 +53,6 @@ public record RegionType(
         upgradeItem = upgradeItem == null ? "" : upgradeItem.trim();
         borderColor = borderColor == null ? "" : borderColor.trim();
         menuName = menuName == null ? "" : menuName.trim();
-        greeting = greeting == null ? "" : greeting.trim();
-        farewell = farewell == null ? "" : farewell.trim();
 
         allowedWorlds = Set.copyOf(allowedWorlds);
         allowedEffects = List.copyOf(allowedEffects);

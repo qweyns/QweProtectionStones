@@ -318,7 +318,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
         String sql = "SELECT id, world, min_x, min_y, min_z, max_x, max_y, max_z, core_x, core_y, core_z," +
                 " type, owner_uuid, owner_name, durability, max_durability, effects, created_at," +
                 " attack_count, last_attack_at, last_attacker, penalty_until," +
-                " display_name, greeting, farewell FROM " + regionsTable();
+                " display_name FROM " + regionsTable();
 
         try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -341,7 +341,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 region.getEffects().addAll(splitCsv(rs.getString("effects")));
                 region.restoreStats(rs.getInt("attack_count"), rs.getLong("last_attack_at"), rs.getString("last_attacker"));
                 region.setPenaltyUntil(rs.getLong("penalty_until"));
-                region.restoreDecoration(rs.getString("display_name"), rs.getString("greeting"), rs.getString("farewell"));
+                region.restoreDecoration(rs.getString("display_name"));
                 target.put(id, region);
             }
         }
@@ -430,8 +430,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 ps.setString(21, region.getLastAttackerName());
                 ps.setLong(22, region.getPenaltyUntil());
                 ps.setString(23, region.getDisplayName());
-                ps.setString(24, region.getGreeting());
-                ps.setString(25, region.getFarewell());
                 ps.addBatch();
 
                 if (++batched % batchSize() == 0) ps.executeBatch();

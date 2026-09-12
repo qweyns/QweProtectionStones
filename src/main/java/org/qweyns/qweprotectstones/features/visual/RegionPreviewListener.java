@@ -62,10 +62,10 @@ public class RegionPreviewListener implements Listener {
         Region blocking = plugin.getRegionManager().findOverlapping(world, bounds);
 
         if (blocking != null) {
-            player.sendActionBar(plugin.getLanguageManager().getMessage("preview_blocked",
+            player.sendMessage(plugin.getLanguageManager().getMessage("preview_blocked",
                     "%owner%", blocking.getOwnerName()));
         } else {
-            player.sendActionBar(plugin.getLanguageManager().getMessage("preview_free",
+            player.sendMessage(plugin.getLanguageManager().getMessage("preview_free",
                     "%size%", type.widthX() + "x" + type.widthZ()));
         }
     }

@@ -62,7 +62,7 @@ public class InteractProtectionListener implements Listener {
         TrustLevel required = protection.requiredFor(requiredActionFor(block, event));
         if (protection.has(region, event.getPlayer(), required)) return;
 
-        if (event.getAction() != Action.PHYSICAL) protection.notifyDenied(event.getPlayer(), region);
+        if (event.getAction() != Action.PHYSICAL) protection.notifyDenied(event.getPlayer(), region, "interact");
         event.setCancelled(true);
     }
 
@@ -115,7 +115,7 @@ public class InteractProtectionListener implements Listener {
 
         if (protection.has(region, event.getPlayer(), required)) return;
 
-        protection.notifyDenied(event.getPlayer(), region);
+        protection.notifyDenied(event.getPlayer(), region, "interact");
         event.setCancelled(true);
     }
 

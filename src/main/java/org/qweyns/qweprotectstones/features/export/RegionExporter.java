@@ -52,8 +52,6 @@ public class RegionExporter {
         json.append("      \"id\": \"").append(region.getId()).append("\",\n");
         json.append("      \"type\": \"").append(escape(region.getTypeId())).append("\",\n");
         json.append("      \"name\": \"").append(escape(region.getDisplayName())).append("\",\n");
-        json.append("      \"greeting\": \"").append(escape(region.getGreeting())).append("\",\n");
-        json.append("      \"farewell\": \"").append(escape(region.getFarewell())).append("\",\n");
         json.append("      \"world\": \"").append(escape(region.getWorldName())).append("\",\n");
         json.append("      \"owner\": {\"uuid\": \"").append(region.getOwnerId())
                 .append("\", \"name\": \"").append(escape(region.getOwnerName())).append("\"},\n");
