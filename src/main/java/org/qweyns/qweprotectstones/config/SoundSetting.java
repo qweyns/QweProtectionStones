@@ -69,7 +69,7 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
         return index.get(compact(name));
     }
 
-    private static String compact(String value) {
+    static String compact(String value) {
         return value.toUpperCase(Locale.ROOT).replace("_", "").replace(".", "").replace("-", "");
     }
 

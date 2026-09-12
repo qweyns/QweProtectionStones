@@ -150,6 +150,10 @@ admin_saved: "%prefix%<#86EFAC>已保存领地：<#FDE68A>%count%"
 admin_stats: "%prefix%<#F2EFFA>领地：<#FDE68A>%regions%<#F2EFFA>，类型：<#FDE68A>%types%<#F2EFFA>，所有者：<#FDE68A>%owners%"
 admin_stats_market: "<#A79FC0>市场：出售 <#F2EFFA>%sales%<#A79FC0>，已出租 <#F2EFFA>%rented%<#A79FC0>/<#F2EFFA>%listings%<#A79FC0> 条，耐久惩罚 <#F2EFFA>%penalties%"
 admin_stats_cache: "<#A79FC0>数据库队列：<#F2EFFA>%pending%<#A79FC0>，上次写入：<#F2EFFA>%flush% 秒前"
+update_available:
+  - "%prefix%<#FDE68A>有新版本可用：<#86EFAC>%latest%<#A79FC0>（当前 %current%）"
+  - "<click:open_url:'%url%'><hover:show_text:'<#C4B5FD>在 GitHub 打开发布页面'><#C4B5FD>▸ 下载更新</hover></click>"
+admin_stats_types: "<#A79FC0>按类型：<#F2EFFA>%types%"
 
 # 网页地图（Dynmap/BlueMap）标注与客户端命令列表中的命令描述
 command_description: "领地管理"

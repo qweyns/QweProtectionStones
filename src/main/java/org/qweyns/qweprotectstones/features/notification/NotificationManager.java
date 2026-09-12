@@ -149,6 +149,11 @@ public class NotificationManager {
     }
 
     private void post(String url, String jsonPayload) {
+        post(url, jsonPayload, 1);
+    }
+
+    // один вызов — одна попытка; повторы по таймеру без блокировки потоков
+    private void post(String url, String jsonPayload, int attempt) {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder(URI.create(url))
@@ -162,9 +167,35 @@ public class NotificationManager {
         }
 
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.discarding())
-                .exceptionally(throwable -> {
-                    plugin.getLogger().log(Level.FINE, "Не удалось отправить уведомление", throwable);
-                    return null;
-                });
+                .whenComplete((response, throwable) -> deliver(url, jsonPayload, attempt, response, throwable));
+    }
+
+    private void deliver(String url, String jsonPayload, int attempt,
+                         HttpResponse<Void> response, Throwable throwable) {
+        FileConfiguration cfg = plugin.getConfigManager().getConfig();
+        int retries = Math.max(0, cfg.getInt("notifications.webhook-retries", 2));
+        long delaySeconds = Math.max(1, cfg.getLong("notifications.webhook-retry-delay-seconds", 15));
+
+        // 429 и 5xx — временные неудачи, остальной 4xx — ошибка конфигурации
+        boolean retriable = throwable != null
+                || response != null && (response.statusCode() == 429 || response.statusCode() >= 500);
+        if (!retriable) {
+            if (response != null && response.statusCode() >= 400) {
+                plugin.getLogger().warning("Вебхук отклонён (" + response.statusCode() + ") — проверьте URL и настройки.");
+            }
+            return;
+        }
+        if (attempt > retries) {
+            plugin.getLogger().log(Level.WARNING,
+                    "Уведомление не доставлено после " + retries + " повтор(ов): " + url, throwable);
+            return;
+        }
+
+        plugin.getLogger().log(Level.FINE, "Вебхук не прошёл ("
+                + (throwable != null ? throwable.getMessage() : response.statusCode())
+                + "), повтор " + attempt + "/" + retries + " через " + delaySeconds + " с.");
+        java.util.concurrent.CompletableFuture
+                .delayedExecutor(delaySeconds, TimeUnit.SECONDS)
+                .execute(() -> post(url, jsonPayload, attempt + 1));
     }
 }

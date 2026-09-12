@@ -27,6 +27,7 @@ public class HologramManager implements Listener {
     private final QweProtectStones plugin;
     private IHologramProvider dhProvider;
     private IHologramProvider fhProvider;
+    private IHologramProvider nativeProvider;
 
     private final Map<String, Set<UUID>> chunkCache = new ConcurrentHashMap<>();
 
@@ -43,14 +44,16 @@ public class HologramManager implements Listener {
             fhProvider = new FHProvider(plugin);
             plugin.getLogger().info("Мост для FancyHolograms загружен.");
         }
+        // встроенный провайдер не требует ничего и всегда доступен
+        nativeProvider = new NativeHologramProvider(plugin);
         if (dhProvider == null && fhProvider == null) {
-            plugin.getLogger().info("Плагины на голограммы не найдены — голограммы приватов отключены.");
+            plugin.getLogger().info("DecentHolograms/FancyHolograms не найдены — использую встроенные голограммы (TextDisplay).");
         }
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public boolean isAvailable() {
-        return dhProvider != null || fhProvider != null;
+        return nativeProvider != null || dhProvider != null || fhProvider != null;
     }
 
     public void createOrUpdateHologram(Region region) {
@@ -78,8 +81,12 @@ public class HologramManager implements Listener {
 
         if (!core.getWorld().isChunkLoaded(core.getBlockX() >> 4, core.getBlockZ() >> 4)) return;
 
-        boolean modern = plugin.getConfigManager().getHologramType(region.getTypeId()).equals("MODERN");
-        IHologramProvider primary = modern ? firstNonNull(fhProvider, dhProvider) : firstNonNull(dhProvider, fhProvider);
+        // выбранный плагин может отсутствовать — тогда сработает встроенный
+        IHologramProvider primary = switch (plugin.getConfigManager().getHologramType(region.getTypeId())) {
+            case "NATIVE" -> nativeProvider;
+            case "DECENT" -> firstNonNull(dhProvider, firstNonNull(fhProvider, nativeProvider));
+            default -> firstNonNull(fhProvider, firstNonNull(dhProvider, nativeProvider));
+        };
         if (primary == null) return;
 
         try {
@@ -111,6 +118,7 @@ public class HologramManager implements Listener {
         try {
             if (dhProvider != null) dhProvider.remove(regionId);
             if (fhProvider != null) fhProvider.remove(regionId);
+            if (nativeProvider != null) nativeProvider.remove(regionId);
         } catch (Throwable t) {
             plugin.getLogger().log(Level.WARNING, "Не удалось удалить голограмму привата " + regionId, t);
         }
@@ -120,6 +128,7 @@ public class HologramManager implements Listener {
         try {
             if (dhProvider != null) dhProvider.deleteAll();
             if (fhProvider != null) fhProvider.deleteAll();
+            if (nativeProvider != null) nativeProvider.deleteAll();
         } catch (Throwable t) {
 
             plugin.getLogger().log(Level.WARNING, "Ошибка при удалении голограмм", t);

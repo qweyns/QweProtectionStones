@@ -206,7 +206,9 @@ default_region:
   # Тип может переопределить это значение для себя.
   hologram_under_attack: true
   # MODERN — FancyHolograms (текстовые дисплеи, богаче настройки);
-  # DECENT — DecentHolograms. Выбранный плагин должен быть установлен.
+  # DECENT — DecentHolograms;
+  # NATIVE — встроенные голограммы на TextDisplay, плагины не нужны.
+  # Если выбранный плагин не установлен, работа молча продолжится на NATIVE.
   hologram_provider: MODERN
   hologram_offset: 1.1            # высота первой строки над ядром
   hologram_display_range: 16      # с какого расстояния видно

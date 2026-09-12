@@ -150,6 +150,10 @@ admin_saved: "%prefix%<#86EFAC>Parcelas guardadas: <#FDE68A>%count%"
 admin_stats: "%prefix%<#F2EFFA>Regiones: <#FDE68A>%regions%<#F2EFFA>, tipos: <#FDE68A>%types%<#F2EFFA>, dueños: <#FDE68A>%owners%"
 admin_stats_market: "<#A79FC0>Mercado: en venta — <#F2EFFA>%sales%<#A79FC0>, alquiladas — <#F2EFFA>%rented% <#A79FC0>de <#F2EFFA>%listings%<#A79FC0> anuncios, penalizaciones — <#F2EFFA>%penalties%"
 admin_stats_cache: "<#A79FC0>Cola de escritura BD: <#F2EFFA>%pending%<#A79FC0>, última escritura: <#F2EFFA>%flush% s atrás"
+update_available:
+  - "%prefix%<#FDE68A>Nueva versión disponible: <#86EFAC>%latest%<#A79FC0> (tienes %current%)"
+  - "<click:open_url:'%url%'><hover:show_text:'<#C4B5FD>Abrir la página de versiones en GitHub'><#C4B5FD>▸ Descargar actualización</hover></click>"
+admin_stats_types: "<#A79FC0>Por tipo: <#F2EFFA>%types%"
 
 # Etiquetas de los mapas web (Dynmap/BlueMap) y la descripción del comando en la lista del cliente
 command_description: "Gestión de regiones"

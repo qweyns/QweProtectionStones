@@ -71,7 +71,7 @@ public class MenuActions {
             if (amount <= 0) return true;
 
             if (!plugin.getVaultHook().takeMoney(player, amount)) return paymentFailed(player, plugin.getVaultHook().isEnabled());
-            taken.money += amount;
+            taken.addMoney(amount);
             return true;
         }
         if (cmd.startsWith(TAKE_POINTS)) {
@@ -79,9 +79,9 @@ public class MenuActions {
             if (amount == null) return false;
             if (amount <= 0) return true;
 
-            int cost = (int) Math.ceil(amount);
+            int cost = Payments.ceilCost(amount);
             if (!plugin.getPlayerPointsHook().takePoints(player, cost)) return paymentFailed(player, plugin.getPlayerPointsHook().isEnabled());
-            taken.points += cost;
+            taken.addPoints(cost);
             return true;
         }
         if (cmd.startsWith(TAKE_EXP)) {
@@ -89,10 +89,10 @@ public class MenuActions {
             if (amount == null) return false;
             if (amount <= 0) return true;
 
-            int cost = (int) Math.ceil(amount);
+            int cost = Payments.ceilCost(amount);
             if (player.getLevel() < cost) return paymentFailed(player, true);
             player.setLevel(player.getLevel() - cost);
-            taken.exp += cost;
+            taken.addExp(cost);
             return true;
         }
 
@@ -122,25 +122,14 @@ public class MenuActions {
         }
     }
 
-    /** Сколько списали в текущей цепочке — для возврата при сбое дальше по списку. */
-    private static final class Payments {
-        double money;
-        int points;
-        int exp;
-
-        boolean any() {
-            return money > 0 || points > 0 || exp > 0;
-        }
-    }
-
     private void refund(Player player, Payments taken, String failedCmd) {
         if (!taken.any()) return;
 
-        if (taken.money > 0) plugin.getVaultHook().giveMoney(player, taken.money);
-        if (taken.points > 0) plugin.getPlayerPointsHook().givePoints(player, taken.points);
-        if (taken.exp > 0) player.giveExpLevels(taken.exp);
+        if (taken.money() > 0) plugin.getVaultHook().giveMoney(player, taken.money());
+        if (taken.points() > 0) plugin.getPlayerPointsHook().givePoints(player, taken.points());
+        if (taken.exp() > 0) player.giveExpLevels(taken.exp());
         plugin.getLogger().warning("Действие меню не удалось ('" + failedCmd + "') — списанное возвращено: "
-                + taken.money + " денег, " + taken.points + " очков, " + taken.exp + " уровней опыта.");
+                + taken.money() + " денег, " + taken.points() + " очков, " + taken.exp() + " уровней опыта.");
     }
 
     private boolean runSimple(Player player, String cmd, Region region) {

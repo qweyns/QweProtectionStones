@@ -162,7 +162,7 @@ public class EffectManager implements Listener {
 
     // до 1.20.5 имена Bukkit не совпадали с ключами реестра (SLOW != minecraft:slowness),
     // конфиги и уже купленные эффекты в них и записаны старыми именами
-    private static final Map<String, String> LEGACY_EFFECT_NAMES = Map.of(
+    static final Map<String, String> LEGACY_EFFECT_NAMES = Map.of(
             "slow", "slowness",
             "slow_digging", "mining_fatigue",
             "fast_digging", "haste",

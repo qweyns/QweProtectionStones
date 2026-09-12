@@ -137,6 +137,11 @@ notifications:
   discord_webhook: ""
   telegram_bot_token: ""
   telegram_chat_id: ""
+  # Повторы при недоставке вебхука: Discord/Telegram могли быть недоступны
+  # пару секунд в момент рейда. 0 — не повторять.
+  webhook-retries: 2
+  # Пауза между попытками, секунд.
+  webhook-retry-delay-seconds: 15
   discordsrv:
     # Отправлять те же уведомления через DiscordSRV, если он установлен.
     enable: true

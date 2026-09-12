@@ -86,6 +86,7 @@ public final class QweProtectStones extends JavaPlugin {
     private BlueMapIntegration blueMapIntegration;
     private org.qweyns.qweprotectstones.features.market.MarketManager marketManager;
     private org.qweyns.qweprotectstones.features.backup.BackupTask backupTask;
+    private org.qweyns.qweprotectstones.features.update.UpdateChecker updateChecker;
     private org.qweyns.qweprotectstones.hooks.DiscordSrvHook discordSrvHook;
     private AbandonedRegionTask abandonedRegionTask;
     private RegionActionLogger actionLogger;
@@ -180,6 +181,10 @@ public final class QweProtectStones extends JavaPlugin {
         this.criticalFileLogger = new org.qweyns.qweprotectstones.features.log.CriticalFileLogger(this);
         this.backupTask = new org.qweyns.qweprotectstones.features.backup.BackupTask(this);
         this.backupTask.start();
+
+        this.updateChecker = new org.qweyns.qweprotectstones.features.update.UpdateChecker(this);
+        this.updateChecker.start();
+        initMetrics();
 
         this.dynmapIntegration = new DynmapIntegration(this);
         this.dynmapIntegration.enable();
@@ -331,6 +336,24 @@ public final class QweProtectStones extends JavaPlugin {
     public org.qweyns.qweprotectstones.features.market.MarketManager getMarketManager() { return marketManager; }
 
     public org.qweyns.qweprotectstones.features.backup.BackupTask getBackupTask() { return backupTask; }
+
+    private void initMetrics() {
+        if (!getConfigManager().getConfig().getBoolean("metrics.enable", true)) return;
+        int pluginId = getConfigManager().getConfig().getInt("metrics.plugin-id", 0);
+        if (pluginId <= 0) return;
+
+        org.bstats.bukkit.Metrics metrics = new org.bstats.bukkit.Metrics(this, pluginId);
+        metrics.addCustomChart(new org.bstats.bukkit.Metrics.SingleLineChart("regions",
+                () -> regionManager.size()));
+        metrics.addCustomChart(new org.bstats.bukkit.Metrics.AdvancedPie("region_types", () -> {
+            java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+            for (Region region : regionManager.getAllRegions()) {
+                counts.merge(region.getTypeId(), 1, Integer::sum);
+            }
+            return counts;
+        }));
+        getLogger().info("Метрики bStats включены (id " + pluginId + ").");
+    }
 
     public org.qweyns.qweprotectstones.features.log.CriticalFileLogger getCriticalFileLogger() { return criticalFileLogger; }
 

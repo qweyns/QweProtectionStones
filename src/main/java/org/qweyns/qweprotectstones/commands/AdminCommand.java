@@ -297,6 +297,18 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(lm.getMessage("admin_stats_cache",
                 "%pending%", String.valueOf(plugin.getRegionStorage().pendingCount()),
                 "%flush%", flushAgo));
+
+        java.util.Map<String, Long> byType = new java.util.TreeMap<>();
+        for (org.qweyns.qweprotectstones.regions.Region region : plugin.getRegionManager().getAllRegions()) {
+            byType.merge(region.getTypeId(), 1L, Long::sum);
+        }
+        StringBuilder typesLine = new StringBuilder();
+        for (java.util.Map.Entry<String, Long> entry : byType.entrySet()) {
+            if (!typesLine.isEmpty()) typesLine.append(", ");
+            typesLine.append(entry.getKey()).append(" — ").append(entry.getValue());
+        }
+        sender.sendMessage(lm.getMessage("admin_stats_types",
+                "%types%", typesLine.isEmpty() ? "-" : typesLine.toString()));
     }
 
     private void give(CommandSender sender, String[] args) {
