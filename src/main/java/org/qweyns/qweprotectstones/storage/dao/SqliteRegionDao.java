@@ -62,7 +62,7 @@ public class SqliteRegionDao extends AbstractSqlRegionDao {
         return "INSERT OR REPLACE INTO " + regionsTable() + " (id, world, min_x, min_y, min_z, max_x, max_y, max_z," +
                 " core_x, core_y, core_z, type, owner_uuid, owner_name, durability, max_durability, effects, created_at," +
                 " attack_count, last_attack_at, last_attacker, penalty_until, display_name)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     @Override
