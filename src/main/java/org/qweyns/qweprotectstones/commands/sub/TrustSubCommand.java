@@ -112,7 +112,7 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         // ровню и того, кто выше по уровню, из участников не выкинешь
         TrustLevel actorTrust = plugin.getProtectionService().trustOf(region, player);
         if (actorTrust == null
-                || (actorTrust != TrustLevel.OWNER && member.get().level().atLeast(actorTrust))) {
+                || (actorTrust != TrustLevel.OWNER && member.get().trust().atLeast(actorTrust))) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_cant_revoke"));
             return;
         }
