@@ -343,9 +343,9 @@ public final class QweProtectStones extends JavaPlugin {
         if (pluginId <= 0) return;
 
         org.bstats.bukkit.Metrics metrics = new org.bstats.bukkit.Metrics(this, pluginId);
-        metrics.addCustomChart(new org.bstats.bukkit.Metrics.SingleLineChart("regions",
+        metrics.addCustomChart(new org.bstats.charts.SingleLineChart("regions",
                 () -> regionManager.size()));
-        metrics.addCustomChart(new org.bstats.bukkit.Metrics.AdvancedPie("region_types", () -> {
+        metrics.addCustomChart(new org.bstats.charts.AdvancedPie("region_types", () -> {
             java.util.Map<String, Integer> counts = new java.util.HashMap<>();
             for (Region region : regionManager.getAllRegions()) {
                 counts.merge(region.getTypeId(), 1, Integer::sum);
