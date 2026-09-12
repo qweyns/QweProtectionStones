@@ -151,13 +151,15 @@ default_region:
   # Каким ВИДАМ взрывов разрешено снимать прочность ядра (осада).
   # Внимание: это не защита блоков — за неё отвечает флаг explosion_damage.
   # WITHER — визер и его черепа; TNT — всё прочее (ТНТ, вагонетка, гаст);
-  # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере.
+  # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере;
+  # WIND_CHARGE — заряд ветра (игрок и бриз), по умолчанию безвреден.
   explosions:
     TNT: true
     WITHER: true
     CREEPER: false
     ENDER_CRYSTAL: false
     BED: false
+    WIND_CHARGE: false
 
   # --- Эффекты ------------------------------------------------------------------------
   # Эффекты, доступные для покупки в меню «Эффекты» для этого типа.
@@ -385,6 +387,7 @@ region_types:
       CREEPER: false
       ENDER_CRYSTAL: false
       BED: false
+      WIND_CHARGE: false
     allowed_effects:
     - SPEED
     - SLOW
@@ -431,6 +434,7 @@ region_types:
   #     CREEPER: false
   #     ENDER_CRYSTAL: false
   #     BED: false
+  #     WIND_CHARGE: false
   #
   # --- Пример обычного привата с оформленным предметом ------------------------
   # Блок работает как обычный (добыл — поставил), но выданный командой

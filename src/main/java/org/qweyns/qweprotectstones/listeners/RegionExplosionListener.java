@@ -59,6 +59,7 @@ public class RegionExplosionListener implements Listener {
             case WITHER, WITHER_SKULL -> "WITHER";
             case CREEPER -> "CREEPER";
             case END_CRYSTAL -> "ENDER_CRYSTAL";
+            case WIND_CHARGE, BREEZE_WIND_CHARGE -> "WIND_CHARGE";
             default -> "TNT";
         };
     }
@@ -88,8 +89,6 @@ public class RegionExplosionListener implements Listener {
 
         List<Region> damaged = new ArrayList<>();
         for (Region region : affected) {
-            plugin.getPenaltyManager().markAttacked(region);
-
             RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
             if (type != null && type.explosionDamages(explosionType)) damaged.add(region);
         }
@@ -102,6 +101,8 @@ public class RegionExplosionListener implements Listener {
 
             double radius = explosionRadiusFor(region);
             if (core.distanceSquared(center) <= radius * radius) {
+                // штраф за починку — только от взрыва, которому разрешено вредить ядру
+                plugin.getPenaltyManager().markAttacked(region);
                 damageRegion(region, explosionType);
             }
         }

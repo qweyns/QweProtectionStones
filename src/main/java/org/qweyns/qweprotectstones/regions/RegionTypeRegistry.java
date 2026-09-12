@@ -17,7 +17,8 @@ import java.util.Set;
 
 public class RegionTypeRegistry {
 
-    private static final List<String> EXPLOSION_KINDS = List.of("TNT", "CREEPER", "WITHER", "ENDER_CRYSTAL", "BED");
+    private static final List<String> EXPLOSION_KINDS =
+            List.of("TNT", "CREEPER", "WITHER", "ENDER_CRYSTAL", "BED", "WIND_CHARGE");
 
     private final QweProtectStones plugin;
     private final Map<String, RegionType> byId = new LinkedHashMap<>();
