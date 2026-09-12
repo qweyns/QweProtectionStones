@@ -189,7 +189,7 @@ public class EffectManager implements Listener {
         String normalized = name.trim().toLowerCase(Locale.ROOT);
         NamespacedKey key = NamespacedKey.fromString(LEGACY_EFFECT_NAMES.getOrDefault(normalized, normalized));
         return key != null ? RegistryAccess.registryAccess()
-                .getRegistry(RegistryKey.POTION_EFFECT_TYPE).get(key) : null;
+                .getRegistry(RegistryKey.MOB_EFFECT).get(key) : null;
     }
 
     /** Известно ли такое имя эффекта для покупки: встроенные ALERTS/EXP_BOOST или эффект из реестра. */
