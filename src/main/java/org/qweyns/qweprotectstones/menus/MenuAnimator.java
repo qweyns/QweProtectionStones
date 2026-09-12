@@ -34,6 +34,9 @@ public class MenuAnimator implements Runnable {
     // отмена приходит из потока закрытия инвентаря, а run — из таймера
     private volatile boolean changedThisTick = false;
     private volatile boolean cancelled = false;
+    // все кадры проиграны и goto не собирается возвращаться — задачу можно снимать
+    private volatile boolean finished = false;
+    private int lastFrameTick = -1;
 
     MenuAnimator(QweProtectStones plugin, Player player, FileConfiguration menuCfg,
                  Region region, Inventory inv, MenuHolder holder) {
@@ -45,6 +48,7 @@ public class MenuAnimator implements Runnable {
         this.holder = holder;
         this.animLayer = new ItemStack[inv.getSize()];
         compileAnimations();
+        lastFrameTick = compiledFrames.keySet().stream().max(Integer::compareTo).orElse(-1);
         // кадр 0 исполняем сразу: шторка видна с первого тика
         if (compiledFrames.containsKey(0)) run();
     }
@@ -55,6 +59,11 @@ public class MenuAnimator implements Runnable {
 
     boolean isCancelled() {
         return cancelled;
+    }
+
+    /** Последний кадр проигран — таймер анимации тикает вхолостую, снимаем его. */
+    boolean isFinished() {
+        return finished;
     }
 
     // слот закрыт шторкой анимации — клик по нему не проходит
@@ -90,6 +99,9 @@ public class MenuAnimator implements Runnable {
 
         if (changedThisTick || currentTick == 0) inv.setContents(composeDisplay());
         currentTick++;
+
+        // goto назад держит currentTick ниже последнего кадра; без цикла анимация доиграла
+        if (currentTick > lastFrameTick) finished = true;
     }
 
     private void compileAnimations() {

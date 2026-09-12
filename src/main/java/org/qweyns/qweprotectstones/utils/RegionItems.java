@@ -11,26 +11,37 @@ import org.qweyns.qweprotectstones.regions.RegionType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class RegionItems {
 
     private RegionItems() {
     }
 
+    // ключ зависит только от имени плагина — кеш безопасен и переживает reload
+    private static final Map<String, NamespacedKey> KEYS = new ConcurrentHashMap<>();
+
+    private static NamespacedKey key(QweProtectStones plugin, String name) {
+        return KEYS.computeIfAbsent(plugin.getName().toLowerCase(Locale.ROOT) + ':' + name,
+                ignored -> new NamespacedKey(plugin, name));
+    }
+
     public static NamespacedKey typeKey(QweProtectStones plugin) {
-        return new NamespacedKey(plugin, "core-type");
+        return key(plugin, "core-type");
     }
 
     public static NamespacedKey durabilityKey(QweProtectStones plugin) {
-        return new NamespacedKey(plugin, "core-durability");
+        return key(plugin, "core-durability");
     }
 
     public static NamespacedKey penaltyUntilKey(QweProtectStones plugin) {
-        return new NamespacedKey(plugin, "core-penalty-until");
+        return key(plugin, "core-penalty-until");
     }
 
     public static NamespacedKey lastAttackKey(QweProtectStones plugin) {
-        return new NamespacedKey(plugin, "core-last-attack");
+        return key(plugin, "core-last-attack");
     }
 
     public static ItemStack core(QweProtectStones plugin, RegionType type, int amount,

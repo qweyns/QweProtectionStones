@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DeleteSubCommand extends AbstractRegionSubCommand {
+public class DeleteSubCommand extends AbstractRegionSubCommand implements org.bukkit.event.Listener {
 
     private final Map<UUID, PendingDelete> pending = new ConcurrentHashMap<>();
 
@@ -23,6 +23,13 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
 
     public DeleteSubCommand(QweProtectStones plugin) {
         super(plugin);
+        // карта подтверждений не должна переживать выход игрока, как остальные UUID-карты
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        pending.remove(event.getPlayer().getUniqueId());
     }
 
     @Override

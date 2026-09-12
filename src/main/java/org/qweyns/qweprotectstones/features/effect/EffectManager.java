@@ -4,7 +4,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -187,7 +188,8 @@ public class EffectManager implements Listener {
         if (name == null || name.isBlank()) return null;
         String normalized = name.trim().toLowerCase(Locale.ROOT);
         NamespacedKey key = NamespacedKey.fromString(LEGACY_EFFECT_NAMES.getOrDefault(normalized, normalized));
-        return key != null ? Registry.POTION_EFFECT_TYPE.get(key) : null;
+        return key != null ? RegistryAccess.registryAccess()
+                .getRegistry(RegistryKey.POTION_EFFECT_TYPE).get(key) : null;
     }
 
     /** Известно ли такое имя эффекта для покупки: встроенные ALERTS/EXP_BOOST или эффект из реестра. */

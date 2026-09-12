@@ -29,7 +29,9 @@ public class PlayerPointsHook {
     }
 
     public boolean takePoints(Player player, int amount) {
-        if (api == null || amount <= 0) return false;
+        if (api == null) return false;
+        // нулевая цена — не операция: как у Vault takeMoney, бесплатный пункт не должен падать
+        if (amount <= 0) return true;
         return api.take(player.getUniqueId(), amount);
     }
 

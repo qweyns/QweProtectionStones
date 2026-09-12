@@ -210,6 +210,12 @@ public class MenuManager implements Listener {
                     holder.cancelTasks();
                     return;
                 }
+                // анимация доиграла — таймер больше не нужен
+                if (anim.isFinished()) {
+                    holder.animatorTask.cancel();
+                    holder.animatorTask = null;
+                    return;
+                }
                 anim.run();
             }, 1L, 1L);
         }
@@ -350,7 +356,9 @@ public class MenuManager implements Listener {
         clickCooldowns.remove(event.getPlayer().getUniqueId());
     }
 
-    // приват уничтожен — никто не должен остаться в его меню
+    // приват уничтожен — никто не должен остаться в его меню.
+    // MONITOR осознанно: closeInventory — побочный эффект, допустимый только когда
+    // событие доработало всех слушателей и отменить удаление уже нельзя.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onRegionDelete(RegionDeleteEvent event) {
         UUID regionId = event.getRegion().getId();

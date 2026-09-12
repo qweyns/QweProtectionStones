@@ -29,6 +29,11 @@ public class RegionExporter {
 
         String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
         File target = new File(folder, "regions_" + stamp + ".json");
+        // два экспорта в одну секунду не должны молча перезаписывать друг друга
+        int serial = 2;
+        while (target.exists()) {
+            target = new File(folder, "regions_" + stamp + "_" + serial++ + ".json");
+        }
 
         StringBuilder json = new StringBuilder(1024);
         json.append("{\n  \"exported_at\": \"").append(stamp).append("\",\n");

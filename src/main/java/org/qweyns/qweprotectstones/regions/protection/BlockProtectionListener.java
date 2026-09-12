@@ -46,7 +46,8 @@ public class BlockProtectionListener implements Listener {
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && region.isCore(event.getBlock().getLocation())) return;
 
-        if (protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
+        // регион уже найден выше — повторный lookup не нужен
+        if (protection.denyBuild(event.getPlayer(), region)) {
             event.setCancelled(true);
         }
     }
@@ -153,7 +154,8 @@ public class BlockProtectionListener implements Listener {
         if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)) event.setCancelled(true);
     }
 
-    // разрешённый поршнем ход ядра переносим в данные привата — после всех, кто мог отменить событие
+    // переносим ядро в данных привата. MONITOR осознанно: updateCore — побочный эффект,
+    // запись в регион легитимна только когда ход поршня уже никто не отменит.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPistonExtendApplied(BlockPistonExtendEvent event) {
         relocateCore(event.getBlocks(), event.getDirection(), true);

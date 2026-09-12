@@ -194,6 +194,7 @@ public final class QweProtectStones extends JavaPlugin {
         this.actionLogger.startPruning();
 
         this.criticalFileLogger = new org.qweyns.qweprotectstones.features.log.CriticalFileLogger(this);
+        this.criticalFileLogger.start();
         this.backupTask = new org.qweyns.qweprotectstones.features.backup.BackupTask(this);
         this.backupTask.start();
 
@@ -286,6 +287,8 @@ public final class QweProtectStones extends JavaPlugin {
         if (rateLimiter != null) rateLimiter.clear();
         if (inviteManager != null) inviteManager.clear();
         if (previewListener != null) previewListener.clear();
+        // буфер журнала критических операций сбрасываем на диск до выхода
+        if (criticalFileLogger != null) criticalFileLogger.stop();
         if (schedulers != null) schedulers.cancelAll();
         if (autoAddManager != null) autoAddManager.saveAllOnline();
         if (hologramManager != null) hologramManager.deleteAll();
@@ -318,6 +321,7 @@ public final class QweProtectStones extends JavaPlugin {
         rateLimiter.reload();
         explosionListener.reload();
         inviteManager.reload();
+        criticalFileLogger.start();
         // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге
         actionLogger.startPruning();
 

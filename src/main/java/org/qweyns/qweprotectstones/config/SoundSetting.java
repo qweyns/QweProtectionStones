@@ -2,7 +2,8 @@ package org.qweyns.qweprotectstones.config;
 
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -61,7 +62,7 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
         Map<String, Sound> index = legacyIndex;
         if (index == null) {
             index = new HashMap<>();
-            for (Sound sound : Registry.SOUNDS) {
+            for (Sound sound : RegistryAccess.registryAccess().getRegistry(RegistryKey.SOUND_EVENT)) {
                 index.put(compact(sound.getKey().getKey()), sound);
             }
             legacyIndex = index;
@@ -90,7 +91,9 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
 
     private static Sound byKey(String key) {
         NamespacedKey namespaced = NamespacedKey.fromString(key);
-        return namespaced != null ? Registry.SOUNDS.get(namespaced) : null;
+        return namespaced != null
+                ? RegistryAccess.registryAccess().getRegistry(RegistryKey.SOUND_EVENT).get(namespaced)
+                : null;
     }
 
     private static float readFloat(String[] parts, int index, float fallback) {

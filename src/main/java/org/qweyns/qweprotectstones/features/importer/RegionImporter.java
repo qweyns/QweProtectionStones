@@ -112,7 +112,7 @@ public class RegionImporter {
         }
 
         Region region = buildRegion(worldName, bounds, ownerId, ownerName, psMaterial(data));
-        if (region == null) return false;
+        if (region == null) return null;
 
         applyWgFlags(region, data);
 

@@ -114,7 +114,11 @@ public class ProtectionService {
     }
 
     public boolean denyBuild(Player player, Location location) {
-        Region region = regionAt(location);
+        return denyBuild(player, regionAt(location));
+    }
+
+    /** Регион уже найден вызывающим — не ищем второй раз. */
+    public boolean denyBuild(Player player, Region region) {
         if (region == null || has(region, player, requiredFor(Tunables.TrustAction.BUILD))) return false;
 
         notifyDenied(player, region);

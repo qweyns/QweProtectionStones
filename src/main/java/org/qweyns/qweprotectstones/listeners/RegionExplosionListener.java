@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -63,12 +64,15 @@ public class RegionExplosionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
-        handleExplosion(event.getBlock().getLocation(), event.blockList(), "BED");
+        handleExplosion(event.getBlock().getLocation(), event.blockList(), "BED", null);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        handleExplosion(event.getLocation(), event.blockList(), classify(event.getEntityType()));
+        // поджигавший TNT записывается атакующим, даже если взрыв догнал уже его смерть
+        String primer = event.getEntity() instanceof TNTPrimed primed
+                && primed.getSource() instanceof Player player ? player.getName() : null;
+        handleExplosion(event.getLocation(), event.blockList(), classify(event.getEntityType()), primer);
     }
 
     private String classify(EntityType type) {
@@ -82,7 +86,7 @@ public class RegionExplosionListener implements Listener {
         };
     }
 
-    private void handleExplosion(Location center, List<Block> blockList, String explosionType) {
+    private void handleExplosion(Location center, List<Block> blockList, String explosionType, String primerName) {
         World world = center.getWorld();
         if (world == null) return;
 
@@ -125,7 +129,7 @@ public class RegionExplosionListener implements Listener {
             if (core.distanceSquared(center) <= radius * radius) {
                 // штраф за починку — только от взрыва, которому разрешено вредить ядру
                 plugin.getPenaltyManager().markAttacked(region);
-                damageRegion(region, explosionType);
+                damageRegion(region, explosionType, primerName);
             }
         }
     }
@@ -137,7 +141,7 @@ public class RegionExplosionListener implements Listener {
                 : plugin.getConfigManager().getExplosionDamageRadius();
     }
 
-    private void damageRegion(Region region, String explosionType) {
+    private void damageRegion(Region region, String explosionType, String primerName) {
         if (processingRemoval.contains(region.getId())) return;
 
         RegionType regionType = plugin.getRegionTypes().byId(region.getTypeId());
@@ -165,7 +169,7 @@ public class RegionExplosionListener implements Listener {
                 ? plugin.getLanguageManager().rawTemplate("unknown_owner")
                 : region.getOwnerName();
 
-        region.recordAttack(attackerNameNear(core));
+        region.recordAttack(primerName != null ? primerName : attackerNameNear(region, core));
 
         if (region.getDurability() > event.getDamage()) {
             region.setDurability(region.getDurability() - event.getDamage());
@@ -187,7 +191,7 @@ public class RegionExplosionListener implements Listener {
         destroyRegion(region, core);
     }
 
-    private String attackerNameNear(Location core) {
+    private String attackerNameNear(Region region, Location core) {
         // мир мог выгрузиться между поджигом и взрывом
 
         if (core == null || core.getWorld() == null) return "";
@@ -197,6 +201,9 @@ public class RegionExplosionListener implements Listener {
         String best = "";
 
         for (Player nearby : core.getWorld().getPlayers()) {
+            // владелец и участники свой приват не штурмуют: TNT, заложенная заранее,
+            // не должна записывать атакующим того, кто просто стоит рядом
+            if (region.isOwner(nearby.getUniqueId()) || region.getTrust(nearby.getUniqueId()) != null) continue;
             double distance = nearby.getLocation().distanceSquared(core);
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -232,7 +239,11 @@ public class RegionExplosionListener implements Listener {
 
         plugin.getSchedulers().runAtLocationLater(core, () -> {
             try {
-                if (core.getWorld() != null && core.getBlock().getType() == materialOf(region)) {
+                // за тик в этот блок мог встать новый приват: его ядро нельзя сносить
+                Region replacement = plugin.getRegionManager().getRegionAt(core);
+                boolean occupiedByNewCore = replacement != null && replacement.isCore(core);
+                if (core.getWorld() != null && !occupiedByNewCore
+                        && core.getBlock().getType() == materialOf(region)) {
                     core.getBlock().setType(Material.AIR);
                 }
             } finally {
