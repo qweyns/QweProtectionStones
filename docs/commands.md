@@ -49,13 +49,10 @@
 
 | Команда | Описание |
 | --- | --- |
-| `/ps expand [число] [all\|horizontal\|up\|down]` | Расширить приват |
-| `/ps move` | Перенести ядро — территория следует за ним |
 | `/ps findspot [тип]` | Ближайшее свободное место под приват |
 | `/ps glow` | Постоянная подсветка границ |
 | `/ps delete` | Удалить приват (с подтверждением) |
 
-Лимиты расширения и переноса — в `features.yml` (секция `resize`).
 
 ### Рынок
 
@@ -140,8 +137,6 @@
 | `qweprotectstones.log` | `/ps log` | все |
 | `qweprotectstones.findspot` | `/ps findspot` | все |
 | `qweprotectstones.glow` | `/ps glow` | все |
-| `qweprotectstones.expand` | `/ps expand` | все |
-| `qweprotectstones.move` | `/ps move` | все |
 | `qweprotectstones.buysell` | `/ps sell`, `/ps buy` | все |
 | `qweprotectstones.rent` | `/ps rent` | все |
 | `qweprotectstones.transfer` | `/ps transfer` | все |

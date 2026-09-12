@@ -18,7 +18,6 @@ import org.qweyns.qweprotectstones.commands.sub.InfoSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.InviteSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.ListSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.LogSubCommand;
-import org.qweyns.qweprotectstones.commands.sub.ResizeSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.SellSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.RentSubCommand;
 import org.qweyns.qweprotectstones.commands.sub.MembersSubCommand;
@@ -78,8 +77,6 @@ public class RegionCommand extends Command {
         register(new DecorationSubCommand(plugin, DecorationSubCommand.Mode.GREETING));
         register(new DecorationSubCommand(plugin, DecorationSubCommand.Mode.FAREWELL));
         register(new FindSpotSubCommand(plugin));
-        register(new ResizeSubCommand(plugin, ResizeSubCommand.Mode.EXPAND));
-        register(new ResizeSubCommand(plugin, ResizeSubCommand.Mode.MOVE));
         register(new SellSubCommand(plugin, SellSubCommand.Mode.SELL));
         register(new SellSubCommand(plugin, SellSubCommand.Mode.BUY));
         register(new RentSubCommand(plugin));

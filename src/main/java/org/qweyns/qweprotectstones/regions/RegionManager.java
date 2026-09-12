@@ -323,39 +323,6 @@ public class RegionManager {
         return updateBounds(region, bounds);
     }
 
-    public Region moveRegion(Region region, org.bukkit.Location newCore) {
-        World world = newCore.getWorld();
-        if (world == null || !world.getName().equals(region.getWorldName())) return null;
-
-        RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
-        if (type == null) {
-
-            plugin.getLogger().warning("Перенос привата " + region.getShortId() + " невозможен: типы не настроены.");
-            return null;
-        }
-        int radiusY = type.fullHeight() ? world.getMaxHeight() - world.getMinHeight() : type.radiusY();
-        RegionBounds newBounds = RegionBounds.around(
-                newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ(),
-                type.radiusX(), radiusY, type.radiusZ(),
-                world.getMinHeight(), world.getMaxHeight() - 1);
-
-        for (Region other : index.intersecting(world.getName(), newBounds)) {
-            if (!other.getId().equals(region.getId())) return other;
-        }
-
-        index.remove(region);
-
-        org.bukkit.block.Block oldCore = world.getBlockAt(region.getCoreX(), region.getCoreY(), region.getCoreZ());
-        if (oldCore.getType() == type.material()) oldCore.setType(org.bukkit.Material.AIR);
-        world.getBlockAt(newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ()).setType(type.material());
-
-        region.setCore(newCore.getBlockX(), newCore.getBlockY(), newCore.getBlockZ());
-        region.setBounds(newBounds);
-        index.add(region);
-
-        plugin.getRegionStorage().save(region);
-        return null;
-    }
 
     public void refreshTypeData() {
         for (Region region : regions.values()) {

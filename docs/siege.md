@@ -49,9 +49,8 @@
 - **Уведомления**: владелец (и все с эффектом `ALERTS`) получают сообщение
   в чат; соседям в радиусе `neighbour_alert_radius` — звук и уведомление.
 - **Штраф**: в меню прокачки показывается множитель `%penalty%`.
-- Сделки (`/ps sell`, `/ps buy`, аренда) и расширение границ можно запретить
-  на время осады: `market.sell.allow-during-siege` и
-  `resize.block-during-siege` (features.yml).
+- Сделки (`/ps sell`, `/ps buy`, аренда) можно запретить на время осады:
+  `market.sell.allow-during-siege` (features.yml).
 
 ## Живучесть штрафа
 

@@ -74,12 +74,6 @@ permissions:
   qweprotectstones.glow:
     description: Постоянная подсветка границ (/ps glow)
     default: true
-  qweprotectstones.expand:
-    description: Расширение границ привата (/ps expand)
-    default: true
-  qweprotectstones.move:
-    description: Перенос ядра привата (/ps move)
-    default: true
   qweprotectstones.buysell:
     description: Рынок приватов (/ps sell, /ps buy)
     default: true

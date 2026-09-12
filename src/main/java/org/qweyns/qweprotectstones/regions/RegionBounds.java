@@ -37,11 +37,6 @@ public record RegionBounds(int minX, int minY, int minZ, int maxX, int maxY, int
                 maxX + amount, maxY + amount, maxZ + amount);
     }
 
-    public RegionBounds expandHorizontally(int amount) {
-        return new RegionBounds(minX - amount, minY, minZ - amount,
-                maxX + amount, maxY, maxZ + amount);
-    }
-
     public int chunkMinX() { return minX >> 4; }
     public int chunkMaxX() { return maxX >> 4; }
     public int chunkMinZ() { return minZ >> 4; }

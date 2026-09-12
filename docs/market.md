@@ -40,34 +40,6 @@ market:
 (проверка по расписанию `check-interval-minutes`). Приват возвращается
 владельцу в исходном виде.
 
-## Изменение границ (features.yml → resize)
-
-Рыночные команды соседствуют с изменением территории:
-
-```yaml
-resize:
-  block-during-siege: true   # запретить expand/move под осадой
-  expand:
-    enable: true
-    max-step: 10             # максимум за одну команду (блоков)
-    max-radius: 32           # потолок полуширины (0 = не ограничено)
-    vertical: false          # разрешить up/down
-    required-trust: "manager"
-  move:
-    enable: true
-    max-distance: 64         # от текущего ядра за один перенос
-    # блоки, на которые можно поставить ядро при переносе
-    replaceable:
-      - AIR
-      - WATER
-      - SHORT_GRASS
-      - SNOW
-    required-trust: "owner"
-```
-
-- `/ps expand [число] [all|horizontal|up|down]` — расширить границы.
-- `/ps move` — перенести ядро: территория следует за ним.
-
 ## Телепорт домой (features.yml → home)
 
 ```yaml

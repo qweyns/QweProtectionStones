@@ -80,18 +80,6 @@ class RegionBoundsTest {
         assertEquals(new RegionBounds(-2, -2, -2, 12, 12, 12), expanded);
     }
 
-    @Test
-    void expandHorizontallyKeepsHeight() {
-        RegionBounds bounds = new RegionBounds(0, 5, 0, 10, 20, 10);
-        RegionBounds expanded = bounds.expandHorizontally(3);
-
-        assertEquals(-3, expanded.minX());
-        assertEquals(13, expanded.maxX());
-        assertEquals(-3, expanded.minZ());
-        assertEquals(13, expanded.maxZ());
-        assertEquals(5, expanded.minY(), "вертикаль не меняется");
-        assertEquals(20, expanded.maxY(), "вертикаль не меняется");
-    }
 
     @Test
     void sizesCountBlocksNotCoordinates() {
