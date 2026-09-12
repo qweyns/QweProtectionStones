@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.qweyns.qweprotectstones.QweProtectStones;
+import org.qweyns.qweprotectstones.features.effect.EffectManager;
 import org.qweyns.qweprotectstones.config.SoundSetting;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.event.RegionEvents;
@@ -223,8 +224,7 @@ public class MenuActions {
 
         // имя эффекта до списания, за опечатку в конфиге не платят
 
-        boolean builtin = effectName.equalsIgnoreCase("ALERTS") || effectName.equalsIgnoreCase("EXP_BOOST");
-        if (!builtin && plugin.getEffectManager().potionType(effectName) == null) {
+        if (!EffectManager.isKnownEffect(effectName)) {
             plugin.getLogger().warning("Магазин эффектов: неизвестный эффект '" + effectName + "' (проверьте menus/effects.yml)");
             player.sendMessage(plugin.getLanguageManager().getMessage("effect_unknown", "%effect%", effectName));
             return false;

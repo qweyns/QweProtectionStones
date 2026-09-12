@@ -27,6 +27,9 @@ effect_targets:
 `SPEED`, `SLOW`, `FAST_DIGGING`, `INCREASE_DAMAGE`, `INVISIBILITY`,
 `HEALTH_BOOST`, `WITHER`, …
 
+Старые Bukkit-имена и новые ванильные ключи равнозначны: `SLOW` = `SLOWNESS`,
+`FAST_DIGGING` = `HASTE`, `INCREASE_DAMAGE` = `STRENGTH` и т.п.
+
 Псевдоэффекты:
 
 - **ALERTS** — уведомления о рейдах (в чат и мессенджеры);

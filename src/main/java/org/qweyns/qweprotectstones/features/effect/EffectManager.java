@@ -160,10 +160,31 @@ public class EffectManager implements Listener {
         }
     }
 
+    // до 1.20.5 имена Bukkit не совпадали с ключами реестра (SLOW != minecraft:slowness),
+    // конфиги и уже купленные эффекты в них и записаны старыми именами
+    private static final Map<String, String> LEGACY_EFFECT_NAMES = Map.of(
+            "slow", "slowness",
+            "slow_digging", "mining_fatigue",
+            "fast_digging", "haste",
+            "increase_damage", "strength",
+            "damage_resistance", "resistance",
+            "jump", "jump_boost",
+            "confusion", "nausea",
+            "heal", "instant_health",
+            "harm", "instant_damage");
+
     public static PotionEffectType potionType(String name) {
         if (name == null || name.isBlank()) return null;
-        NamespacedKey key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));
+        String normalized = name.trim().toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(LEGACY_EFFECT_NAMES.getOrDefault(normalized, normalized));
         return key != null ? Registry.POTION_EFFECT_TYPE.get(key) : null;
+    }
+
+    /** Известно ли такое имя эффекта для покупки: встроенные ALERTS/EXP_BOOST или эффект из реестра. */
+    public static boolean isKnownEffect(String name) {
+        if (name == null || name.isBlank()) return false;
+        return name.equalsIgnoreCase("ALERTS") || name.equalsIgnoreCase("EXP_BOOST")
+                || potionType(name) != null;
     }
 
     public void addCustomEffect(Region region, String effectName, int amplifier) {

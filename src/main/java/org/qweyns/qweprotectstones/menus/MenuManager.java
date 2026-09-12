@@ -15,6 +15,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.qweyns.qweprotectstones.QweProtectStones;
+import org.qweyns.qweprotectstones.features.effect.EffectManager;
 import org.qweyns.qweprotectstones.config.Tunables;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionType;
@@ -105,8 +106,27 @@ public class MenuManager implements Listener {
             FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
             menus.put(name, cfg);
             if (cfg.saveToString().indexOf('%') >= 0) menusWithPercent.add(name);
+            validateEffectNames(name, cfg);
         }
         plugin.getLogger().info("Загружено меню: " + menus.size());
+    }
+
+    // опечатка в имени эффекта всплыла бы только у игрока на кнопке — ловим при загрузке
+    private void validateEffectNames(String menuName, FileConfiguration cfg) {
+        ConfigurationSection items = cfg.getConfigurationSection("items");
+        if (items == null) return;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "\\[(?:region|claim|ps)_add_effect\\]\\s*([A-Za-z0-9_]+)");
+        for (String itemId : items.getKeys(false)) {
+            for (String cmd : items.getStringList(itemId + ".click_commands")) {
+                java.util.regex.Matcher matcher = pattern.matcher(cmd);
+                if (!matcher.find()) continue;
+                if (!EffectManager.isKnownEffect(matcher.group(1))) {
+                    plugin.getLogger().warning("Меню '" + menuName + "', предмет '" + itemId
+                            + "': неизвестный эффект '" + matcher.group(1) + "'.");
+                }
+            }
+        }
     }
 
     public String defaultMenuFor(Region region) {
