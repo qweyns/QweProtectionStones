@@ -3,6 +3,7 @@ package org.qweyns.qweprotectstones.regions.protection;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -142,26 +143,35 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
-        if (pistonBlocked(event.getBlock().getLocation(), event.getBlocks())) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), true)) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        if (pistonBlocked(event.getBlock().getLocation(), event.getBlocks())) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)) event.setCancelled(true);
     }
 
-    private boolean pistonBlocked(Location pistonLocation, List<Block> blocks) {
-        Region pistonRegion = protection.regionAt(pistonLocation);
+    private boolean pistonBlocked(Block piston, List<Block> blocks, BlockFace direction, boolean extend) {
+        Region pistonRegion = protection.regionAt(piston.getLocation());
 
+        // голова поршня занимает блок перед собой
+        if (extend && violates(pistonRegion, piston.getRelative(direction).getLocation())) return true;
+
+        // и текущие позиции блоков, и те, куда их сместит поршень
         for (Block block : blocks) {
-            Region blockRegion = protection.regionAt(block.getLocation());
-            if (blockRegion == null) continue;
-
-            if (blockRegion.isCore(block.getLocation())) return true;
-            if (blockRegion.equals(pistonRegion)) continue;
-            if (!protection.flag(blockRegion, RegionFlag.PISTONS_FROM_OUTSIDE)) return true;
+            if (violates(pistonRegion, block.getLocation())) return true;
+            if (violates(pistonRegion, block.getRelative(direction).getLocation())) return true;
         }
         return false;
+    }
+
+    private boolean violates(Region pistonRegion, Location location) {
+        Region region = protection.regionAt(location);
+        if (region == null) return false;
+
+        if (region.isCore(location)) return true;
+        if (region.equals(pistonRegion)) return false;
+        return !protection.flag(region, RegionFlag.PISTONS_FROM_OUTSIDE);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

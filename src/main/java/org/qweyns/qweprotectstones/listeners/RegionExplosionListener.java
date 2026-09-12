@@ -81,6 +81,10 @@ public class RegionExplosionListener implements Listener {
             return !plugin.getProtectionService().flag(region, RegionFlag.EXPLOSION_DAMAGE);
         });
 
+        // у заряда ветра список блоков пуст — регион ищем ещё и по центру взрыва
+        Region centerRegion = plugin.getRegionManager().getRegionAt(center);
+        if (centerRegion != null) affected.add(centerRegion);
+
         if (affected.isEmpty()) return;
 
         // осады выключены, прочность не снимаем, блоки по-прежнему под флагом

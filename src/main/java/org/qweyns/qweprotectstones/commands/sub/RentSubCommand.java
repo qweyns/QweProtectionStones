@@ -43,6 +43,10 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
         }
     }
 
+    private boolean allowDuringSiege() {
+        return plugin.getConfigManager().getConfig().getBoolean("market.rent.allow-during-siege", false);
+    }
+
     private void offer(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(plugin.getLanguageManager().getMessage("rent_usage"));
@@ -51,6 +55,11 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
 
         Region region = regionWithTrust(player, TrustLevel.OWNER);
         if (region == null) return;
+
+        if (!allowDuringSiege() && plugin.isUnderSiege(region)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("rent_siege"));
+            return;
+        }
 
         double price;
         int minutes;
@@ -95,6 +104,11 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
 
         Region region = regionUnderFeet(player);
         if (region == null) return;
+
+        if (!allowDuringSiege() && plugin.isUnderSiege(region)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("rent_siege"));
+            return;
+        }
 
         RegionRental rental = plugin.getMarketManager().getRental(region);
         if (rental == null) {

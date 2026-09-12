@@ -24,7 +24,10 @@ market:
     min-duration-minutes: 10
     max-duration-minutes: 4320
     # Уровень доступа арендатора: access | container | build | manager.
-    trust-level: "manager"
+    # container — открывать сундуки и двери, но не строить и не рулить флагами.
+    trust-level: "container"
+    # Разрешить сдавать и снимать аренду у приватов под осадой.
+    allow-during-siege: false
     # Как часто проверять истёкшие аренды (в минутах).
     check-interval-minutes: 5
 

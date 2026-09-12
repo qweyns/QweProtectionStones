@@ -189,6 +189,13 @@ public class MenuActions {
     private boolean addEffect(Player player, Region region, String argument) {
         if (region == null || argument.isEmpty()) return false;
 
+        // эффекты — настройка привата, покупка доступна управляющим
+        if (!plugin.getProtectionService().canManage(player, region)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
+                    "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));
+            return false;
+        }
+
         String[] parts = argument.split(":");
         String effectName = parts[0].trim();
         if (effectName.isEmpty()) return false;

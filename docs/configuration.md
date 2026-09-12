@@ -54,7 +54,8 @@ database:
 | `menu_command_radius` | С какого расстояния `/ps menu` достаёт до ядра |
 
 **Заброшенные приваты** (`settings.abandoned`): `enable`, `inactive_days`,
-`check_interval_minutes`, `keep_upgraded` (не трогать прокачанные).
+`check_interval_minutes`, `keep_upgraded` (не трогать прокачанные),
+`skip_listed` (не трогать выставленные на продажу и в аренду).
 
 **Журнал действий** (`settings.action_log`): `enable`, `log_containers`
 (записывать открытие сундуков), `keep_days`.

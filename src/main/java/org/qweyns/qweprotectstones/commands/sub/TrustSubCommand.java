@@ -103,8 +103,17 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
     private void revoke(Player player, Region region, OfflinePlayer target) {
         String targetName = target.getName() != null ? target.getName() : target.getUniqueId().toString();
 
-        if (region.getMember(target.getUniqueId()).isEmpty()) {
+        var member = region.getMember(target.getUniqueId());
+        if (member.isEmpty()) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_not_member", "%player%", targetName));
+            return;
+        }
+
+        // ровню и того, кто выше по уровню, из участников не выкинешь
+        TrustLevel actorTrust = plugin.getProtectionService().trustOf(region, player);
+        if (actorTrust == null
+                || (actorTrust != TrustLevel.OWNER && member.get().level().atLeast(actorTrust))) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("trust_cant_revoke"));
             return;
         }
         if (RegionEvents.fireMemberChange(region, player, target.getUniqueId(), targetName,

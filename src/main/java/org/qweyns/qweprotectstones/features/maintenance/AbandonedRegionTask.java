@@ -71,6 +71,9 @@ public class AbandonedRegionTask {
 
             if (keepUpgraded() && region.getDurability() > startDurabilityOf(region)) continue;
 
+            // выставленные на продажу и в аренду не трогаем — вместе с приватом сгорали бы сделки
+            if (skipListed() && isListed(region)) continue;
+
             doomed.add(region);
         }
 
@@ -85,6 +88,15 @@ public class AbandonedRegionTask {
             removed++;
         }
         plugin.getLogger().info("Автоочистка: удалено заброшенных приватов — " + removed);
+    }
+
+    private boolean skipListed() {
+        return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.skip_listed", true);
+    }
+
+    private boolean isListed(Region region) {
+        return plugin.getMarketManager().getSale(region) != null
+                || plugin.getMarketManager().getRental(region) != null;
     }
 
     private int startDurabilityOf(Region region) {

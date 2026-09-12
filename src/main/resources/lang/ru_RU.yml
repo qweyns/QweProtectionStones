@@ -52,6 +52,7 @@ trust_too_high: "%prefix%<#FB7185>Нельзя выдать уровень вы�
 trust_granted: "%prefix%<#86EFAC>Игроку <#FDE68A>%player% <#86EFAC>выдан уровень <#FDE68A>%level%<#86EFAC>."
 trust_granted_target: "%prefix%<#86EFAC>Игрок <#FDE68A>%owner% <#86EFAC>выдал вам доступ <#FDE68A>%level%<#86EFAC>."
 trust_revoked: "%prefix%<#FB7185>Доступ игрока <#FDE68A>%player% <#FB7185>отозван."
+trust_cant_revoke: "%prefix%<#FB7185>Нельзя отозвать доступ участника с уровнем не ниже твоего."
 trust_not_member: "%prefix%<#FDE68A>%player% <#FB7185>не имеет доступа к этому привату."
 members_header: "<#A79FC0>=== <#C4B5FD>Доступ к привату <#A79FC0>=== <#A79FC0>(владелец: <#FDE68A>%owner%<#A79FC0>)"
 members_empty: "<#A79FC0>Доступ никому не выдан."
@@ -83,6 +84,7 @@ home_teleported: "%prefix%<#86EFAC>Вы перемещены к привату <
 transfer_usage: "%prefix%<#FDE68A>/ps transfer <ник>"
 transfer_already_owner: "%prefix%<#FB7185>Этот игрок уже владелец привата."
 transfer_done: "%prefix%<#86EFAC>Приват передан игроку <#FDE68A>%player%<#86EFAC>. Вы остались управляющим."
+transfer_sale_cancelled: "%prefix%<#FB7185>Продажа привата <#FDE68A>%id% <#FB7185>снята — приват передан."
 transfer_received: "%prefix%<#86EFAC>Игрок <#FDE68A>%player% <#86EFAC>передал вам приват!"
 delete_confirm:
   - "%prefix%<#FB7185>Удаление привата <#FDE68A>%id% <#FB7185>необратимо! <#F2EFFA>Подтвердите в течение <#FDE68A>%seconds% <#F2EFFA>сек:"
@@ -218,6 +220,7 @@ sell_not_listed: "%prefix%<#FDE68A>%id% <#FB7185>не был на продаже
 buy_not_listed: "%prefix%<#FDE68A>%id% <#FB7185>не продаётся."
 buy_self: "%prefix%<#FB7185>Это ваш собственный приват."
 buy_siege: "%prefix%<#FB7185>Приват под осадой — покупать нельзя."
+rent_siege: "%prefix%<#FB7185>Приват под осадой — аренда недоступна."
 buy_no_money: "%prefix%<#FB7185>Не хватает денег: нужно <#FDE68A>%price%<#FB7185>."
 buy_failed: "%prefix%<#FB7185>Сделка не состоялась (проблема с экономикой или отменена плагином)."
 buy_success: "%prefix%<#86EFAC>Вы купили приват <#FDE68A>%id% <#86EFAC>за <#FDE68A>%price%<#86EFAC>."

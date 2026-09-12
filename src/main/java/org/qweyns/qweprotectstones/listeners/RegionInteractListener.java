@@ -48,6 +48,10 @@ public class RegionInteractListener implements Listener {
             if (type != null && type.spawnEggAllowed() && trusted) {
                 event.setUseInteractedBlock(Event.Result.ALLOW);
                 event.setUseItemInHand(Event.Result.ALLOW);
+            } else {
+                // без разрешения типа яйцо у ядра ничего не спавнит
+                event.setCancelled(true);
+                if (!trusted) plugin.getProtectionService().notifyDenied(player, region, "interact");
             }
             return;
         }

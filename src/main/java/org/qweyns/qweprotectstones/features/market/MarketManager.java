@@ -70,6 +70,19 @@ public class MarketManager {
         return true;
     }
 
+    /** Смена владельца: продажа снимается, аренда перепривязывается к новому. Возвращает true, если продажа была активна. */
+    public boolean handleOwnershipChange(Region region, UUID newOwnerId, String newOwnerName) {
+        boolean hadSale = cancelSale(region);
+
+        rentals.computeIfPresent(region.getId(), (id, rental) -> {
+            RegionRental rebound = new RegionRental(rental.regionId(), newOwnerId, newOwnerName,
+                    rental.price(), rental.durationMinutes(), rental.tenantId(), rental.tenantName(), rental.rentedUntil());
+            plugin.getRegionStorage().saveRentalNow(rebound);
+            return rebound;
+        });
+        return hadSale;
+    }
+
     public boolean buy(Player buyer, Region region) {
         RegionSale sale = sales.get(region.getId());
         if (sale == null) return false;
@@ -96,7 +109,7 @@ public class MarketManager {
         if (previousOwner != null) region.removeMember(previousOwner);
         plugin.getRegionStorage().save(region);
 
-        cancelSale(region);
+        handleOwnershipChange(region, buyer.getUniqueId(), buyer.getName());
         return true;
     }
 
@@ -168,9 +181,9 @@ public class MarketManager {
     }
 
     public TrustLevel rentTrustLevel() {
-        String raw = plugin.getConfigManager().getConfig().getString("market.rent.trust-level", "manager");
+        String raw = plugin.getConfigManager().getConfig().getString("market.rent.trust-level", "container");
         Optional<TrustLevel> parsed = TrustLevel.parse(raw);
-        return parsed.orElse(TrustLevel.MANAGER);
+        return parsed.orElse(TrustLevel.CONTAINER);
     }
 
     public void expireRentals() {

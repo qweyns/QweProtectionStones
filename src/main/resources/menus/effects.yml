@@ -94,6 +94,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "EXP_BOOST"
@@ -162,6 +165,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "ALERTS"
@@ -227,6 +233,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "FAST_DIGGING"
@@ -293,6 +302,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "SPEED"
@@ -357,6 +369,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "INCREASE_DAMAGE"
@@ -421,6 +436,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "INVISIBILITY"
@@ -485,6 +503,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "HEALTH_BOOST"
@@ -554,6 +575,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "SLOW"
@@ -620,6 +644,9 @@ items:
       - "<#FDE68A>▶ Нажмите, чтобы купить!"
     view_requirement:
       requirements:
+        trust:
+          type: "trust_level"
+          level: "manager"
         a:
           type: "allowed_effect"
           effect_name: "WITHER"
