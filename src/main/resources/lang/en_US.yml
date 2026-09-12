@@ -355,6 +355,7 @@ findspot_usage: "%prefix%<#FDE68A>/ps findspot [type] <#A79FC0>Available: %types
 findspot_found: "%prefix%<#86EFAC>Free spot for %type%<#86EFAC>: <#FDE68A>%x% %y% %z% <#A79FC0>(%distance% blocks)"
 findspot_none: "%prefix%<#FB7185>No free spot within %distance% blocks."
 region_cooldown: "%prefix%<#FB7185>Wait <#FDE68A>%seconds% <#FB7185>s before creating another region."
+core_break_siege: "%prefix%<#FB7185>The region is under attack — the core cannot be removed yet. Time left: <#FDE68A>%seconds%<#FB7185> sec."
 siege_active: "<#FB7185>under siege"
 siege_calm: "<#86EFAC>calm"
 admin_never: "never"

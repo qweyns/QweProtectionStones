@@ -88,7 +88,7 @@ public class RegionExplosionListener implements Listener {
 
         List<Region> damaged = new ArrayList<>();
         for (Region region : affected) {
-            plugin.getPenaltyManager().markAttacked(region.getId());
+            plugin.getPenaltyManager().markAttacked(region);
 
             RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
             if (type != null && type.explosionDamages(explosionType)) damaged.add(region);

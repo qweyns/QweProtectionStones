@@ -73,6 +73,19 @@ public class RegionLifecycleListener implements Listener {
         int carriedDurability = taggedDurability(event.getItemInHand());
         if (carriedDurability > 0) {
             region.setDurability(Math.min(carriedDurability, region.getMaxDurability()));
+        }
+
+        // штраф и момент последней атаки едут с предметом: «сломал-поставил» осаду не обнуляет
+
+        long carriedAttack = taggedLong(event.getItemInHand(), lastAttackKey());
+        if (carriedAttack > 0) {
+            region.restoreStats(region.getAttackCount(), carriedAttack, region.getLastAttackerName());
+        }
+        long carriedPenalty = taggedLong(event.getItemInHand(), penaltyUntilKey());
+        if (carriedPenalty > System.currentTimeMillis()) {
+            region.setPenaltyUntil(carriedPenalty);
+        }
+        if (carriedDurability > 0 || carriedAttack > 0 || carriedPenalty > 0) {
             plugin.getRegionStorage().save(region);
         }
 
@@ -123,6 +136,20 @@ public class RegionLifecycleListener implements Listener {
             } else {
                 plugin.getProtectionService().notifyDenied(player, region);
             }
+            return;
+        }
+
+        // снести ядро и поставить заново — значит сбросить осаду, не даём
+
+        if (plugin.getConfigManager().isSiegeEnabled()
+                && plugin.getConfigManager().isCoreBreakDeniedUnderAttack()
+                && region.isUnderSiege(plugin.getTunables().siegeWindowMs())
+                && !plugin.getProtectionService().bypasses(player)) {
+            event.setCancelled(true);
+            long leftMs = region.getLastAttackAt() + plugin.getTunables().siegeWindowMs()
+                    - System.currentTimeMillis();
+            player.sendMessage(plugin.getLanguageManager().getMessage("core_break_siege",
+                    "%seconds%", String.valueOf(Math.max(1, (leftMs + 999) / 1000))));
             return;
         }
 
@@ -178,6 +205,21 @@ public class RegionLifecycleListener implements Listener {
         return item.getItemMeta().getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.INTEGER);
     }
 
+    private long taggedLong(ItemStack item, org.bukkit.NamespacedKey key) {
+        if (item == null || !item.hasItemMeta()) return 0L;
+        Long value = item.getItemMeta().getPersistentDataContainer()
+                .get(key, org.bukkit.persistence.PersistentDataType.LONG);
+        return value != null ? value : 0L;
+    }
+
+    private org.bukkit.NamespacedKey penaltyUntilKey() {
+        return org.qweyns.qweprotectstones.utils.RegionItems.penaltyUntilKey(plugin);
+    }
+
+    private org.bukkit.NamespacedKey lastAttackKey() {
+        return org.qweyns.qweprotectstones.utils.RegionItems.lastAttackKey(plugin);
+    }
+
     private org.bukkit.NamespacedKey typeKey() {
         return org.qweyns.qweprotectstones.utils.RegionItems.typeKey(plugin);
     }
@@ -190,7 +232,6 @@ public class RegionLifecycleListener implements Listener {
         plugin.getHologramManager().removeHologram(region.getId());
         plugin.getVisualManager().showBoundary(region, "remove");
         plugin.getVisualManager().removeGlow(region.getId());
-        plugin.getPenaltyManager().removeRegion(region.getId());
         plugin.getDynmapIntegration().remove(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().remove(region);
 

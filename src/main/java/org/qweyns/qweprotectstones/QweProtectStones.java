@@ -283,7 +283,6 @@ public final class QweProtectStones extends JavaPlugin {
         regionManager.refreshTypeData();
         coreRecipeManager.reload();
         menuManager.loadMenus();
-        penaltyManager.rebuild();
         protectionService.reloadDenyCooldown();
 
         hologramManager.restoreHolograms();

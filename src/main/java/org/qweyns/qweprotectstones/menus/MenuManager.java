@@ -349,7 +349,7 @@ public class MenuManager implements Listener {
     }
 
     private long upgradeCost(Region region, int current, int target) {
-        int penalty = plugin.getPenaltyManager().hasPenalty(region.getId())
+        int penalty = plugin.getPenaltyManager().hasPenalty(region)
                 ? plugin.getPenaltyManager().getPenaltyMultiplier()
                 : 1;
 
@@ -522,7 +522,7 @@ public class MenuManager implements Listener {
             return true;
         }
 
-        if (plugin.getPenaltyManager().hasPenalty(region.getId())) {
+        if (plugin.getPenaltyManager().hasPenalty(region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_penalty",
                     "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
         }

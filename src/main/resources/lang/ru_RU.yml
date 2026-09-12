@@ -355,6 +355,7 @@ findspot_usage: "%prefix%<#FDE68A>/ps findspot [тип] <#A79FC0>Доступн�
 findspot_found: "%prefix%<#86EFAC>Свободное место для %type%<#86EFAC>: <#FDE68A>%x% %y% %z% <#A79FC0>(%distance% блоков)"
 findspot_none: "%prefix%<#FB7185>Свободного места в радиусе %distance% блоков не нашлось."
 region_cooldown: "%prefix%<#FB7185>Подождите <#FDE68A>%seconds% <#FB7185>сек. перед созданием следующего привата."
+core_break_siege: "%prefix%<#FB7185>Приват под атакой — сейчас ядро не снести. Осталось: <#FDE68A>%seconds%<#FB7185> сек."
 siege_active: "<#FB7185>идёт осада"
 siege_calm: "<#86EFAC>спокойно"
 admin_never: "никогда"

@@ -125,6 +125,14 @@ public class ConfigManager {
 
     public boolean isSiegeEnabled() { return config.getBoolean("siege.enabled", true); }
 
+    public boolean isCoreBreakDeniedUnderAttack() {
+        return config.getBoolean("siege.deny_core_break_under_attack", true);
+    }
+
+    public boolean isPenaltyTransferEnabled() {
+        return config.getBoolean("settings.transfer-penalty", true);
+    }
+
     public Component getDamageIndicator(int damage) {
         return plugin.getLanguageManager().getMessage("damage_indicator", "%damage%", String.valueOf(damage));
     }

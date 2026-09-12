@@ -71,7 +71,7 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
         player.sendMessage(plugin.getLanguageManager().getMessage("info_created",
                 "%date%", new SimpleDateFormat("dd.MM.yyyy").format(new Date(region.getCreatedAt()))));
 
-        if (plugin.getPenaltyManager().hasPenalty(region.getId())) {
+        if (plugin.getPenaltyManager().hasPenalty(region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("info_penalty",
                     "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
         }

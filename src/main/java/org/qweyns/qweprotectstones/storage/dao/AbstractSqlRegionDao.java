@@ -30,7 +30,7 @@ import java.util.logging.Level;
 
 public abstract class AbstractSqlRegionDao implements RegionDao {
 
-    private static final int SCHEMA_VERSION = 4;
+    private static final int SCHEMA_VERSION = 5;
 
     protected final QweProtectStones plugin;
     protected final String tablePrefix;
@@ -136,6 +136,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "attack_count INT NOT NULL DEFAULT 0," +
                     "last_attack_at BIGINT NOT NULL DEFAULT 0," +
                     "last_attacker VARCHAR(32)," +
+                    "penalty_until BIGINT NOT NULL DEFAULT 0," +
                     "display_name VARCHAR(128)," +
                     "greeting VARCHAR(128)," +
                     "farewell VARCHAR(128))");
@@ -250,6 +251,12 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             addColumnIfMissing("farewell", "VARCHAR(128)");
         }
 
+        // схема 5: дедлайн штрафа за атаку переживает рестарт
+
+        if (current < 5) {
+            addColumnIfMissing("penalty_until", "BIGINT NOT NULL DEFAULT 0");
+        }
+
         writeSchemaVersion();
         if (current > 0) log().info("Схема базы обновлена: " + current + " -> " + SCHEMA_VERSION);
     }
@@ -310,7 +317,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     private void loadRegions(Connection conn, Map<UUID, Region> target) throws SQLException {
         String sql = "SELECT id, world, min_x, min_y, min_z, max_x, max_y, max_z, core_x, core_y, core_z," +
                 " type, owner_uuid, owner_name, durability, max_durability, effects, created_at," +
-                " attack_count, last_attack_at, last_attacker," +
+                " attack_count, last_attack_at, last_attacker, penalty_until," +
                 " display_name, greeting, farewell FROM " + regionsTable();
 
         try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -333,6 +340,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
                 region.getEffects().addAll(splitCsv(rs.getString("effects")));
                 region.restoreStats(rs.getInt("attack_count"), rs.getLong("last_attack_at"), rs.getString("last_attacker"));
+                region.setPenaltyUntil(rs.getLong("penalty_until"));
                 region.restoreDecoration(rs.getString("display_name"), rs.getString("greeting"), rs.getString("farewell"));
                 target.put(id, region);
             }
@@ -423,6 +431,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 ps.setString(22, region.getDisplayName());
                 ps.setString(23, region.getGreeting());
                 ps.setString(24, region.getFarewell());
+                ps.setLong(25, region.getPenaltyUntil());
                 ps.addBatch();
 
                 if (++batched % batchSize() == 0) ps.executeBatch();

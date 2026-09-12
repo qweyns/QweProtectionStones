@@ -51,6 +51,19 @@ public class DeleteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
+        // осада должна догореть, снос командой её тоже сбрасывал бы
+
+        if (plugin.getConfigManager().isSiegeEnabled()
+                && plugin.getConfigManager().isCoreBreakDeniedUnderAttack()
+                && region.isUnderSiege(plugin.getTunables().siegeWindowMs())
+                && !plugin.getProtectionService().bypasses(player)) {
+            long leftMs = region.getLastAttackAt() + plugin.getTunables().siegeWindowMs()
+                    - System.currentTimeMillis();
+            player.sendMessage(plugin.getLanguageManager().getMessage("core_break_siege",
+                    "%seconds%", String.valueOf(Math.max(1, (leftMs + 999) / 1000))));
+            return;
+        }
+
         // подтверждение той же командой
         PendingDelete confirmation = pending.get(player.getUniqueId());
         boolean confirmed = confirmation != null

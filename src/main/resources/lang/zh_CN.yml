@@ -355,6 +355,7 @@ findspot_usage: "%prefix%<#FDE68A>/ps findspot [类型] <#A79FC0>可用：%types
 findspot_found: "%prefix%<#86EFAC>%type% <#86EFAC>的空位：<#FDE68A>%x% %y% %z% <#A79FC0>(%distance% 格)"
 findspot_none: "%prefix%<#FB7185>%distance% 格内没有空位。"
 region_cooldown: "%prefix%<#FB7185>请等待 <#FDE68A>%seconds% <#FB7185>秒后再创建领地。"
+core_break_siege: "%prefix%<#FB7185>领地正受攻击——暂时无法拆除核心。剩余 <#FDE68A>%seconds%<#FB7185> 秒。"
 siege_active: "<#FB7185>正被围攻"
 siege_calm: "<#86EFAC>平静"
 admin_never: "从未"

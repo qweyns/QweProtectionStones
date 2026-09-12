@@ -355,6 +355,7 @@ findspot_usage: "%prefix%<#FDE68A>/ps findspot [tipo] <#A79FC0>Disponibles: %typ
 findspot_found: "%prefix%<#86EFAC>Sitio libre para %type%<#86EFAC>: <#FDE68A>%x% %y% %z% <#A79FC0>(%distance% bloques)"
 findspot_none: "%prefix%<#FB7185>Sin sitio libre en %distance% bloques."
 region_cooldown: "%prefix%<#FB7185>Espera <#FDE68A>%seconds% <#FB7185>s antes de crear otra parcela."
+core_break_siege: "%prefix%<#FB7185>La parcela está bajo ataque: el núcleo no se puede romper todavía. Quedan <#FDE68A>%seconds%<#FB7185> s."
 siege_active: "<#FB7185>bajo asedio"
 siege_calm: "<#86EFAC>tranquilo"
 admin_never: "nunca"

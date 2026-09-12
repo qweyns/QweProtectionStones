@@ -25,8 +25,22 @@ public final class RegionItems {
         return new NamespacedKey(plugin, "core-durability");
     }
 
+    public static NamespacedKey penaltyUntilKey(QweProtectStones plugin) {
+        return new NamespacedKey(plugin, "core-penalty-until");
+    }
+
+    public static NamespacedKey lastAttackKey(QweProtectStones plugin) {
+        return new NamespacedKey(plugin, "core-last-attack");
+    }
+
     public static ItemStack core(QweProtectStones plugin, RegionType type, int amount,
                                  Integer carriedDurability, boolean tagType, boolean styled) {
+        return core(plugin, type, amount, carriedDurability, tagType, styled, 0L, 0L);
+    }
+
+    public static ItemStack core(QweProtectStones plugin, RegionType type, int amount,
+                                 Integer carriedDurability, boolean tagType, boolean styled,
+                                 long penaltyUntil, long lastAttackAt) {
         ItemStack stack = new ItemStack(type.material(), Math.max(1, amount));
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) return stack;
@@ -38,6 +52,14 @@ public final class RegionItems {
         if (carriedDurability != null && carriedDurability > 0) {
             meta.getPersistentDataContainer().set(
                     durabilityKey(plugin), PersistentDataType.INTEGER, carriedDurability);
+        }
+        if (penaltyUntil > System.currentTimeMillis()) {
+            meta.getPersistentDataContainer().set(
+                    penaltyUntilKey(plugin), PersistentDataType.LONG, penaltyUntil);
+        }
+        if (lastAttackAt > 0) {
+            meta.getPersistentDataContainer().set(
+                    lastAttackKey(plugin), PersistentDataType.LONG, lastAttackAt);
         }
 
         if (styled) {
@@ -81,7 +103,11 @@ public final class RegionItems {
                 && plugin.getConfigManager().getConfig().getBoolean("settings.return-durability", true)
                 && tags
                 ? region.getDurability() : null;
-        return core(plugin, type, 1, durability, tags || type.restrictObtaining(), type.restrictObtaining());
+        boolean transferPenalty = tags && plugin.getConfigManager().isPenaltyTransferEnabled();
+        long penaltyUntil = transferPenalty && region != null ? region.getPenaltyUntil() : 0L;
+        long lastAttackAt = transferPenalty && region != null ? region.getLastAttackAt() : 0L;
+        return core(plugin, type, 1, durability, tags || type.restrictObtaining(), type.restrictObtaining(),
+                penaltyUntil, lastAttackAt);
     }
 
 }

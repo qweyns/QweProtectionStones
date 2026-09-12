@@ -72,7 +72,7 @@ public class MenuPlaceholders {
                 .replace("%max_durability%", String.valueOf(region.getMaxDurability()));
 
         if (text.contains("%penalty%")) {
-            boolean penalised = plugin.getPenaltyManager().hasPenalty(region.getId());
+            boolean penalised = plugin.getPenaltyManager().hasPenalty(region);
             text = text.replace("%penalty%", penalised
                     ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())
                     : plugin.getLanguageManager().rawTemplate("no_penalty"));

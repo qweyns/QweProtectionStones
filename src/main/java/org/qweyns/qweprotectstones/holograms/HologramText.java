@@ -38,7 +38,7 @@ final class HologramText {
                 .replace("%item%", prettyItem(plugin.getMenuManager().upgradeItemFor(region)))
                 .replace("%siege%", plugin.getLanguageManager()
                         .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"))
-                .replace("%penalty%", plugin.getPenaltyManager().hasPenalty(region.getId())
+                .replace("%penalty%", plugin.getPenaltyManager().hasPenalty(region)
                         ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())
                         : plugin.getLanguageManager().rawTemplate("no_penalty"))
                 .replace("%attacks%", String.valueOf(region.getAttackCount()));

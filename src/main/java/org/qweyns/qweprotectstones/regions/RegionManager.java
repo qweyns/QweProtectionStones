@@ -236,8 +236,6 @@ public class RegionManager {
 
         plugin.getRegionStorage().delete(region.getId());
 
-        plugin.getPenaltyManager().removeRegion(region.getId());
-
         if (plugin.getMarketManager() != null) {
             plugin.getMarketManager().cancelSale(region);
             plugin.getMarketManager().cancelRental(region);

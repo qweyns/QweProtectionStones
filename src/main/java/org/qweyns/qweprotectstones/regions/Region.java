@@ -45,6 +45,8 @@ public final class Region implements Bounded {
     private volatile int attackCount;
     private volatile long lastAttackAt;
     private volatile String lastAttackerName = "";
+    // до какого времени (epoch ms) действует штраф за атаку: 0 — штрафа нет
+    private volatile long penaltyUntil;
 
     private final AtomicLong version = new AtomicLong();
 
@@ -294,6 +296,10 @@ public final class Region implements Bounded {
     }
 
     public int getAttackCount() { return attackCount; }
+
+    public long getPenaltyUntil() { return penaltyUntil; }
+
+    public void setPenaltyUntil(long penaltyUntil) { this.penaltyUntil = penaltyUntil; }
 
     public long getLastAttackAt() { return lastAttackAt; }
 
