@@ -2,7 +2,6 @@ package org.qweyns.qweprotectstones.features.importer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.RegionBounds;
@@ -14,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,7 +21,8 @@ import java.util.logging.Level;
 
 public class RegionImporter {
 
-    public record Result(int imported, int skipped, int errors) {
+    /** Разобранные, но ещё не зарегистрированные приваты: регистрацию делаем в потоке сервера. */
+    public record Pending(List<Region> regions, int skipped, int errors) {
     }
 
     private final QweProtectStones plugin;
@@ -30,20 +31,22 @@ public class RegionImporter {
         this.plugin = plugin;
     }
 
-    public Result importFromWorldGuard(boolean stonesOnly) {
+    /** Читает и разбирает выгрузку WorldGuard без регистрации — можно звать вне основного потока. */
+    public Pending parseWorldGuard(boolean stonesOnly, Map<String, int[]> worldBounds) {
         File folder = new File(dataFolder(stonesOnly
                 ? "import.protectionstones.data-folder"
                 : "import.worldguard.data-folder",
                 stonesOnly ? "plugins/WorldGuard" : "plugins/WorldGuard"));
 
+        List<Region> parsed = new ArrayList<>();
         File worldsDir = new File(folder, "worlds");
         File[] worldFolders = worldsDir.listFiles(File::isDirectory);
         if (worldFolders == null || worldFolders.length == 0) {
             plugin.getLogger().warning("Импорт: папка не найдена или пуста — " + worldsDir.getPath());
-            return new Result(0, 0, 1);
+            return new Pending(List.of(), 0, 1);
         }
 
-        int imported = 0, skipped = 0, errors = 0;
+        int skipped = 0, errors = 0;
         for (File worldFolder : worldFolders) {
             File regionsFile = new File(worldFolder, "regions.yml");
             if (!regionsFile.isFile()) continue;
@@ -66,7 +69,8 @@ public class RegionImporter {
                         skipped++;
                         continue;
                     }
-                    if (importCuboid(worldName, data)) imported++;
+                    Region region = parseCuboid(worldName, data, worldBounds);
+                    if (region != null) parsed.add(region);
                     else skipped++;
                 }
             } catch (Exception e) {
@@ -74,20 +78,20 @@ public class RegionImporter {
                 plugin.getLogger().log(Level.WARNING, "Импорт: не удалось прочитать " + regionsFile.getPath(), e);
             }
         }
-        return new Result(imported, skipped, errors);
+        return new Pending(parsed, skipped, errors);
     }
 
-    private boolean importCuboid(String worldName, Map<?, ?> data) {
+    private Region parseCuboid(String worldName, Map<?, ?> data, Map<String, int[]> worldBounds) {
         Object minRaw = data.get("min");
         Object maxRaw = data.get("max");
-        if (!(minRaw instanceof Map<?, ?> min) || !(maxRaw instanceof Map<?, ?> max)) return false;
+        if (!(minRaw instanceof Map<?, ?> min) || !(maxRaw instanceof Map<?, ?> max)) return null;
 
-        World world = Bukkit.getWorld(worldName);
         int minY = intOf(min.get("y"));
         int maxY = intOf(max.get("y"));
-        if (world != null) {
-            minY = Math.max(world.getMinHeight(), minY);
-            maxY = Math.min(world.getMaxHeight() - 1, maxY);
+        int[] limits = worldBounds.get(worldName);
+        if (limits != null) {
+            minY = Math.max(limits[0], minY);
+            maxY = Math.min(limits[1], maxY);
         }
 
         RegionBounds bounds = new RegionBounds(
@@ -119,19 +123,21 @@ public class RegionImporter {
                 region.setMember(uuid, String.valueOf(member.getValue()), TrustLevel.BUILD);
             }
         }
-        return plugin.getRegionManager().importRegion(region);
+        return region;
     }
 
-    public Result importFromGriefPrevention() {
+    /** Читает и разбирает данные GriefPrevention без регистрации — можно звать вне основного потока. */
+    public Pending parseGriefPrevention(Map<String, int[]> worldBounds) {
         File folder = new File(dataFolder("import.griefprevention.data-folder", "plugins/GriefPreventionData"));
         File claimsDir = new File(folder, "ClaimData");
         File[] files = claimsDir.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null || files.length == 0) {
             plugin.getLogger().warning("Импорт: папка не найдена или пуста — " + claimsDir.getPath());
-            return new Result(0, 0, 1);
+            return new Pending(List.of(), 0, 1);
         }
 
-        int imported = 0, skipped = 0, errors = 0;
+        List<Region> parsed = new ArrayList<>();
+        int skipped = 0, errors = 0;
         for (File file : files) {
             try (InputStream in = new FileInputStream(file)) {
                 Object raw = new Yaml().load(in);
@@ -151,14 +157,14 @@ public class RegionImporter {
                 if (min == null || max == null) continue;
 
                 String worldName = worldOf(lesserStr);
-                World world = Bukkit.getWorld(worldName);
-                if (world == null) {
+                int[] limits = worldBounds.get(worldName);
+                if (limits == null) {
                     skipped++;
                     continue;
                 }
 
-                RegionBounds bounds = new RegionBounds(min[0], world.getMinHeight(), min[2],
-                        max[0], world.getMaxHeight() - 1, max[2]);
+                RegionBounds bounds = new RegionBounds(min[0], limits[0], min[2],
+                        max[0], limits[1], max[2]);
 
                 UUID ownerId = parseUuid(String.valueOf(data.get("Owner")));
                 String ownerName = nameOf(ownerId);
@@ -173,14 +179,13 @@ public class RegionImporter {
                 importGpList(region, data.get("Accessors"), TrustLevel.ACCESS, ownerId);
                 importGpList(region, data.get("Managers"), TrustLevel.MANAGER, ownerId);
 
-                if (plugin.getRegionManager().importRegion(region)) imported++;
-                else skipped++;
+                parsed.add(region);
             } catch (IOException e) {
                 errors++;
                 plugin.getLogger().log(Level.WARNING, "Импорт: не удалось прочитать " + file.getPath(), e);
             }
         }
-        return new Result(imported, skipped, errors);
+        return new Pending(parsed, skipped, errors);
     }
 
     private void importGpList(Region region, Object raw, TrustLevel level, UUID ownerId) {
@@ -211,14 +216,9 @@ public class RegionImporter {
         // ядро виртуальное, в центре объёма
         int coreY = (bounds.minY() + bounds.maxY()) / 2;
 
-        Region region = new Region(UUID.randomUUID(), worldName, bounds,
+        return new Region(UUID.randomUUID(), worldName, bounds,
                 coreX, coreY, coreZ, type.id(), ownerId, ownerName,
                 type.startDurability(), type.maxDurability(), System.currentTimeMillis());
-
-        if (plugin.getConfigManager().getConfig().getBoolean("import.create-holograms", false)) {
-            plugin.getHologramManager().createOrUpdateHologram(region);
-        }
-        return region;
     }
 
     private String importTypeId() {

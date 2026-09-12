@@ -95,7 +95,7 @@ public class UpdateChecker implements Listener {
         String tag = newerVersion;
         if (tag == null) return;
         if (!event.getPlayer().isOp()
-                && !event.getPlayer().hasPermission("qweprotectionstones.update-notify")) return;
+                && !event.getPlayer().hasPermission("qweprotectstones.update-notify")) return;
 
         plugin.getLanguageManager().sendList(event.getPlayer(), "update_available",
                 "%current%", plugin.getPluginMeta().getVersion(),

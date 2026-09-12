@@ -3,6 +3,7 @@ package org.qweyns.qweprotectstones.storage;
 import org.qweyns.qweprotectstones.scheduler.Schedulers;
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
+import org.qweyns.qweprotectstones.regions.RegionManager;
 import org.qweyns.qweprotectstones.storage.dao.RegionDao;
 import org.qweyns.qweprotectstones.storage.dao.RegionLogEntry;
 import org.qweyns.qweprotectstones.storage.dao.MysqlRegionDao;
@@ -70,9 +71,15 @@ public class RegionStorage {
     }
 
     public void save(Region region) {
-        if (region == null) return;
-        pendingDeletes.remove(region.getId());
+        if (region == null || !isLive(region)) return;
+        // удаление не снимается: flush пишет удаления после сохранений, при гонке побеждает удаление
         pendingSaves.put(region.getId(), region);
+    }
+
+    /** Жив ли регион: удалённые из менеджера не должны возвращаться в базу. */
+    private boolean isLive(Region region) {
+        RegionManager manager = plugin.getRegionManager();
+        return manager != null && manager.getById(region.getId()) == region;
     }
 
     public long lastFlushMillis() {
@@ -86,10 +93,26 @@ public class RegionStorage {
     }
 
     public void saveNow(Region region) {
-        if (region == null) return;
+        if (region == null || !isLive(region)) return;
         pendingSaves.remove(region.getId());
-        pendingDeletes.remove(region.getId());
         plugin.getSchedulers().runAsync(() -> dao.saveAll(List.of(region)));
+    }
+
+    /**
+     * Снимок для /qps save: через общую очередь, а не напрямую в DAO — иначе запись
+     * обгоняла отложенные удаления и возвращала в базу снесённые приваты.
+     * Возвращает число реально поставленных в очередь регионов.
+     */
+    public int saveSnapshot(java.util.Collection<Region> regions) {
+        if (dao == null || regions == null) return 0;
+        int count = 0;
+        for (Region region : regions) {
+            if (region == null || !isLive(region)) continue;
+            pendingSaves.put(region.getId(), region);
+            count++;
+        }
+        flush();
+        return count;
     }
 
     public void delete(UUID regionId) {

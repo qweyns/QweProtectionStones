@@ -98,6 +98,7 @@ public final class QweProtectStones extends JavaPlugin {
     private RegionMovementListener regionMovementListener;
     private RegionCommand regionCommand;
 
+    private org.qweyns.qweprotectstones.listeners.RegionExplosionListener explosionListener;
     private VaultHook vaultHook;
     private PlayerPointsHook playerPointsHook;
     private org.bukkit.event.Listener papiFallbackListener;
@@ -124,7 +125,17 @@ public final class QweProtectStones extends JavaPlugin {
 
         this.regionStorage = new RegionStorage(this);
         this.regionManager = new RegionManager(this);
-        this.regionManager.loadAll(regionStorage.init());
+
+        List<Region> loadedRegions;
+        try {
+            loadedRegions = regionStorage.init();
+        } catch (RuntimeException e) {
+            // без базы плагин бессмыслен и опасен: честно отключаемся, а не работаем вслепую
+            getLogger().log(java.util.logging.Level.SEVERE, "База данных недоступна — плагин отключается", e);
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        this.regionManager.loadAll(loadedRegions);
         this.regionManager.refreshTypeData();
 
         this.coreRecipeManager.reload();
@@ -209,7 +220,8 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(bypassManager, this);
         pm.registerEvents(regionLifecycleListener, this);
         pm.registerEvents(regionMovementListener, this);
-        pm.registerEvents(new RegionExplosionListener(this), this);
+        this.explosionListener = new RegionExplosionListener(this);
+        pm.registerEvents(explosionListener, this);
         pm.registerEvents(new RegionInteractListener(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
@@ -304,6 +316,10 @@ public final class QweProtectStones extends JavaPlugin {
         backupTask.start();
         updateChecker.start();
         rateLimiter.reload();
+        explosionListener.reload();
+        inviteManager.reload();
+        // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге
+        actionLogger.startPruning();
 
         hologramManager.restoreHolograms();
         if (dynmapIntegration != null) dynmapIntegration.redrawAll();

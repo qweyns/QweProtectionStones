@@ -16,13 +16,24 @@ public class InviteManager {
     }
 
     private final QweProtectStones plugin;
-    private final Cache<UUID, Invite> pending;
+    private Cache<UUID, Invite> pending;
 
     public InviteManager(QweProtectStones plugin) {
         this.plugin = plugin;
+        rebuildCache();
+    }
+
+    private void rebuildCache() {
         this.pending = CacheBuilder.newBuilder()
                 .expireAfterWrite(expireSeconds(), TimeUnit.SECONDS)
                 .build();
+    }
+
+    /** Срок приглашения мог измениться в конфиге — при /reload строим кеш заново. */
+    public void reload() {
+        Cache<UUID, Invite> previous = pending;
+        rebuildCache();
+        previous.invalidateAll();
     }
 
     private long expireSeconds() {

@@ -38,19 +38,22 @@ public class DHProvider implements IHologramProvider {
 
         Location hologramLoc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
-        Hologram holo = DHAPI.getHologram(name);
-        if (holo == null) {
-            holo = DHAPI.createHologram(name, hologramLoc);
-        }
+        // DHAPI создаёт и двигает сущности в мире — на Folia это можно только из потока региона
+        plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
+            Hologram holo = DHAPI.getHologram(name);
+            if (holo == null) {
+                holo = DHAPI.createHologram(name, hologramLoc);
+            }
 
-        holo.setSaveToFile(false);
+            holo.setSaveToFile(false);
 
-        DHAPI.setHologramLines(holo, buildLines(region, typeId, config));
-        holo.setDisplayRange(config.getHologramRange(typeId));
+            DHAPI.setHologramLines(holo, buildLines(region, typeId, config));
+            holo.setDisplayRange(config.getHologramRange(typeId));
 
-        applyOptionalSettings(holo, typeId, config);
+            applyOptionalSettings(holo, typeId, config);
 
-        activeHolograms.add(name);
+            activeHolograms.add(name);
+        });
     }
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {

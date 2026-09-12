@@ -50,28 +50,31 @@ public class FHProvider implements IHologramProvider {
 
         Location hologramLoc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
-        Hologram holo = fhManager.getHologram(name).orElse(null);
-        if (holo == null) {
-            holo = fhManager.create(new TextHologramData(name, hologramLoc));
-            fhManager.addHologram(holo);
-        }
+        // FH-менеджер спавнит сущности в мире — на Folia это можно только из потока региона
+        plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
+            Hologram holo = fhManager.getHologram(name).orElse(null);
+            if (holo == null) {
+                holo = fhManager.create(new TextHologramData(name, hologramLoc));
+                fhManager.addHologram(holo);
+            }
 
-        if (!(holo.getData() instanceof TextHologramData textData)) return;
+            if (!(holo.getData() instanceof TextHologramData textData)) return;
 
-        textData.setText(buildLines(region, typeId, config));
-        textData.setLocation(hologramLoc);
+            textData.setText(buildLines(region, typeId, config));
+            textData.setLocation(hologramLoc);
 
-        // иначе FH сохранит их в свой файл и повиснут дубли
+            // иначе FH сохранит их в свой файл и повиснут дубли
 
-        textData.setPersistent(false);
+            textData.setPersistent(false);
 
-        applyTextSettings(textData, typeId, config);
-        applyDisplaySettings(textData, typeId, config);
+            applyTextSettings(textData, typeId, config);
+            applyDisplaySettings(textData, typeId, config);
 
-        holo.forceUpdate();
-        holo.refreshForViewersInWorld();
+            holo.forceUpdate();
+            holo.refreshForViewersInWorld();
 
-        activeHolograms.add(name);
+            activeHolograms.add(name);
+        });
     }
 
     private List<String> buildLines(Region region, String typeId, ConfigManager config) {

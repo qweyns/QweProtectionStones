@@ -20,7 +20,8 @@ import java.util.UUID;
 
 public class RegionRestorer {
 
-    public record Result(int restored, int skipped, int errors) {
+    /** Разобранные, но ещё не зарегистрированные приваты: регистрацию делаем в потоке сервера. */
+    public record Parsed(List<Region> regions, int skipped, int errors) {
     }
 
     private final QweProtectStones plugin;
@@ -29,7 +30,8 @@ public class RegionRestorer {
         this.plugin = plugin;
     }
 
-    public Result restore(File file) throws IOException {
+    /** Разбирает выгрузку без регистрации — только файловый I/O, можно звать вне основного потока. */
+    public Parsed parse(File file) throws IOException {
         String raw = Files.readString(file.toPath(), StandardCharsets.UTF_8);
 
         Object parsed;
@@ -42,13 +44,15 @@ public class RegionRestorer {
             throw new IOException("в файле нет секции regions");
         }
 
-        int restored = 0, skipped = 0, errors = 0;
+        List<Region> regions = new ArrayList<>();
+        int skipped = 0, errors = 0;
         for (Object entry : entries) {
             if (!(entry instanceof Map<?, ?> data)) continue;
 
             try {
-                switch (restoreOne(data)) {
-                    case RESTORED -> restored++;
+                One one = parseOne(data);
+                switch (one.outcome()) {
+                    case PARSED -> regions.add(one.region());
                     case SKIPPED -> skipped++;
                     case ERROR -> errors++;
                 }
@@ -57,25 +61,28 @@ public class RegionRestorer {
                 plugin.getLogger().warning("Restore: запись пропущена из-за ошибки — " + e.getMessage());
             }
         }
-        return new Result(restored, skipped, errors);
+        return new Parsed(regions, skipped, errors);
     }
 
-    private enum Outcome {RESTORED, SKIPPED, ERROR}
+    private enum Outcome {PARSED, SKIPPED, ERROR}
 
-    private Outcome restoreOne(Map<?, ?> data) {
+    private record One(Region region, Outcome outcome) {
+    }
+
+    private One parseOne(Map<?, ?> data) {
         UUID id = uuid(String.valueOf(data.get("id")));
         RegionType type = plugin.getRegionTypes().byId(String.valueOf(data.get("type")).toLowerCase(java.util.Locale.ROOT));
-        if (id == null || type == null) return Outcome.ERROR;
+        if (id == null || type == null) return new One(null, Outcome.ERROR);
 
-        if (plugin.getRegionManager().getById(id) != null) return Outcome.SKIPPED;
+        if (plugin.getRegionManager().getById(id) != null) return new One(null, Outcome.SKIPPED);
 
         String world = String.valueOf(data.get("world"));
         UUID ownerId = data.get("owner") instanceof Map<?, ?> owner ? uuid(String.valueOf(owner.get("uuid"))) : null;
-        if (ownerId == null) return Outcome.SKIPPED;
+        if (ownerId == null) return new One(null, Outcome.SKIPPED);
 
         int[] core = intArray(data.get("core"));
         RegionBounds bounds = bounds(data.get("bounds"));
-        if (core == null || bounds == null) return Outcome.ERROR;
+        if (core == null || bounds == null) return new One(null, Outcome.ERROR);
 
         int durability = intOf(data.get("durability"), type.startDurability());
         int maxDurability = Math.max(1, intOf(data.get("max_durability"), type.maxDurability()));
@@ -128,12 +135,7 @@ public class RegionRestorer {
             region.getEffects().addAll(names);
         }
 
-        if (!plugin.getRegionManager().importRegion(region)) return Outcome.SKIPPED;
-
-        if (plugin.getConfigManager().getConfig().getBoolean("import.create-holograms", false)) {
-            plugin.getHologramManager().createOrUpdateHologram(region);
-        }
-        return Outcome.RESTORED;
+        return new One(region, Outcome.PARSED);
     }
 
     private RegionBounds bounds(Object raw) {

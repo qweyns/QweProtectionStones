@@ -28,7 +28,7 @@ public class RegionPreviewListener implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.preview-messages", false);
+        return plugin.getTunables().previewMessages();
     }
 
     @EventHandler

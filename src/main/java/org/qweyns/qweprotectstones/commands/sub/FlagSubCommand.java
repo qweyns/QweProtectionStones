@@ -49,7 +49,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
         }
 
         RegionFlag flag = parsed.get();
-        boolean admin = player.hasPermission("qweprotectstones.admin");
+        boolean admin = player.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix());
         if (!isEditable(flag, admin)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("flag_not_editable", "%flag%", flag.key()));
             return;
@@ -84,6 +84,9 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
+        // событие как у reset-пути: другие плагины могут отменить смену флага
+        if (RegionEvents.fireFlagChange(region, player, flag, parsed)) return;
+
         region.setFlag(flag, parsed);
         plugin.getRegionStorage().save(region);
         player.sendMessage(plugin.getLanguageManager().getMessage("flag_set",
@@ -104,7 +107,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
     }
 
     private void showAll(Player player, Region region) {
-        boolean admin = player.hasPermission("qweprotectstones.admin");
+        boolean admin = player.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix());
 
         player.sendMessage(plugin.getLanguageManager().getMessage("flag_header"));
         for (RegionFlag flag : RegionFlag.values()) {
@@ -124,7 +127,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public List<String> complete(CommandSender sender, Player player, String[] args) {
-        boolean admin = sender.hasPermission("qweprotectstones.admin");
+        boolean admin = sender.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix());
 
         if (args.length == 1) {
             List<String> names = new ArrayList<>();

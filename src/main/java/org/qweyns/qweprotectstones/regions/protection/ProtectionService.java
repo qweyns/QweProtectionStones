@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ProtectionService {
 
+    // отдельное право, объявлено в plugin.yml; право админа — только через ConfigManager.getAdminPermissionPrefix()
     public static final String BYPASS_PERMISSION = "qweprotectstones.bypass";
-    public static final String ADMIN_PERMISSION = "qweprotectstones.admin";
 
     private final QweProtectStones plugin;
     private Cache<UUID, Long> denyMessageCooldowns = CacheBuilder.newBuilder()

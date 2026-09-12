@@ -101,8 +101,9 @@ public class HomeWarmup implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (!plugin.getConfigManager().getConfig().getBoolean("home.cancel-on-move", true)) return;
+        // движение тикает постоянно: сначала дешёвая проверка, настройка — из кеша Tunables
         if (pending.isEmpty()) return;
+        if (!plugin.getTunables().homeCancelOnMove()) return;
 
         // поворот головы не движение
         Location from = event.getFrom();
@@ -116,8 +117,8 @@ public class HomeWarmup implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
-        if (!plugin.getConfigManager().getConfig().getBoolean("home.cancel-on-damage", true)) return;
         if (pending.isEmpty()) return;
+        if (!plugin.getTunables().homeCancelOnDamage()) return;
         if (!(event.getEntity() instanceof Player player)) return;
 
         cancel(player.getUniqueId(), "home_cancelled_damage");

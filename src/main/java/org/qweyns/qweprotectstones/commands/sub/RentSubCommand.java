@@ -156,7 +156,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
 
     private void cancel(Player player) {
         Region region;
-        if (player.hasPermission("qweprotectstones.admin")) {
+        if (player.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix())) {
 
             region = regionUnderFeet(player);
         } else {

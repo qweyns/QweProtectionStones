@@ -238,9 +238,8 @@ public class VisualManager {
         });
 
         display.teleport(spawnLoc.clone().add(0, 1.2, 0));
-        plugin.getSchedulers().runLater(() -> {
-            if (display.isValid()) display.remove();
-        }, 35L);
+        // на Folia сущность живёт в потоке своего региона, глобальный таймер её не имеет права трогать
+        plugin.getSchedulers().runAtEntityLater(display, display::remove, 35L);
     }
 
     public void shutdown() {

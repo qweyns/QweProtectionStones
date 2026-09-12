@@ -5,6 +5,7 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Villager;
@@ -74,6 +75,10 @@ public class EntityProtectionListener implements Listener {
         }
         if (damager instanceof AreaEffectCloud cloud && cloud.getSource() instanceof Player player) {
             return player;
+        }
+        // питомец бьёт по воле хозяина — без этого мобы гибли от волков мимо ANIMAL_PROTECTION
+        if (damager instanceof Tameable pet && pet.getOwner() instanceof Player owner) {
+            return owner;
         }
         return null;
     }

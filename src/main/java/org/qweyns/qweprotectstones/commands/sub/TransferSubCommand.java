@@ -35,7 +35,8 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
         Region region = regionUnderFeet(player);
         if (region == null) return;
 
-        boolean allowed = region.isOwner(player.getUniqueId()) || player.hasPermission("qweprotectstones.admin");
+        boolean allowed = region.isOwner(player.getUniqueId())
+                || player.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix());
         if (!allowed) {
             player.sendMessage(plugin.getLanguageManager().getMessage("not_an_owner"));
             return;

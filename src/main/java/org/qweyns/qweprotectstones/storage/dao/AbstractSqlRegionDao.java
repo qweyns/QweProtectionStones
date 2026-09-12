@@ -137,9 +137,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     "last_attack_at BIGINT NOT NULL DEFAULT 0," +
                     "last_attacker VARCHAR(32)," +
                     "penalty_until BIGINT NOT NULL DEFAULT 0," +
-                    "display_name VARCHAR(128)," +
-                    "greeting VARCHAR(128)," +
-                    "farewell VARCHAR(128))");
+                    "display_name VARCHAR(128))");
 
             st.executeUpdate("CREATE TABLE IF NOT EXISTS " + membersTable() + " (" +
                     "region_id VARCHAR(36) NOT NULL," +
@@ -200,8 +198,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             // Синтаксис создания индексов у SQLite и MySQL разный — отдаём диалекту.
             createIndexes(st);
         } catch (SQLException e) {
-            log().log(Level.SEVERE, "Ошибка создания таблиц БД", e);
-            return;
+            // без схемы плагин работать не может: пул закрываем, ошибку отдаём наверх,
+            // вызывающий (onEnable) обязан отреагировать самоотключением
+            close();
+            throw new IllegalStateException("Не удалось создать таблицы БД", e);
         }
 
         applyMigrations();
@@ -247,8 +247,6 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
 
         if (current < 3) {
             addColumnIfMissing("display_name", "VARCHAR(128)");
-            addColumnIfMissing("greeting", "VARCHAR(128)");
-            addColumnIfMissing("farewell", "VARCHAR(128)");
         }
 
         // схема 5: дедлайн штрафа за атаку переживает рестарт

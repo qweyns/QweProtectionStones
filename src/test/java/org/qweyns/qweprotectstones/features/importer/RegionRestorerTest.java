@@ -25,20 +25,20 @@ class RegionRestorerTest {
     void emptyExportRestoresNothing() throws IOException {
 
         RegionRestorer restorer = new RegionRestorer(null);
-        RegionRestorer.Result result = restorer.restore(file(
+        RegionRestorer.Parsed parsed = restorer.parse(file(
                 "{\n  \"exported_at\": \"2026-01-01_00-00-00\",\n  \"regions\": []\n}\n"));
 
-        assertEquals(0, result.restored());
-        assertEquals(0, result.skipped());
-        assertEquals(0, result.errors());
+        assertEquals(0, parsed.regions().size());
+        assertEquals(0, parsed.skipped());
+        assertEquals(0, parsed.errors());
     }
 
     @Test
     void garbageFileIsRejectedWithIOException() throws IOException {
         RegionRestorer restorer = new RegionRestorer(null);
 
-        assertThrows(IOException.class, () -> restorer.restore(file("совсем не json: [[[ ===")));
-        assertThrows(IOException.class, () -> restorer.restore(file("{\"no_regions_here\": true}")));
+        assertThrows(IOException.class, () -> restorer.parse(file("совсем не json: [[[ ===")));
+        assertThrows(IOException.class, () -> restorer.parse(file("{\"no_regions_here\": true}")));
     }
 
     @Test

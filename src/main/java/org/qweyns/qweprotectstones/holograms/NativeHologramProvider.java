@@ -136,7 +136,8 @@ public class NativeHologramProvider implements IHologramProvider {
     @Override
     public void deleteAll() {
         for (TextDisplay display : active.values()) {
-            if (display.isValid()) display.remove();
+            // как в remove(): сущности удаляются в их собственных потоках
+            plugin.getSchedulers().runAtEntity(display, display::remove);
         }
         active.clear();
     }

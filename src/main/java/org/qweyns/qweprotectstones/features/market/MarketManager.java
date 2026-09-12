@@ -67,14 +67,20 @@ public class MarketManager {
     public void listForSale(Region region, Player seller, double price) {
         RegionSale sale = new RegionSale(region.getId(), seller.getUniqueId(), seller.getName(),
                 price, System.currentTimeMillis());
-        sales.put(region.getId(), sale);
+        synchronized (sales) {
+            sales.put(region.getId(), sale);
+        }
         plugin.getRegionStorage().saveSale(sale);
     }
 
     public boolean cancelSale(Region region) {
-        if (region == null || sales.remove(region.getId()) == null) return false;
-        plugin.getRegionStorage().deleteSale(region.getId());
-        return true;
+        if (region == null) return false;
+        boolean removed;
+        synchronized (sales) {
+            removed = sales.remove(region.getId()) != null;
+        }
+        if (removed) plugin.getRegionStorage().deleteSale(region.getId());
+        return removed;
     }
 
     /** Смена владельца: продажа снимается, аренда перепривязывается к новому. Возвращает true, если продажа была активна. */
@@ -85,12 +91,14 @@ public class MarketManager {
     }
 
     private void rebindRentalOwner(Region region, UUID newOwnerId, String newOwnerName) {
+        synchronized (rentals) {
         rentals.computeIfPresent(region.getId(), (id, rental) -> {
             RegionRental rebound = new RegionRental(rental.regionId(), newOwnerId, newOwnerName,
                     rental.price(), rental.durationMinutes(), rental.tenantId(), rental.tenantName(), rental.rentedUntil());
             plugin.getRegionStorage().saveRental(rebound);
             return rebound;
         });
+        }
     }
 
     public boolean buy(Player buyer, Region region) {
@@ -101,11 +109,20 @@ public class MarketManager {
     }
 
     private boolean buyLocked(Player buyer, Region region) {
+        // платим только за живой приват: удалённый из менеджера мог остаться в руках команды
+        if (plugin.getRegionManager().getById(region.getId()) != region) return false;
+
         RegionSale sale = sales.get(region.getId());
         if (sale == null) return false;
 
         if (RegionEvents.fireTransfer(region, buyer, buyer.getUniqueId(), buyer.getName())) return false;
         if (!plugin.getVaultHook().takeMoney(buyer, sale.price())) return false;
+
+        // покупка гонится с удалением привата: не доехала — деньги назад
+        if (plugin.getRegionManager().getById(region.getId()) != region) {
+            plugin.getVaultHook().giveMoney(buyer, sale.price());
+            return false;
+        }
 
         // комиссия просто сгорает
         double tax = Math.max(0.0, Math.min(100.0,
@@ -140,14 +157,20 @@ public class MarketManager {
     public void offerForRent(Region region, Player owner, double price, int durationMinutes) {
         RegionRental rental = new RegionRental(region.getId(), owner.getUniqueId(), owner.getName(),
                 price, durationMinutes, null, null, 0L);
-        rentals.put(region.getId(), rental);
+        synchronized (rentals) {
+            rentals.put(region.getId(), rental);
+        }
         plugin.getRegionStorage().saveRental(rental);
     }
 
     public boolean cancelRental(Region region) {
-        if (region == null || rentals.remove(region.getId()) == null) return false;
-        plugin.getRegionStorage().deleteRental(region.getId());
-        return true;
+        if (region == null) return false;
+        boolean removed;
+        synchronized (rentals) {
+            removed = rentals.remove(region.getId()) != null;
+        }
+        if (removed) plugin.getRegionStorage().deleteRental(region.getId());
+        return removed;
     }
 
     public boolean takeRent(Player tenant, Region region) {
@@ -179,6 +202,12 @@ public class MarketManager {
         }
 
         if (!plugin.getVaultHook().takeMoney(tenant, rental.price())) return false;
+
+        // аренда гонится с удалением привата: не доехала — деньги назад
+        if (plugin.getRegionManager().getById(region.getId()) != region) {
+            plugin.getVaultHook().giveMoney(tenant, rental.price());
+            return false;
+        }
 
         OfflinePlayer owner = Bukkit.getOfflinePlayer(rental.ownerId());
         if (!plugin.getVaultHook().giveMoney(owner, rental.price())) {

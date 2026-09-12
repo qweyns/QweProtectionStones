@@ -39,12 +39,12 @@ public class SystemAdminCommands {
     }
 
     public void save(CommandSender sender) {
-        // запись всей базы — не в главном потоке
-        List<Region> regions = List.copyOf(plugin.getRegionManager().getAllRegions());
+        // запись всей базы — не в главном потоке и через очередь:
+        // прямой вызов DAO обгонял отложенные удаления и воскресал снесённые приваты
         plugin.getSchedulers().runAsync(() -> {
-            plugin.getRegionStorage().saveAll(regions);
+            int count = plugin.getRegionStorage().saveSnapshot(plugin.getRegionManager().getAllRegions());
             plugin.getSchedulers().runNextTick(() -> sender.sendMessage(
-                    plugin.getLanguageManager().getMessage("admin_saved", "%count%", String.valueOf(regions.size()))));
+                    plugin.getLanguageManager().getMessage("admin_saved", "%count%", String.valueOf(count))));
         });
     }
 
@@ -105,26 +105,51 @@ public class SystemAdminCommands {
 
     public void importRegions(CommandSender sender, String[] args) {
         String source = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
-        org.qweyns.qweprotectstones.features.importer.RegionImporter importer =
-                new org.qweyns.qweprotectstones.features.importer.RegionImporter(plugin);
-
-        sender.sendMessage(plugin.getLanguageManager().getMessage("admin_import_started", "%source%", source));
-        org.qweyns.qweprotectstones.features.importer.RegionImporter.Result result;
-        switch (source) {
-            case "worldguard", "wg" -> result = importer.importFromWorldGuard(false);
-            case "protectionstones", "ps" -> result = importer.importFromWorldGuard(true);
-            case "griefprevention", "gp" -> result = importer.importFromGriefPrevention();
-            default -> {
-                sender.sendMessage(plugin.getLanguageManager().getMessage("admin_import_usage"));
-                return;
-            }
+        boolean stonesOnly = source.equals("protectionstones") || source.equals("ps");
+        boolean griefPrevention = source.equals("griefprevention") || source.equals("gp");
+        if (!stonesOnly && !griefPrevention && !source.equals("worldguard") && !source.equals("wg")) {
+            sender.sendMessage(plugin.getLanguageManager().getMessage("admin_import_usage"));
+            return;
         }
 
-        importer.refreshMaps();
+        // границы миров читаем в потоке сервера, файлы парсим вне его
+        java.util.Map<String, int[]> worldBounds = new java.util.HashMap<>();
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            worldBounds.put(world.getName(), new int[]{world.getMinHeight(), world.getMaxHeight() - 1});
+        }
+
+        sender.sendMessage(plugin.getLanguageManager().getMessage("admin_import_started", "%source%", source));
+
+        plugin.getSchedulers().runAsync(() -> {
+            org.qweyns.qweprotectstones.features.importer.RegionImporter importer =
+                    new org.qweyns.qweprotectstones.features.importer.RegionImporter(plugin);
+            org.qweyns.qweprotectstones.features.importer.RegionImporter.Pending parsed = griefPrevention
+                    ? importer.parseGriefPrevention(worldBounds)
+                    : importer.parseWorldGuard(stonesOnly, worldBounds);
+
+            // регистрация и голограммы — только в потоке сервера
+            plugin.getSchedulers().runNextTick(() -> {
+                registerImported(sender, parsed.regions(), parsed.skipped(), parsed.errors());
+                importer.refreshMaps();
+            });
+        });
+    }
+
+    private void registerImported(CommandSender sender, List<Region> parsed, int skipped, int errors) {
+        int imported = 0;
+        boolean holograms = plugin.getConfigManager().getConfig().getBoolean("import.create-holograms", false);
+        for (Region region : parsed) {
+            if (plugin.getRegionManager().importRegion(region)) {
+                imported++;
+                if (holograms) plugin.getHologramManager().createOrUpdateHologram(region);
+            } else {
+                skipped++;
+            }
+        }
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_import_done",
-                "%imported%", String.valueOf(result.imported()),
-                "%skipped%", String.valueOf(result.skipped()),
-                "%errors%", String.valueOf(result.errors())));
+                "%imported%", String.valueOf(imported),
+                "%skipped%", String.valueOf(skipped),
+                "%errors%", String.valueOf(errors)));
     }
 
     public void restore(CommandSender sender, String[] args) {
@@ -153,12 +178,12 @@ public class SystemAdminCommands {
 
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_started", "%file%", fileName));
 
-        // парсим вне основного потока
+        // файл парсим вне основного потока, регистрацию делаем в потоке сервера
         plugin.getSchedulers().runAsync(() -> {
             var restorer = new org.qweyns.qweprotectstones.features.importer.RegionRestorer(plugin);
-            org.qweyns.qweprotectstones.features.importer.RegionRestorer.Result result;
+            org.qweyns.qweprotectstones.features.importer.RegionRestorer.Parsed parsed;
             try {
-                result = restorer.restore(file);
+                parsed = restorer.parse(file);
             } catch (java.io.IOException e) {
                 plugin.getSchedulers().runNextTick(() -> sender.sendMessage(
                         plugin.getLanguageManager().getMessage("admin_restore_failed", "%error%", String.valueOf(e.getMessage()))));
@@ -166,14 +191,25 @@ public class SystemAdminCommands {
             }
 
             plugin.getSchedulers().runNextTick(() -> {
-                if (result.restored() > 0) {
+                int restored = 0;
+                int skipped = parsed.skipped();
+                boolean holograms = plugin.getConfigManager().getConfig().getBoolean("import.create-holograms", false);
+                for (Region region : parsed.regions()) {
+                    if (plugin.getRegionManager().importRegion(region)) {
+                        restored++;
+                        if (holograms) plugin.getHologramManager().createOrUpdateHologram(region);
+                    } else {
+                        skipped++;
+                    }
+                }
+                if (restored > 0) {
                     if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().redrawAll();
                     if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().updateAll();
                 }
                 sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_done",
-                        "%restored%", String.valueOf(result.restored()),
-                        "%skipped%", String.valueOf(result.skipped()),
-                        "%errors%", String.valueOf(result.errors())));
+                        "%restored%", String.valueOf(restored),
+                        "%skipped%", String.valueOf(skipped),
+                        "%errors%", String.valueOf(parsed.errors())));
             });
         });
     }

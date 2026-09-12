@@ -39,7 +39,7 @@ public class RegionRateLimiter {
     }
 
     public long secondsRemaining(Player player) {
-        if (player.hasPermission("qweprotectstones.admin")) return 0;
+        if (player.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix())) return 0;
 
         long cooldown = cooldownMillis();
         if (cooldown <= 0) return 0;

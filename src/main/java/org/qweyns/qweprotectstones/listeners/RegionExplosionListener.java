@@ -35,12 +35,30 @@ public class RegionExplosionListener implements Listener {
 
     private final Set<UUID> processingRemoval = ConcurrentHashMap.newKeySet();
 
-    private final Cache<UUID, Long> lastDamageTime = CacheBuilder.newBuilder()
-            .expireAfterWrite(10, TimeUnit.MINUTES)
-            .build();
+    // TTL не короче удвоенного кулдауна урона, иначе длинный кулдаун молча отключался
+    private Cache<UUID, Long> lastDamageTime;
 
     public RegionExplosionListener(QweProtectStones plugin) {
         this.plugin = plugin;
+        rebuildDamageCache();
+    }
+
+    private void rebuildDamageCache() {
+        long maxCooldownTicks = plugin.getConfigManager().getDamageCooldownTicks();
+        for (RegionType type : plugin.getRegionTypes().all()) {
+            if (type.overridesDamageCooldown()) maxCooldownTicks = Math.max(maxCooldownTicks, type.damageCooldownTicks());
+        }
+        long ttl = Math.max(TimeUnit.MINUTES.toMillis(5), maxCooldownTicks * 50L * 2);
+        lastDamageTime = CacheBuilder.newBuilder()
+                .expireAfterWrite(ttl, TimeUnit.MILLISECONDS)
+                .build();
+    }
+
+    /** Кулдаун урона мог измениться в конфиге — при /reload строим кеш заново. */
+    public void reload() {
+        Cache<UUID, Long> previous = lastDamageTime;
+        rebuildDamageCache();
+        previous.invalidateAll();
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

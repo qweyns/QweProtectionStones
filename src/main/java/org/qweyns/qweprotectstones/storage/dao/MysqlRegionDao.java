@@ -65,51 +65,51 @@ public class MysqlRegionDao extends AbstractSqlRegionDao {
                 " core_x, core_y, core_z, type, owner_uuid, owner_name, durability, max_durability, effects, created_at," +
                 " attack_count, last_attack_at, last_attacker, penalty_until, display_name)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE world = VALUES(world)," +
-                " min_x = VALUES(min_x), min_y = VALUES(min_y), min_z = VALUES(min_z)," +
-                " max_x = VALUES(max_x), max_y = VALUES(max_y), max_z = VALUES(max_z)," +
-                " core_x = VALUES(core_x), core_y = VALUES(core_y), core_z = VALUES(core_z)," +
-                " type = VALUES(type), owner_uuid = VALUES(owner_uuid), owner_name = VALUES(owner_name)," +
-                " durability = VALUES(durability), max_durability = VALUES(max_durability), effects = VALUES(effects)," +
-                " attack_count = VALUES(attack_count), last_attack_at = VALUES(last_attack_at)," +
-                " last_attacker = VALUES(last_attacker), penalty_until = VALUES(penalty_until),"
-                + " display_name = VALUES(display_name)";
+                " AS new ON DUPLICATE KEY UPDATE world = new.world," +
+                " min_x = new.min_x, min_y = new.min_y, min_z = new.min_z," +
+                " max_x = new.max_x, max_y = new.max_y, max_z = new.max_z," +
+                " core_x = new.core_x, core_y = new.core_y, core_z = new.core_z," +
+                " type = new.type, owner_uuid = new.owner_uuid, owner_name = new.owner_name," +
+                " durability = new.durability, max_durability = new.max_durability, effects = new.effects," +
+                " attack_count = new.attack_count, last_attack_at = new.last_attack_at," +
+                " last_attacker = new.last_attacker, penalty_until = new.penalty_until,"
+                + " display_name = new.display_name";
     }
 
     @Override
     protected String memberUpsert() {
         return "INSERT INTO " + membersTable() + " (region_id, player_uuid, player_name, trust, added_at)" +
                 " VALUES (?, ?, ?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), trust = VALUES(trust)";
+                " AS new ON DUPLICATE KEY UPDATE player_name = new.player_name, trust = new.trust";
     }
 
     @Override
     protected String flagUpsert() {
         return "INSERT INTO " + flagsTable() + " (region_id, flag, value) VALUES (?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE value = VALUES(value)";
+                " AS new ON DUPLICATE KEY UPDATE value = new.value";
     }
 
     @Override
     protected String autoAddUpsert() {
         return "INSERT INTO " + autoAddTable() + " (uuid, friends, toggled_off) VALUES (?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE friends = VALUES(friends), toggled_off = VALUES(toggled_off)";
+                " AS new ON DUPLICATE KEY UPDATE friends = new.friends, toggled_off = new.toggled_off";
     }
 
     @Override
     protected String banUpsert() {
         return "INSERT INTO " + bansTable() + " (region_id, player_uuid, player_name) VALUES (?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE player_name = VALUES(player_name)";
+                " AS new ON DUPLICATE KEY UPDATE player_name = new.player_name";
     }
 
     @Override
     protected String playerUpsert() {
         return "INSERT INTO " + playersTable() + " (uuid, name, last_seen) VALUES (?, ?, ?)" +
-                " ON DUPLICATE KEY UPDATE name = VALUES(name), last_seen = VALUES(last_seen)";
+                " AS new ON DUPLICATE KEY UPDATE name = new.name, last_seen = new.last_seen";
     }
 
     @Override
     protected String metaUpsert() {
         return "INSERT INTO " + metaTable() + " (key_name, value) VALUES (?, ?)" +
-                " ON DUPLICATE KEY UPDATE value = VALUES(value)";
+                " AS new ON DUPLICATE KEY UPDATE value = new.value";
     }
 }

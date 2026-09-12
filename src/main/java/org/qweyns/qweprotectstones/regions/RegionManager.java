@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RegionManager {
 
@@ -62,6 +64,8 @@ public class RegionManager {
 
     private final Map<UUID, Region> regions = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> regionsByOwner = new ConcurrentHashMap<>();
+    // префикс короткого id -> кто им владеет; skip-листа умеет искать по префиксу
+    private final ConcurrentSkipListMap<String, List<UUID>> byShortId = new ConcurrentSkipListMap<>();
 
     public RegionManager(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -70,6 +74,7 @@ public class RegionManager {
     public void loadAll(Collection<Region> loaded) {
         regions.clear();
         regionsByOwner.clear();
+        byShortId.clear();
         index.clear();
 
         int skippedUnknownWorld = 0;
@@ -90,8 +95,20 @@ public class RegionManager {
     private void register(Region region) {
         regions.put(region.getId(), region);
         index.add(region);
+        byShortId.computeIfAbsent(region.getShortId(), k -> new CopyOnWriteArrayList<>()).add(region.getId());
         if (region.getOwnerId() != null) {
             regionsByOwner.computeIfAbsent(region.getOwnerId(), k -> ConcurrentHashMap.newKeySet()).add(region.getId());
+        }
+    }
+
+    private void unregister(Region region) {
+        regions.remove(region.getId());
+        index.remove(region);
+
+        List<UUID> ids = byShortId.get(region.getShortId());
+        if (ids != null) {
+            ids.remove(region.getId());
+            if (ids.isEmpty()) byShortId.remove(region.getShortId(), ids);
         }
     }
 
@@ -114,8 +131,20 @@ public class RegionManager {
         if (shortId == null || shortId.isBlank()) return null;
         String needle = shortId.toLowerCase(java.util.Locale.ROOT);
 
-        for (Region region : regions.values()) {
-            if (region.getId().toString().toLowerCase(java.util.Locale.ROOT).startsWith(needle)) return region;
+        // префикс длиннее индексного (полный UUID) — редкий путь, точный проход
+        if (needle.length() > 8) {
+            for (Region region : regions.values()) {
+                if (region.getId().toString().startsWith(needle)) return region;
+            }
+            return null;
+        }
+
+        for (Map.Entry<String, List<UUID>> entry : byShortId.tailMap(needle).entrySet()) {
+            if (!entry.getKey().startsWith(needle)) break;
+            for (UUID id : entry.getValue()) {
+                Region region = regions.get(id);
+                if (region != null) return region;
+            }
         }
         return null;
     }
@@ -225,8 +254,14 @@ public class RegionManager {
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return false;
 
-        regions.remove(region.getId());
-        index.remove(region);
+        // сначала снимаем сделки под локом рынка: покупка либо завершилась до удаления,
+        // либо уже не увидит объявление и не заплатит
+        if (plugin.getMarketManager() != null) {
+            plugin.getMarketManager().cancelSale(region);
+            plugin.getMarketManager().cancelRental(region);
+        }
+
+        unregister(region);
 
         Set<UUID> owned = regionsByOwner.get(region.getOwnerId());
         if (owned != null) {
@@ -235,11 +270,6 @@ public class RegionManager {
         }
 
         plugin.getRegionStorage().delete(region.getId());
-
-        if (plugin.getMarketManager() != null) {
-            plugin.getMarketManager().cancelSale(region);
-            plugin.getMarketManager().cancelRental(region);
-        }
         return true;
     }
 

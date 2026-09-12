@@ -55,6 +55,9 @@ public final class Tunables {
     private boolean borderFishing;
     private boolean regionEnterEnabled;
     private boolean regionLeaveEnabled;
+    private boolean homeCancelOnMove;
+    private boolean homeCancelOnDamage;
+    private boolean previewMessages;
     private String regionEnterChannel;
     private String regionLeaveChannel;
 
@@ -208,6 +211,9 @@ public final class Tunables {
         borderFishing = cfg.getBoolean("protection.border.fishing", true);
         regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
         regionLeaveEnabled = cfg.getBoolean("region-messages.leave.enabled", true);
+        homeCancelOnMove = cfg.getBoolean("home.cancel-on-move", true);
+        homeCancelOnDamage = cfg.getBoolean("home.cancel-on-damage", true);
+        previewMessages = cfg.getBoolean("settings.preview-messages", false);
         // канал ACTIONBAR выпилен: старые конфиги читаем как CHAT
         regionEnterChannel = channelValue(cfg.getString("region-messages.enter.channel", "CHAT"));
         regionLeaveChannel = channelValue(cfg.getString("region-messages.leave.channel", "CHAT"));
@@ -264,6 +270,9 @@ public final class Tunables {
     public boolean borderFishing() { return borderFishing; }
     public boolean regionEnterEnabled() { return regionEnterEnabled; }
     public boolean regionLeaveEnabled() { return regionLeaveEnabled; }
+    public boolean homeCancelOnMove() { return homeCancelOnMove; }
+    public boolean homeCancelOnDamage() { return homeCancelOnDamage; }
+    public boolean previewMessages() { return previewMessages; }
 
     public String regionEnterChannel() { return regionEnterChannel; }
 
