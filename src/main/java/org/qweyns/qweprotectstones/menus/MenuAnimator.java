@@ -176,10 +176,9 @@ public class MenuAnimator implements Runnable {
                     float volume = args.length > 2 ? Float.parseFloat(args[2]) : 1f;
                     float pitch = args.length > 3 ? Float.parseFloat(args[3]) : 1f;
 
-                    Sound sound = org.qweyns.qweprotectstones.config.SoundSetting.resolve(args[1]);
-                    if (sound == null) {
-                        plugin.getLogger().warning("Неизвестный звук в анимации меню: " + args[1]);
-                    } else {
+                    Sound sound = org.qweyns.qweprotectstones.config.SoundSetting.resolveOnce(
+                            plugin.getLogger(), args[1], "в анимации меню");
+                    if (sound != null) {
                         tasks.add(() -> player.playSound(player.getLocation(), sound, volume, pitch));
                     }
                 }

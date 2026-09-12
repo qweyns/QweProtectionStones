@@ -48,6 +48,7 @@ upgrade:                # переопределение оплаты для т�
 | Ключ | По умолчанию | Описание |
 | --- | --- | --- |
 | `return_block_on_remove` | true | Ядро выпадает на пол при удалении/поломке |
+| `return_core_on_raid` | true | Ядро выпадает на пол, когда приват погиб от взрыва (с остатком штрафа, прочность заново) |
 | `sneak_places_plain_block` | true | Зажав SHIFT, ядро ставится как обычный блок — без привата |
 | `spawn-egg-use` | false | Разрешить доверенным яйцо призыва прямо на ядре |
 | `menu` | "" | Какое меню открывает клик (`main`, `upgrade`, `effects`); пусто — авто |
@@ -93,6 +94,7 @@ recipe:
 
 ```yaml
 raid_immune: false          # true — взрывы вообще не тратят прочность
+return_core_on_raid: true   # ядро выпадает, когда приват добил взрыв
 damage_cooldown_ticks: -1   # -1 — из siege.yml
 explosion_damage_radius: -1 # -1 — из siege.yml
 explosions:                 # каким видам взрывов можно вредить ядру

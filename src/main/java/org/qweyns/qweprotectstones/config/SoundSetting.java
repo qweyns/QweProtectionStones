@@ -7,7 +7,12 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public record SoundSetting(Sound sound, float volume, float pitch) {
 
@@ -44,6 +49,42 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
         Sound sound = byKey(raw);
         // Старые конфиги писали имена констант: ENTITY_PLAYER_LEVELUP → entity.player.levelup.
         if (sound == null) sound = byKey(raw.replace('_', '.'));
+        // Ключи с подчёркиваниями внутри (block.note_block.hat) заменой символов не получить
+        if (sound == null) sound = byLegacyIndex(name);
+        return sound;
+    }
+
+    // сравнение без разделителей: BLOCK_NOTE_BLOCK_HAT == block.note_block.hat
+    private static volatile Map<String, Sound> legacyIndex;
+
+    private static Sound byLegacyIndex(String name) {
+        Map<String, Sound> index = legacyIndex;
+        if (index == null) {
+            index = new HashMap<>();
+            for (Sound sound : Registry.SOUNDS) {
+                index.put(compact(sound.getKey().getKey()), sound);
+            }
+            legacyIndex = index;
+        }
+        return index.get(compact(name));
+    }
+
+    private static String compact(String value) {
+        return value.toUpperCase(Locale.ROOT).replace("_", "").replace(".", "").replace("-", "");
+    }
+
+    private static final Set<String> warnedUnknown = ConcurrentHashMap.newKeySet();
+
+    /** Резолв с жалобой в лог не чаще раза на имя: анимация спрашивает звук каждый кадр. */
+    public static Sound resolveOnce(Logger logger, String name, String context) {
+        String trimmed = name == null ? "" : name.trim();
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (lower.isEmpty() || lower.equals("none") || lower.equals("off") || lower.equals("false")) return null;
+
+        Sound sound = resolve(trimmed);
+        if (sound == null && logger != null && warnedUnknown.add(lower)) {
+            logger.warning("Неизвестный звук " + context + ": " + trimmed);
+        }
         return sound;
     }
 

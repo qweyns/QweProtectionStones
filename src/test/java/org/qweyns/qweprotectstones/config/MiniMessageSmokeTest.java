@@ -1,9 +1,14 @@
 package org.qweyns.qweprotectstones.config;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.qweyns.qweprotectstones.utils.ColorUtil;
 import org.yaml.snakeyaml.Yaml;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,5 +57,22 @@ class MiniMessageSmokeTest {
     void miniMessageParses(String line) {
         assertDoesNotThrow(() -> MiniMessage.miniMessage().deserialize(line),
                 "MiniMessage не смог разобрать строку: " + line);
+    }
+
+    @Test
+    void hoverAndClickSurviveColorUtil() {
+        String line = "<click:run_command:'/ps home a1b2'>"
+                + "<hover:show_text:'<#C4B5FD>Нажмите — телепорт к привату'><#86EFAC>▪ строка списка</hover></click>";
+        Component component = ColorUtil.formatComponent(line);
+        assertTrue(hasEvent(component, true), "click-событие потерялось при разборе MiniMessage");
+        assertTrue(hasEvent(component, false), "hover-событие потерялось при разборе MiniMessage");
+    }
+
+    private static boolean hasEvent(Component component, boolean click) {
+        if (click ? component.clickEvent() != null : component.hoverEvent() != null) return true;
+        for (Component child : component.children()) {
+            if (hasEvent(child, click)) return true;
+        }
+        return false;
     }
 }

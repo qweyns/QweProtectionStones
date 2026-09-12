@@ -106,6 +106,7 @@ public class RegionTypeRegistry {
                 readInt(section, defaults, "damage_cooldown_ticks", -1),
                 readInt(section, defaults, "explosion_damage_radius", -1),
                 readBoolean(section, defaults, "raid_immune", false),
+                readBoolean(section, defaults, "return_core_on_raid", true),
                 readString(section, defaults, "upgrade.item", ""),
                 readInt(section, defaults, "upgrade.cost_multiplier", -1),
                 readInt(section, defaults, "upgrade.tax", -1),

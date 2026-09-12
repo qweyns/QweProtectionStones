@@ -188,12 +188,10 @@ public class MenuActions {
     }
 
     private void playSound(Player player, String soundName) {
-        SoundSetting sound = SoundSetting.parse(soundName, SoundSetting.NONE);
-        if (!sound.isEnabled()) {
-            plugin.getLogger().warning("Неизвестный звук в меню: " + soundName);
-            return;
-        }
-        sound.playTo(player);
+        // громкость и тон идут через двоеточие после имени
+        Sound sound = SoundSetting.resolveOnce(plugin.getLogger(), soundName.split(":")[0], "в меню");
+        if (sound == null) return;
+        SoundSetting.parse(soundName, new SoundSetting(sound, 1f, 1f)).playTo(player);
     }
 
     // цену задаёт само меню ([takemoney] и т.п. выше по списку) —
