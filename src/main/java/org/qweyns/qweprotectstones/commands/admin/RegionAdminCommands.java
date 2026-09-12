@@ -18,17 +18,17 @@ import java.util.Locale;
 import java.util.UUID;
 
 /** Админ-команды над конкретным приватом: инфо, снос, правки, телепорт, флаги, передача. */
-class RegionAdminCommands {
+public class RegionAdminCommands {
 
     private final QweProtectStones plugin;
     private final AdminSupport support;
 
-    RegionAdminCommands(QweProtectStones plugin, AdminSupport support) {
+    public RegionAdminCommands(QweProtectStones plugin, AdminSupport support) {
         this.plugin = plugin;
         this.support = support;
     }
 
-    void info(CommandSender sender, Player player, String[] args) {
+    public void info(CommandSender sender, Player player, String[] args) {
         Region region = support.resolveRegion(player, args);
         if (region == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("region_not_found",
@@ -61,7 +61,7 @@ class RegionAdminCommands {
                         .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm")));
     }
 
-    void delete(CommandSender sender, Player player, String[] args) {
+    public void delete(CommandSender sender, Player player, String[] args) {
         Region region = support.resolveRegion(player, args);
         if (region == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("region_not_found",
@@ -80,7 +80,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%owner%", region.getOwnerName()));
     }
 
-    void give(CommandSender sender, String[] args) {
+    public void give(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_give_usage"));
             return;
@@ -131,7 +131,7 @@ class RegionAdminCommands {
                 "%type%", type.displayName(), "%amount%", String.valueOf(amount)));
     }
 
-    void setDurability(CommandSender sender, Player player, String[] args) {
+    public void setDurability(CommandSender sender, Player player, String[] args) {
         int value = support.parseInt(sender, args, 2);
         if (value < 0) return;
 
@@ -145,7 +145,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
 
-    void setMaxDurability(CommandSender sender, Player player, String[] args) {
+    public void setMaxDurability(CommandSender sender, Player player, String[] args) {
         int value = support.parseInt(sender, args, 2);
         if (value < 1) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_bad_number",
@@ -163,7 +163,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%value%", region.getDurability() + "/" + region.getMaxDurability()));
     }
 
-    void setType(CommandSender sender, Player player, String[] args) {
+    public void setType(CommandSender sender, Player player, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_settype_usage"));
             return;
@@ -206,7 +206,7 @@ class RegionAdminCommands {
                 "%size%", type.widthX() + "x" + type.widthZ()));
     }
 
-    void setBounds(CommandSender sender, Player player, String[] args) {
+    public void setBounds(CommandSender sender, Player player, String[] args) {
         if (args.length < 8) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_setbounds_usage"));
             return;
@@ -245,7 +245,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%size%", region.getBounds().sizeX() + "x" + region.getBounds().sizeZ()));
     }
 
-    void teleport(CommandSender sender, Player player, String[] args) {
+    public void teleport(CommandSender sender, Player player, String[] args) {
         if (player == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("players_only"));
             return;
@@ -269,7 +269,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%owner%", region.getOwnerName()));
     }
 
-    void flag(CommandSender sender, Player player, String[] args) {
+    public void flag(CommandSender sender, Player player, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_flag_usage"));
             return;
@@ -310,7 +310,7 @@ class RegionAdminCommands {
                 "%id%", region.getShortId(), "%flag%", flag.key(), "%value%", args[3]));
     }
 
-    void transfer(CommandSender sender, Player player, String[] args, boolean forgetPrevious) {
+    public void transfer(CommandSender sender, Player player, String[] args, boolean forgetPrevious) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
                     forgetPrevious ? "admin_setowner_usage" : "admin_transfer_usage"));

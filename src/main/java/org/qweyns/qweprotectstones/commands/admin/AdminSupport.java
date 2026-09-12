@@ -12,20 +12,20 @@ import java.util.List;
 import java.util.Locale;
 
 /** Общие помощники админ-команд: поиск привата и игрока, разбор чисел, аудит. */
-class AdminSupport {
+public class AdminSupport {
 
     private final QweProtectStones plugin;
 
-    AdminSupport(QweProtectStones plugin) {
+    public AdminSupport(QweProtectStones plugin) {
         this.plugin = plugin;
     }
 
-    Region resolveRegion(Player player, String[] args) {
+    public Region resolveRegion(Player player, String[] args) {
         if (args.length > 1) return plugin.getRegionManager().getByShortId(args[1]);
         return player == null ? null : plugin.getRegionManager().getRegionAt(player.getLocation());
     }
 
-    Region resolveRegionWithMessage(CommandSender sender, Player player, String[] args) {
+    public Region resolveRegionWithMessage(CommandSender sender, Player player, String[] args) {
         Region region = resolveRegion(player, args);
         if (region == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("region_not_found",
@@ -34,7 +34,7 @@ class AdminSupport {
         return region;
     }
 
-    OfflinePlayer resolvePlayer(String name) {
+    public OfflinePlayer resolvePlayer(String name) {
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) return online;
 
@@ -42,7 +42,7 @@ class AdminSupport {
         return cached != null && cached.getUniqueId() != null ? cached : null;
     }
 
-    int parseInt(CommandSender sender, String[] args, int index) {
+    public int parseInt(CommandSender sender, String[] args, int index) {
         if (args.length <= index) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_bad_number", "%value%", "-"));
             return -1;
@@ -55,7 +55,7 @@ class AdminSupport {
         }
     }
 
-    Boolean parseBoolean(String value) {
+    public Boolean parseBoolean(String value) {
         return switch (value) {
             case "true", "on", "yes", "вкл", "да", "1" -> true;
             case "false", "off", "no", "выкл", "нет", "0" -> false;
@@ -63,7 +63,7 @@ class AdminSupport {
         };
     }
 
-    void auditLog(Region region, CommandSender sender, String action, String detail) {
+    public void auditLog(Region region, CommandSender sender, String action, String detail) {
         String actor = sender.getName();
         if (region != null) {
             plugin.getRegionStorage().log(org.qweyns.qweprotectstones.storage.dao.RegionLogEntry.of(
@@ -75,13 +75,13 @@ class AdminSupport {
                 + (detail == null || detail.isBlank() ? "" : " " + detail));
     }
 
-    List<String> onlineNames() {
+    public List<String> onlineNames() {
         List<String> names = new ArrayList<>();
         for (Player online : Bukkit.getOnlinePlayers()) names.add(online.getName());
         return names;
     }
 
-    List<String> filter(List<String> candidates, String prefix) {
+    public List<String> filter(List<String> candidates, String prefix) {
         String lowered = prefix.toLowerCase(Locale.ROOT);
         List<String> result = new ArrayList<>();
 

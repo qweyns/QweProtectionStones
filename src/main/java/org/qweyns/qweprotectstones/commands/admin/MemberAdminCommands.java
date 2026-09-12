@@ -14,17 +14,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Админ-команды состава привата: баны, участники, доверия. */
-class MemberAdminCommands {
+public class MemberAdminCommands {
 
     private final QweProtectStones plugin;
     private final AdminSupport support;
 
-    MemberAdminCommands(QweProtectStones plugin, AdminSupport support) {
+    public MemberAdminCommands(QweProtectStones plugin, AdminSupport support) {
         this.plugin = plugin;
         this.support = support;
     }
 
-    void ban(CommandSender sender, Player player, String[] args, boolean add) {
+    public void ban(CommandSender sender, Player player, String[] args, boolean add) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
                     add ? "admin_ban_usage" : "admin_unban_usage"));
@@ -68,7 +68,7 @@ class MemberAdminCommands {
                 "%id%", region.getShortId(), "%player%", targetName));
     }
 
-    void members(CommandSender sender, Player player, String[] args) {
+    public void members(CommandSender sender, Player player, String[] args) {
         Region region = support.resolveRegionWithMessage(sender, player, args);
         if (region == null) return;
 
@@ -91,7 +91,7 @@ class MemberAdminCommands {
         }
     }
 
-    void trust(CommandSender sender, Player player, String[] args, boolean grant) {
+    public void trust(CommandSender sender, Player player, String[] args, boolean grant) {
         if (args.length < 3) {
             sender.sendMessage(plugin.getLanguageManager().getMessage(
                     grant ? "admin_trust_usage" : "admin_untrust_usage"));

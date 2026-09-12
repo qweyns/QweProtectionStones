@@ -12,21 +12,21 @@ import java.util.List;
 import java.util.Locale;
 
 /** Системные админ-команды: перезагрузка, обход, статистика, экспорт, импорт, отладка. */
-class SystemAdminCommands {
+public class SystemAdminCommands {
 
     private final QweProtectStones plugin;
     private final long enabledAt = System.currentTimeMillis();
 
-    SystemAdminCommands(QweProtectStones plugin) {
+    public SystemAdminCommands(QweProtectStones plugin) {
         this.plugin = plugin;
     }
 
-    void reload(CommandSender sender) {
+    public void reload(CommandSender sender) {
         plugin.reloadEverything();
         sender.sendMessage(plugin.getLanguageManager().getMessage("reload_success"));
     }
 
-    void bypass(CommandSender sender, Player player) {
+    public void bypass(CommandSender sender, Player player) {
         if (player == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("players_only"));
             return;
@@ -38,7 +38,7 @@ class SystemAdminCommands {
         player.sendMessage(plugin.getLanguageManager().getMessage(enabled ? "bypass_enabled" : "bypass_disabled"));
     }
 
-    void save(CommandSender sender) {
+    public void save(CommandSender sender) {
         // запись всей базы — не в главном потоке
         List<Region> regions = List.copyOf(plugin.getRegionManager().getAllRegions());
         plugin.getSchedulers().runAsync(() -> {
@@ -48,7 +48,7 @@ class SystemAdminCommands {
         });
     }
 
-    void stats(CommandSender sender) {
+    public void stats(CommandSender sender) {
         var lm = plugin.getLanguageManager();
         sender.sendMessage(lm.getMessage("admin_stats",
                 "%regions%", String.valueOf(plugin.getRegionManager().size()),
@@ -81,7 +81,7 @@ class SystemAdminCommands {
                 "%types%", typesLine.isEmpty() ? "-" : typesLine.toString()));
     }
 
-    void export(CommandSender sender) {
+    public void export(CommandSender sender) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_export_started"));
 
         plugin.getSchedulers().runAsync(() -> {
@@ -97,13 +97,13 @@ class SystemAdminCommands {
         });
     }
 
-    void cleanup(CommandSender sender) {
+    public void cleanup(CommandSender sender) {
         plugin.getCriticalFileLogger().log("ADMIN_CLEANUP", "by=" + sender.getName());
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_cleanup_started"));
         plugin.getAbandonedRegionTask().sweep();
     }
 
-    void importRegions(CommandSender sender, String[] args) {
+    public void importRegions(CommandSender sender, String[] args) {
         String source = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
         org.qweyns.qweprotectstones.features.importer.RegionImporter importer =
                 new org.qweyns.qweprotectstones.features.importer.RegionImporter(plugin);
@@ -127,7 +127,7 @@ class SystemAdminCommands {
                 "%errors%", String.valueOf(result.errors())));
     }
 
-    void restore(CommandSender sender, String[] args) {
+    public void restore(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_usage"));
             File folder = new File(plugin.getDataFolder(), "exports");
@@ -178,12 +178,12 @@ class SystemAdminCommands {
         });
     }
 
-    void backup(CommandSender sender) {
+    public void backup(CommandSender sender) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_backup_started"));
         plugin.getBackupTask().run();
     }
 
-    void debug(CommandSender sender) {
+    public void debug(CommandSender sender) {
         long uptimeMinutes = (System.currentTimeMillis() - enabledAt) / 60_000L;
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_debug_header",
                 "%version%", plugin.getPluginMeta().getVersion(),
