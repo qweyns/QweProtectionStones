@@ -207,14 +207,6 @@ public class RegionExplosionListener implements Listener {
         plugin.getRegionLifecycleListener().cleanupVisuals(region);
         plugin.getNotificationManager().sendDestroyedAlert(region, core);
 
-        // ядро может вернуться игроку и после гибели привата — решает тип
-
-        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
-        if (type != null && type.returnCoreOnRaid() && core.getWorld() != null) {
-            core.getWorld().dropItemNaturally(core,
-                    org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region));
-        }
-
         plugin.getSchedulers().runAtLocationLater(core, () -> {
             try {
                 if (core.getWorld() != null && core.getBlock().getType() == materialOf(region)) {

@@ -267,10 +267,10 @@ admin_restore_failed: "%prefix%<#FB7185>Restauración fallida: %error%"
 
 # --- Справка ---
 help_header: "%prefix%<#DDD6FE>Ayuda <#A79FC0>· <#A79FC0>página <#FDE68A>%page% <#A79FC0>de <#FDE68A>%total%"
-help_line: "<#A79FC0>• <click:suggest_command:'/%command% %sub% '><#C4B5FD>/%command% %sub% %description%</click>"
+help_line: "<#A79FC0>• <click:suggest_command:'/%command% %sub% '><hover:show_text:'<#C4B5FD>Haz clic para insertar el comando'><#C4B5FD>/%command% %sub% %description%</hover></click>"
 help_footer: "%button-prev% <#8E86A8>· <#A79FC0>%page% / %total% <#8E86A8>· %button-next%"
-help_button_prev: "<click:run_command:'/%command% help %page%'><#C4B5FD>[ ◀ Atrás ]</click>"
-help_button_next: "<click:run_command:'/%command% help %page%'><#C4B5FD>[ Siguiente ▶ ]</click>"
+help_button_prev: "<click:run_command:'/%command% help %page%'><hover:show_text:'<#C4B5FD>Ir a la página <#FDE68A>%page%'><#C4B5FD>[ ◀ Atrás ]</hover></click>"
+help_button_next: "<click:run_command:'/%command% help %page%'><hover:show_text:'<#C4B5FD>Ir a la página <#FDE68A>%page%'><#C4B5FD>[ Siguiente ▶ ]</hover></click>"
 
 help_info: "<#A79FC0>— <#F2EFFA>ficha de la región y bordes resaltados"
 help_menu_main: "<#A79FC0>— <#F2EFFA>menú principal de la región"

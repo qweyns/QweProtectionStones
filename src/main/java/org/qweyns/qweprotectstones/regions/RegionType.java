@@ -33,7 +33,6 @@ public record RegionType(
         int damageCooldownTicks,
         int explosionDamageRadius,
         boolean raidImmune,
-        boolean returnCoreOnRaid,
         String upgradeItem,
         int upgradeCostMultiplier,
         int upgradeTax,

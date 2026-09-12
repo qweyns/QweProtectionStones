@@ -267,10 +267,10 @@ admin_restore_failed: "%prefix%<#FB7185>Восстановление не уда
 
 # --- Справка ---
 help_header: "%prefix%<#DDD6FE>Справка <#A79FC0>· <#A79FC0>страница <#FDE68A>%page% <#A79FC0>из <#FDE68A>%total%"
-help_line: "<#A79FC0>• <click:suggest_command:'/%command% %sub% '><#C4B5FD>/%command% %sub% %description%</click>"
+help_line: "<#A79FC0>• <click:suggest_command:'/%command% %sub% '><hover:show_text:'<#C4B5FD>Нажмите, чтобы подставить команду'><#C4B5FD>/%command% %sub% %description%</hover></click>"
 help_footer: "%button-prev% <#8E86A8>· <#A79FC0>%page% / %total% <#8E86A8>· %button-next%"
-help_button_prev: "<click:run_command:'/%command% help %page%'><#C4B5FD>[ ◀ Назад ]</click>"
-help_button_next: "<click:run_command:'/%command% help %page%'><#C4B5FD>[ Далее ▶ ]</click>"
+help_button_prev: "<click:run_command:'/%command% help %page%'><hover:show_text:'<#C4B5FD>Перейти на страницу <#FDE68A>%page%'><#C4B5FD>[ ◀ Назад ]</hover></click>"
+help_button_next: "<click:run_command:'/%command% help %page%'><hover:show_text:'<#C4B5FD>Перейти на страницу <#FDE68A>%page%'><#C4B5FD>[ Далее ▶ ]</hover></click>"
 
 help_info: "<#A79FC0>— <#F2EFFA>карточка привата и подсветка границ"
 help_menu_main: "<#A79FC0>— <#F2EFFA>главное меню привата"
