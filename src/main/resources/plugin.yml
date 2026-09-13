@@ -17,6 +17,7 @@ softdepend:
   - dynmap
   - BlueMap
   - DiscordSRV
+  - QweTnts
 
 # Игровая команда (по умолчанию /ps) задаётся в config.yml -> settings.command
 # и регистрируется при запуске. Здесь объявлена только административная.
