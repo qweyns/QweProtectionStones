@@ -1,0 +1,456 @@
+# ===========================================================================
+#  QweProtectStones v2.0.0 — типы приватов
+# ===========================================================================
+#  Здесь описываются блоки-ядра: размер территории, прочность, флаги,
+#  голограммы, звуки и всё остальное, что относится к самому привату.
+#
+#  Как это читается:
+#    default_region  — значения по умолчанию для всех типов;
+#    region_types.<БЛОК> — отличия конкретного типа от умолчаний.
+#  Указывайте в типе только то, что отличается от default_region —
+#  остальное подставится само.
+#
+#  Ключ типа — материал блока Minecraft (DIAMOND_BLOCK и т.п.).
+#  Один материал может принадлежать только одному типу.
+#
+#  Плейсхолдеры для строк голограмм:
+#    %type%   — название типа (display_name, вместе с цветами)
+#    %owner%  — ник владельца          %name%   — название привата
+#    %members% — число участников      %size%   — размер (например 33x33)
+#    %durability% / %max_durability% — текущая и максимальная прочность
+#    %id%     — короткий id привата    %item%   — предмет прокачки
+#    %siege%  — идёт ли осада          %penalty% — множитель штрафа
+#    %attacks% — сколько было атак
+# ===========================================================================
+
+default_region:
+
+  # --- Название и голограмма ---------------------------------------------
+  # Название типа в ИНТЕРФЕЙСЕ плагина: /ps list, /ps info, /ps findspot,
+  # меню и сообщение /qps give. Поддерживаются цвета MiniMessage.
+  # В голограмму оно НЕ подставляется — содержимое голограммы целиком
+  # задаётся строками ниже, включая заголовок, если он нужен.
+  display_name: "<#C4B5FD>Приват"
+
+  # Строки голограммы — целиком ваши, display_name сверху не добавляется.
+  # Заголовок — плейсхолдером %type%: подставится display_name типа вместе
+  # с цветами. Название типа пишется один раз — в display_name выше.
+  # Плейсхолдеры работают в каждой строке: %type% %owner% %name% %members%
+  # %size% %durability% %max_durability% %id% %item% %siege% %penalty%
+  # %attacks%
+  hologram_lines:
+    - "%type%"
+    - "<#F2EFFA>Владелец: <#C4B5FD>%owner%"
+    - "<#F2EFFA>Прочность: <#C4B5FD>[ %durability% / %max_durability% ]"
+
+  # Строки во время осады. Если не задать — показываются обычные.
+  # Используются только при hologram_under_attack: true — сам
+  # переключатель в блоке «Голограммы» ниже. %type% работает и здесь.
+  hologram_lines_under_attack:
+    - "%type%"
+    - "<#F43F5E>⚔ ПОД АТАКОЙ"
+    - "<#F2EFFA>Владелец: <#C4B5FD>%owner%"
+    - "<#F2EFFA>Прочность: <#F43F5E>[ %durability% / %max_durability% ]"
+
+  # --- Территория ----------------------------------------------------------
+  # Радиус считается от блока-ядра. radius: 16 → площадка 33×33 блока.
+  radius: 16
+  # Неквадратная территория: radius_x и radius_z важнее radius.
+  # radius_x: 24
+  # radius_z: 8
+  # Высота вверх и вниз от ядра.
+  radius_y: 64
+  # true — от бедрока до неба (radius_y при этом игнорируется).
+  full_height: false
+
+  # --- Прочность и прокачка --------------------------------------------------
+  # Прочность — сколько взрывов рядом с ядром выдержит приват.
+  start_durability: 2
+  max_durability: 10
+  # Разрешить владельцу прокачивать прочность в меню «Улучшение».
+  enable_durability_upgrade: true
+
+  # Переопределение оплаты прокачки для этого типа.
+  # item: "" — общий предмет из config.yml (settings.upgrade_item).
+  # cost_multiplier / tax: -1 — общие значения из config.yml.
+  upgrade:
+    item: ""
+    cost_multiplier: -1
+    tax: -1
+
+  # --- Лимиты и доступ ----------------------------------------------------------
+  # Сколько приватов этого типа может иметь один игрок.
+  # 0 — без ограничения.
+  # Право qweprotectstones.limit.<тип>.<число> перекрывает это значение,
+  # а qweprotectstones.limit.unlimited снимает лимит полностью.
+  max_per_player: 0
+  # Минимальное расстояние между ядрами этого и других приватов (в блоках).
+  min_distance_to_others: 0
+  # Право, нужное для установки этого блока-ядра. Пусто — не нужно.
+  place_permission: ""
+  # В каких мирах разрешён тип. Пустой список — во всех.
+  worlds: []
+  # whitelist — разрешены ТОЛЬКО миры из списка; blacklist — все КРОМЕ них.
+  worlds_mode: whitelist
+
+  # --- Поведение -----------------------------------------------------------------
+  # Возвращать блок-ядро при удалении привата. Предмет выпадает НА ПОЛ
+  # у места, где стояло ядро (и при поломке, и при /ps delete) — как
+  # обычный дроп. false — ядро пропадает совсем.
+  return_block_on_remove: true
+  # Зажав SHIFT, игрок ставит блок-ядро как обычный блок — приват
+  # не создаётся. Удобно, когда ядро хочется использовать в постройке.
+  # Настраивается для каждого типа отдельно.
+  sneak_places_plain_block: true
+  # Разрешить доверенным игрокам использовать яйцо призыва прямо на ядре
+  # (моб появится, меню не откроется).
+  spawn-egg-use: false
+  # --- Получение и внешний вид блока-ядра ----------------------------------
+  # false — блок работает как обычный блок Minecraft: добыл, поставил —
+  #         приват создался (по умолчанию).
+  # true  — «кастомный» предмет: приват создаёт только блок, выданный
+  #         командой /qps give или скрафченный по recipe (см. ниже).
+  #         Добытый в мире блок того же материала остаётся обычным блоком.
+  restrict-obtaining: false
+  # Внешний вид предмета-ядра, когда его создаёт плагин: выдача /qps give
+  # и крафт по recipe. При поломке ядра обычный тип возвращается как
+  # обычный блок; ограниченный (restrict-obtaining: true) — в полном
+  # оформлении, чтобы покупка не теряла вид.
+  item:
+    # Имя предмета (MiniMessage). Пусто — стандартное имя блока.
+    name: ""
+    # Описание (lore), построчно. Пусто — без описания.
+    lore: []
+    # Свечение предмета, как у зачарованного.
+    glow: false
+  # Собственный крафт блока-ядра. Если recipe не задан — блок получается
+  # как обычно (это обычный блок Minecraft). Для restrict-obtaining: true
+  # рецепт — легальный способ получить предмет, как в ProtectionStones.
+  # Пример:
+  # recipe:
+  #   pattern: ["AAA", "ABA", "AAA"]   # схема верстака, пробел — пусто
+  #   ingredients: { A: DIAMOND, B: NETHER_STAR }
+  #   result_amount: 1                  # сколько ядер за один крафт
+  # recipe:
+
+  # Какое меню открывает клик по ядру (файл из папки /menus/ без .yml).
+  # Пусто — плагин выберет сам: «main», если доступна прокачка, иначе «effects».
+  menu: ""
+  # Цвет каркаса границ именно этого типа (подсветка), например "#C4B5FD".
+  # Пусто — цвет из visuals.boundaries в visuals.yml.
+  border_color: ""
+
+  # --- Осада ----------------------------------------------------------------------
+  # true — приват вообще неуязвим для взрывов (прочность не тратится).
+  raid_immune: false
+  # -1 — брать из siege.yml (damage_cooldown_ticks и
+  # explosion_damage_radius). Свои значения — только для типа.
+  damage_cooldown_ticks: -1
+  explosion_damage_radius: -1
+
+  # Каким ВИДАМ взрывов разрешено снимать прочность ядра (осада).
+  # Внимание: это не защита блоков — за неё отвечает флаг explosion_damage.
+  # WITHER — визер и его черепа; TNT — всё прочее (ТНТ, вагонетка, гаст);
+  # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере;
+  # WIND_CHARGE — заряд ветра (игрок и бриз), по умолчанию безвреден.
+  # Аддоны кастомной взрывчатки регистрируют СВОИ типы теми же ключами
+  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/DYNAMITE_ADDON_API.md.
+  explosions:
+    TNT: true
+    WITHER: true
+    CREEPER: false
+    ENDER_CRYSTAL: false
+    BED: false
+    WIND_CHARGE: false
+
+  # --- Эффекты ------------------------------------------------------------------------
+  # Эффекты, доступные для покупки в меню «Эффекты» для этого типа.
+  # Пусто — меню эффектов недоступно. Имена — как у зачарований зельй:
+  # SPEED, SLOW, FAST_DIGGING, INCREASE_DAMAGE, INVISIBILITY,
+  # HEALTH_BOOST, WITHER, ...
+  # Псевдоэффекты: ALERTS (уведомления о рейдах), EXP_BOOST (бустер опыта).
+  allowed_effects: []
+
+  # --- Флаги ---------------------------------------------------------------------------
+  # Начальные значения флагов привата этого типа.
+  # Игрок может менять их через /ps flag, если флаг не закрыт в
+  # flags.locked (protection.yml). Описание каждого — в /ps flag без аргументов.
+  flags:
+    pvp: false                  # PvP между игроками на территории
+    entry: true                 # вход посторонних (false = не пускать)
+    public_access: false        # «публичный доступ»: сундуки открыты всем
+    monster_spawning: true      # спавн враждебных мобов
+    animal_spawning: true       # спавн животных
+    animal_protection: true     # защита животных от урона
+    mob_griefing: false         # могут ли мобы ломать блоки (эндермены, крипера...)
+    fire_spread: false          # распространение огня
+    liquid_flow_in: false       # затекание жидкостей снаружи
+    pistons_from_outside: false # поршни с внешней стороны
+    crop_trample: false         # вытаптывание грядок
+    explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри привата
+    teleport_in: true           # телепорты внутрь (эндер-жемчуг, /ps home чужие)
+    item_pickup: true           # подбор предметов посторонними
+    greeting: true              # показывать приветствие при входе
+    leaf_decay: true            # опадание листвы
+    ice_and_snow: true          # образование льда и снега
+    block_growth: true          # рост растений
+
+  # =========================================================================
+  #  Голограммы
+  # =========================================================================
+  hologram: true                  # показывать голограмму над ядром
+  # Менять ли голограмму на осадную (hologram_lines_under_attack),
+  # когда блок привата под атакой. false — голограмма не меняется.
+  # Тип может переопределить это значение для себя.
+  hologram_under_attack: true
+  # MODERN — FancyHolograms (текстовые дисплеи, богаче настройки);
+  # DECENT — DecentHolograms;
+  # NATIVE — встроенные голограммы на TextDisplay, плагины не нужны.
+  # Если выбранный плагин не установлен, работа молча продолжится на NATIVE.
+  hologram_provider: MODERN
+  hologram_offset: 1.1            # высота первой строки над ядром
+  hologram_display_range: 16      # с какого расстояния видно
+
+  # Общие настройки голограмм. Работают и под секцией hologram_settings
+  # у конкретного типа. Старое имя секции fancyholograms_settings тоже
+  # читается — конфиги, написанные раньше, продолжают работать.
+  hologram_settings:
+    # --- у обоих провайдеров ---
+    update_interval: 20       # период обновления текста, тиков
+    see_through: false        # видно ли текст сквозь блоки
+    permission: ""            # право на просмотр; пусто — видно всем
+
+    # --- только FancyHolograms ---
+    shadow: true              # тень у букв
+    scale: 1.0                # размер текста
+    billboard: CENTER         # поворот к игроку: CENTER, VERTICAL, HORIZONTAL, FIXED
+    text_alignment: CENTER    # LEFT, CENTER или RIGHT
+    background: ""            # подложка, например "#40000000"; пусто — без неё
+    visibility: ALL           # ALL, PERMISSION_REQUIRED или MANUAL
+    shadow_radius: 0.0        # тень «на земле» под голограммой
+    shadow_strength: 1.0
+    interpolation_ticks: 0    # плавность перемещения
+    translation:              # дополнительное смещение текста (в блоках)
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    brightness:               # освещение текста; -1 — как в окружении
+      block: -1
+      sky: -1
+
+    # --- только DecentHolograms ---
+    update_range: 48          # радиус, в котором обновляется содержимое
+    down_origin: false        # считать точку низом голограммы, а не верхом
+
+  # =========================================================================
+  #  Звук и молния на события привата
+  #  (create — создан, damage — по ядру ударили, remove — удалён)
+  # =========================================================================
+  create:
+    sound: ENTITY_PLAYER_LEVELUP
+    volume: 1.0
+    pitch: 1.0
+    lightning: false          # эффект молнии (только визуально)
+  damage:
+    sound: ENTITY_GENERIC_EXPLODE
+    volume: 1.0
+    pitch: 0.5
+    lightning: false
+  remove:
+    sound: BLOCK_BEACON_DEACTIVATE
+    volume: 1.0
+    pitch: 0.5
+    lightning: true
+
+
+# ===========================================================================
+#  Типы приватов. Указывайте только отличия от default_region.
+# ===========================================================================
+region_types:
+
+  DIAMOND_BLOCK:
+    display_name: <#67E8F9>Маленький приват
+    hologram_lines:
+    - '  %type%  '
+    - ''
+    - '  <#F2EFFA>Владелец: <#67E8F9>%owner%  '
+    - '  <#F2EFFA>Размер: <#67E8F9>%size%  '
+    - ''
+    radius: 8
+    radius_y: 32
+    enable_durability_upgrade: false
+    start_durability: 1
+    max_durability: 1
+    max_per_player: 3
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    hologram_display_range: 20
+    fancyholograms_settings:
+      scale: 1.1
+    create:
+      sound: BLOCK_BEACON_ACTIVATE
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+  DEEPSLATE_EMERALD_ORE:
+    display_name: <#6EE7B7>Средний приват
+    hologram_lines:
+    - '  %type%  '
+    - ''
+    - '  <#F2EFFA>Владелец: <#6EE7B7>%owner%  '
+    - '  <#F2EFFA>Прочность: <#6EE7B7>[ %durability% / %max_durability% ]  '
+    - ''
+    radius: 16
+    radius_y: 48
+    enable_durability_upgrade: true
+    start_durability: 2
+    max_durability: 12
+    max_per_player: 2
+    min_distance_to_others: 8
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    hologram_display_range: 20
+    fancyholograms_settings:
+      scale: 1.1
+    create:
+      sound: BLOCK_BEACON_ACTIVATE
+      volume: 1.0
+      pitch: 1.5
+      lightning: true
+
+  ANCIENT_DEBRIS:
+    display_name: <gradient:#F8BA47:#FF9F41>Большой приват</gradient>
+    hologram_lines:
+    - '  %type%  '
+    - ''
+    - '  <#F2EFFA>Владелец: <gradient:#F8BA47:#FF9F41>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#F8BA47:#FF9F41>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#F8BA47:#FF9F41>%members%</gradient>  '
+    - ''
+    radius: 32
+    radius_y: 64
+    enable_durability_upgrade: true
+    start_durability: 4
+    max_durability: 24
+    max_per_player: 1
+    min_distance_to_others: 16
+    spawn-egg-use: true
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    - INVISIBILITY
+    - FAST_DIGGING
+    flags:
+      pvp: false
+      monster_spawning: false
+    hologram_display_range: 24
+    fancyholograms_settings:
+      scale: 1.1
+
+  RED_MUSHROOM_BLOCK:
+    display_name: <gradient:#F84747:#DD4141>Огромный приват</gradient>
+    hologram_lines:
+    - '  %type%  '
+    - ''
+    - '  <#F2EFFA>Владелец: <gradient:#F84747:#DD4141>%owner%</gradient>  '
+    - '  <#F2EFFA>Прочность: <gradient:#F84747:#DD4141>[ %durability% / %max_durability% ]</gradient>  '
+    - '  <#F2EFFA>Участников: <gradient:#F84747:#DD4141>%members%</gradient>  '
+    - ''
+    radius: 48
+    radius_y: 96
+    enable_durability_upgrade: true
+    start_durability: 8
+    max_durability: 48
+    max_per_player: 1
+    min_distance_to_others: 32
+    # Покупной приват: создаётся только предметом с тегом — выдача /qps give
+    # или магазин сервера. Добытый блок гриба остаётся обычным блоком.
+    restrict-obtaining: true
+    item:
+      name: "<gradient:#F84747:#DD4141>Огромный приват</gradient>"
+      lore:
+        - "<#F2EFFA>Территория 97×97, высота 192"
+        - "<#F2EFFA>Прочность: %durability% (прокачка до %max_durability%)"
+        - "<#A79FC0>Продаётся в магазине сервера"
+      glow: true
+    spawn-egg-use: true
+    explosions:
+      TNT: true
+      WITHER: false
+      CREEPER: false
+      ENDER_CRYSTAL: false
+      BED: false
+      WIND_CHARGE: false
+    allowed_effects:
+    - SPEED
+    - SLOW
+    - EXP_BOOST
+    - INCREASE_DAMAGE
+    - INVISIBILITY
+    - FAST_DIGGING
+    - HEALTH_BOOST
+    - WITHER
+    - ALERTS
+    flags:
+      pvp: false
+      monster_spawning: false
+      teleport_in: false
+    hologram_display_range: 24
+    fancyholograms_settings:
+      scale: 1.1
+
+  # --- Пример «покупного» привата -------------------------------------------
+  # Приват создаёт только предмет с тегом: выдача /qps give или крафт
+  # по recipe. Добытый в мире незеритовый блок остаётся обычным блоком.
+  # При выдаче, крафте и возврате при поломке предмет выглядит как
+  # описано в item (имя, описание, свечение).
+  #
+  # NETHERITE_BLOCK:
+  #   display_name: "<gradient:#8B5CF6:#A78BFA:#F472B6>Элитный приват</gradient>"
+  #   restrict-obtaining: true
+  #   item:
+  #     name: "<gradient:#8B5CF6:#A78BFA:#F472B6>Элитный приват</gradient>"
+  #     lore:
+  #       - "<#F2EFFA>Радиус: 64 × 64, высота: 128"
+  #       - "<#F2EFFA>Прочность: %durability% (до %max_durability%)"
+  #       - "<#A79FC0>Продаётся в магазине сервера"
+  #     glow: true
+  #   radius: 64
+  #   radius_y: 128
+  #   start_durability: 16
+  #   max_durability: 64
+  #   max_per_player: 1
+  #   raid_immune: false
+  #   explosions:
+  #     TNT: false
+  #     WITHER: false
+  #     CREEPER: false
+  #     ENDER_CRYSTAL: false
+  #     BED: false
+  #     WIND_CHARGE: false
+  #
+  # --- Пример обычного привата с оформленным предметом ------------------------
+  # Блок работает как обычный (добыл — поставил), но выданный командой
+  # предмет выглядит красиво. Крафт — по желанию.
+  #
+  # EMERALD_BLOCK:
+  #   display_name: "<#86EFAC>Изумрудный приват</#86EFAC>"
+  #   item:
+  #     name: "<#86EFAC>Изумрудный приват"
+  #     lore:
+  #       - "<#F2EFFA>Поставьте, чтобы занять территорию 49×49"
+  #   recipe:
+  #     pattern: ["EE", "EE"]
+  #     ingredients: { E: EMERALD }
+  #     result_amount: 1
+  #   radius: 24
+  #   radius_y: 64
