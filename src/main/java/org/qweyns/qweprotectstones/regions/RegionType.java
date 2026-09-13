@@ -73,7 +73,8 @@ public record RegionType(
     }
 
     public boolean explosionDamages(String explosionType) {
-        return explosionRules.getOrDefault(explosionType, Boolean.FALSE);
+        if (explosionType == null) return false;
+        return explosionRules.getOrDefault(explosionType.toUpperCase(java.util.Locale.ROOT), Boolean.FALSE);
     }
 
     public boolean isWorldAllowed(String worldName) {

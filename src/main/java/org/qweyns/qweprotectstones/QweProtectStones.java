@@ -98,7 +98,7 @@ public final class QweProtectStones extends JavaPlugin {
     private RegionMovementListener regionMovementListener;
     private RegionCommand regionCommand;
 
-    private org.qweyns.qweprotectstones.listeners.RegionExplosionListener explosionListener;
+    private org.qweyns.qweprotectstones.api.SiegeService siegeService;
     private VaultHook vaultHook;
     private PlayerPointsHook playerPointsHook;
     private org.bukkit.event.Listener papiFallbackListener;
@@ -185,6 +185,9 @@ public final class QweProtectStones extends JavaPlugin {
         this.hologramManager = new HologramManager(this);
         this.hologramManager.init();
 
+        // сервис осады раньше листенера взрывов: тот работает только через него
+        this.siegeService = new org.qweyns.qweprotectstones.api.SiegeService(this);
+
         registerListeners(pm);
         registerCommands();
 
@@ -221,8 +224,7 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(bypassManager, this);
         pm.registerEvents(regionLifecycleListener, this);
         pm.registerEvents(regionMovementListener, this);
-        this.explosionListener = new RegionExplosionListener(this);
-        pm.registerEvents(explosionListener, this);
+        pm.registerEvents(new RegionExplosionListener(this, siegeService), this);
         pm.registerEvents(new RegionInteractListener(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
@@ -319,7 +321,7 @@ public final class QweProtectStones extends JavaPlugin {
         backupTask.start();
         updateChecker.start();
         rateLimiter.reload();
-        explosionListener.reload();
+        siegeService.reload();
         inviteManager.reload();
         criticalFileLogger.start();
         // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге
@@ -346,6 +348,8 @@ public final class QweProtectStones extends JavaPlugin {
     public RegionStorage getRegionStorage() { return regionStorage; }
     public RegionManager getRegionManager() { return regionManager; }
     public ProtectionService getProtectionService() { return protectionService; }
+
+    public org.qweyns.qweprotectstones.api.SiegeService getSiegeService() { return siegeService; }
     public BypassManager getBypassManager() { return bypassManager; }
 
     public HologramManager getHologramManager() { return hologramManager; }

@@ -153,6 +153,8 @@ default_region:
   # WITHER — визер и его черепа; TNT — всё прочее (ТНТ, вагонетка, гаст);
   # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере;
   # WIND_CHARGE — заряд ветра (игрок и бриз), по умолчанию безвреден.
+  # Аддоны кастомной взрывчатки регистрируют СВОИ типы теми же ключами
+  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/DYNAMITE_ADDON_API.md.
   explosions:
     TNT: true
     WITHER: true

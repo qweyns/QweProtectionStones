@@ -17,9 +17,6 @@ import java.util.Set;
 
 public class RegionTypeRegistry {
 
-    private static final List<String> EXPLOSION_KINDS =
-            List.of("TNT", "CREEPER", "WITHER", "ENDER_CRYSTAL", "BED", "WIND_CHARGE");
-
     private final QweProtectStones plugin;
     private final Map<String, RegionType> byId = new LinkedHashMap<>();
 
@@ -199,8 +196,12 @@ public class RegionTypeRegistry {
             ConfigurationSection explosions = owner.getConfigurationSection("explosions");
             if (explosions == null) continue;
 
-            for (String kind : EXPLOSION_KINDS) {
-                if (explosions.contains(kind)) rules.put(kind, explosions.getBoolean(kind));
+            // ключи не ограничены вшитым списком: аддоны кастомной взрывчатки
+            // регистрируют свои типы взрывов (C4, DYNAMITE_A, SHOCKWAVE...)
+            for (String kind : explosions.getKeys(false)) {
+                if (explosions.isBoolean(kind)) {
+                    rules.put(kind.toUpperCase(Locale.ROOT), explosions.getBoolean(kind));
+                }
             }
         }
         return rules;

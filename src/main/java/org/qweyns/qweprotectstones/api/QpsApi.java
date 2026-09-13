@@ -129,6 +129,61 @@ public final class QpsApi {
     }
 
     // ------------------------------------------------------------------
+    // Осада и взрывы (для аддонов кастомной взрывчатки)
+    // ------------------------------------------------------------------
+
+    /**
+     * Сервис осады: снятие прочности привата взрывом с полным конвейером
+     * плагина (кулдаун, RegionDamageEvent, алерты, уничтожение на нуле).
+     * Подробности и примеры — docs/DYNAMITE_ADDON_API.md.
+     */
+    public SiegeService getSiegeService() {
+        return plugin.getSiegeService();
+    }
+
+    /**
+     * Снять прочность привата — как это делает сам плагин при взрыве.
+     * Звать в потоке сервера.
+     *
+     * @param damage        единиц прочности (Разрывная волна сносит сразу 2)
+     * @param explosionType тип взрыва для правил explosions у типа привата
+     * @param attackerName  имя атакующего для статистики и алертов, может быть null
+     * @return false — урон не прошёл (иммунитет, кулдаун, отмена RegionDamageEvent)
+     */
+    public boolean damageRegion(Region region, int damage, String explosionType, String attackerName) {
+        return plugin.getSiegeService().damageRegion(region, damage, explosionType, attackerName);
+    }
+
+    /** Вредит ли взрыв данного типа прочности этого привата (правила explosions + raid_immune). */
+    public boolean isExplosionDamaging(Region region, String explosionType) {
+        return plugin.getSiegeService().isDamaging(region, explosionType);
+    }
+
+    /** Включена ли осада (siege.enabled). */
+    public boolean isSiegeEnabled() {
+        return plugin.getConfigManager().isSiegeEnabled();
+    }
+
+    // ------------------------------------------------------------------
+    // Типы приватов
+    // ------------------------------------------------------------------
+
+    /** Тип привата по id или null. */
+    public RegionType getRegionType(String id) {
+        return id == null ? null : plugin.getRegionTypes().byId(id);
+    }
+
+    /** Тип текущего привата или null (тип мог удалиться из конфига). */
+    public RegionType regionTypeOf(Region region) {
+        return region == null ? null : plugin.getRegionTypes().byId(region.getTypeId());
+    }
+
+    /** Все зарегистрированные типы приватов. */
+    public Collection<RegionType> getRegionTypes() {
+        return plugin.getRegionTypes().all();
+    }
+
+    // ------------------------------------------------------------------
     // Управление (только основной поток сервера)
     // ------------------------------------------------------------------
 
