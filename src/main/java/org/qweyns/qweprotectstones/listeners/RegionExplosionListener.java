@@ -60,7 +60,7 @@ public class RegionExplosionListener implements Listener {
         return switch (type) {
             case WITHER, WITHER_SKULL -> "WITHER";
             case CREEPER -> "CREEPER";
-            case ENDER_CRYSTAL -> "ENDER_CRYSTAL";
+            case END_CRYSTAL -> "ENDER_CRYSTAL";
             case WIND_CHARGE, BREEZE_WIND_CHARGE -> "WIND_CHARGE";
             default -> "TNT";
         };
