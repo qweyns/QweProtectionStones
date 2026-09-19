@@ -97,25 +97,10 @@ items:
   # ==========================================
   # ПРЕДМЕТЫ ДЛЯ АНИМАЦИИ
   # ==========================================
-  anim_cover:
-    material: BLACK_STAINED_GLASS_PANE
-    display_name: "<#A79FC0>Запуск интерфейса..."
-
   anim_bg:
     material: BLACK_STAINED_GLASS_PANE
     display_name: "<white> "
-
-  anim_bg2:
-    material: GRAY_STAINED_GLASS_PANE
-    display_name: "<white> "
-
-  anim_chain:
-    material: CHAIN
-    display_name: "<white> "
-
-  anim_spark:
-    material: LIGHT_BLUE_STAINED_GLASS_PANE
-    display_name: "<bold><#C4B5FD>⚡ Передача энергии...</bold>"
+    slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 17, 18, 19, 20, 21, 23, 24, 25, 26]
 
 # ==========================================
 # ДВИЖОК АНИМАЦИИ
@@ -124,89 +109,4 @@ animations:
   default:
     - tick: 0
       opcodes:
-        - fill: anim_cover
-    - tick: 2
-      opcodes:
-        - set: anim_bg2 4
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 4
-      opcodes:
-        - set: anim_bg 3,5
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 6
-      opcodes:
-        - set: anim_bg2 2,6
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 8
-      opcodes:
-        - set: anim_bg 1,7
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 10
-      opcodes:
-        - set: anim_chain 0,8
-        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
-    - tick: 12
-      opcodes:
-        - set: anim_bg2 9,17
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 14
-      opcodes:
-        - set: anim_chain 18,26
-        - sound: BLOCK_ANVIL_PLACE 0.5 2.0
-    - tick: 16
-      opcodes:
-        - set: anim_bg 19,25
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 18
-      opcodes:
-        - set: anim_bg2 20,24
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 20
-      opcodes:
-        - set: anim_bg 21,23
-        - sound: UI_BUTTON_CLICK 1.0 1.5
-    - tick: 22
-      opcodes:
-        - remove: 22
         - sound: BLOCK_NOTE_BLOCK_CHIME 1.0 1.0
-
-    # 8. Появление Ядра (Слот 10)
-    - tick: 28
-      opcodes:
-        - remove: 10
-        - sound: ITEM_TRIDENT_RETURN 1.0 0.5
-    - tick: 32
-      opcodes:
-        - remove: 11
-    - tick: 34
-      opcodes:
-        - remove: 12
-        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.5
-    - tick: 36
-      opcodes:
-        - remove: 13
-        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.6
-    - tick: 38
-      opcodes:
-        - remove: 14
-        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.7
-    - tick: 40
-      opcodes:
-        - remove: 15
-        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 1.8
-    - tick: 42
-      opcodes:
-        - remove: 16
-        - sound: BLOCK_NOTE_BLOCK_HAT 1.0 2.0
-    
-    # ⚡ Эффект передачи энергии от Ядра к Прокачке
-    - tick: 60
-      opcodes:
-        - set: anim_spark 11
-        - sound: BLOCK_AMETHYST_BLOCK_RESONATE 0.8 2.0
-    - tick: 65
-      opcodes:
-        - remove: 11
-    - tick: 120
-      opcodes:
-        - goto: 60

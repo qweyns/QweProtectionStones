@@ -12,12 +12,12 @@ class TrustLevelTest {
 
     @Test
     void levelsAreStrictlyNested() {
-
+        TrustLevel.clearCustom();
         for (TrustLevel given : TrustLevel.values()) {
             for (TrustLevel required : TrustLevel.values()) {
                 assertEquals(given.weight() >= required.weight(),
                         given.atLeast(required),
-                        given + " vs " + required);
+                        given.name() + " vs " + required.name());
             }
         }
     }

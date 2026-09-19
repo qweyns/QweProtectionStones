@@ -179,6 +179,17 @@ public final class Tunables {
     }
 
     private void loadTrust(FileConfiguration cfg) {
+        TrustLevel.clearCustom();
+        org.bukkit.configuration.ConfigurationSection rolesSection = cfg.getConfigurationSection("roles");
+        if (rolesSection != null) {
+            for (String key : rolesSection.getKeys(false)) {
+                String name = rolesSection.getString(key + ".name", key);
+                String color = rolesSection.getString(key + ".color", "<white>");
+                int weight = rolesSection.getInt(key + ".weight", 1);
+                TrustLevel.register(key, weight, name, color);
+            }
+        }
+
         Map<TrustAction, TrustLevel> requirements = new EnumMap<>(TrustAction.class);
         for (TrustAction action : TrustAction.values()) {
             String raw = cfg.getString("trust.required." + action.key());

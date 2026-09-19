@@ -1,0 +1,22 @@
+menu_title: "<bold><gradient:#34D399:#10B981>Участники региона</gradient></bold>"
+size: 54
+
+items:
+  back_btn:
+    slot: 49
+    material: ARROW
+    display_name: "<bold><#C4B5FD>Назад</bold>"
+    click_commands:
+      - "[openguimenu] main"
+      - "[sound] UI_BUTTON_CLICK"
+
+  anim_bg:
+    material: BLACK_STAINED_GLASS_PANE
+    display_name: "<white> "
+    slots: [45, 46, 47, 48, 50, 51, 52, 53]
+
+animations:
+  default:
+    - tick: 0
+      opcodes:
+        - sound: BLOCK_NOTE_BLOCK_CHIME 1.0 1.0

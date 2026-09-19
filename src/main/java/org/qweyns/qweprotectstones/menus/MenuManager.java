@@ -44,6 +44,7 @@ public class MenuManager implements Listener {
     private final MenuRequirements requirements;
     private final MenuActions actions;
     private final MenuUpgrades upgrades;
+    private final MenuMembers membersGui;
 
     private final Map<String, FileConfiguration> menus = new HashMap<>();
     private final Map<UUID, Long> clickCooldowns = new ConcurrentHashMap<>();
@@ -56,6 +57,7 @@ public class MenuManager implements Listener {
         this.requirements = new MenuRequirements(plugin, placeholders);
         this.actions = new MenuActions(plugin, placeholders, requirements);
         this.upgrades = new MenuUpgrades(plugin, this);
+        this.membersGui = new MenuMembers(plugin, this);
 
         loadMenus();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -293,6 +295,7 @@ public class MenuManager implements Listener {
         }
 
         if (holder.menuName.equals("upgrade")) upgrades.renderSlots(player, holder, region, menuCfg, contents);
+        if (holder.menuName.equals("members")) membersGui.renderSlots(player, holder, region, menuCfg, contents);
 
         holder.baseLayer = contents;
 
@@ -425,6 +428,7 @@ public class MenuManager implements Listener {
         }
 
         if (holder.menuName.equals("upgrade") && upgrades.handleClick(player, holder, menuCfg, slot)) return;
+        if (holder.menuName.equals("members") && membersGui.handleClick(player, holder, menuCfg, slot, event.isRightClick())) return;
 
         ConfigurationSection items = menuCfg.getConfigurationSection("items");
         if (items == null) return;
