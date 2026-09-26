@@ -33,8 +33,6 @@ public final class ConfigValidator {
         }
 
         oneOf(cfg, "help.no-args", "help", List.of("help", "menu"), warn);
-        oneOf(cfg, "region-messages.enter.channel", "CHAT", List.of("CHAT", "NONE", "ACTIONBAR"), warn);
-        oneOf(cfg, "region-messages.leave.channel", "CHAT", List.of("CHAT", "NONE", "ACTIONBAR"), warn);
 
         nonNegative(cfg, "creation.recreate-cooldown-seconds", warn);
         nonNegative(cfg, "creation.near-siege-radius", warn);

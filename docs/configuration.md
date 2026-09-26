@@ -125,23 +125,11 @@ help:
   admin-page-size: 10 # команд на страницу в /qps help
 ```
 
-### region-messages
+### Сообщения входа и выхода
 
-Тексты входа/выхода — шаблоны `region_enter` / `region_leave` из
-lang-файла; игроки их менять не могут.
-
-```yaml
-region-messages:
-  enter:
-    enabled: true
-    channel: "CHAT"   # CHAT | NONE
-  leave:
-    enabled: true
-    channel: "CHAT"
-```
-
-Флаг привата `greeting` (`/ps flag greeting`) выключает оба сообщения
-для конкретного привата.
+Всегда приходят в чат. Тексты — шаблоны `region_enter` / `region_leave` в
+lang-файле (пустая строка — не показывать). Флаг привата `greeting`
+(`/ps flag greeting`) выключает оба сообщения для конкретного привата.
 
 ### Роли (roles.yml)
 
@@ -163,7 +151,10 @@ roles:
       weight: 25                 # выдавать/снимать можно только роли ниже своей
       grantable: true
       inherit: access
-      actions: [build, container, -glow]   # "-действие" убирает унаследованное, "*" — все
+      actions:  # "-действие" убирает унаследованное, "*" — все
+        - build
+        - container
+        - -glow
 ```
 
 Действия: `interact`, `container`, `build`, `entity`, `menu`, `manage`, `flags`,
@@ -198,7 +189,6 @@ updates:
 ```yaml
 metrics:
   enable: true     # анонимная статистика bStats
-  plugin-id: 33994 # id плагина на bstats.org; 0 — ничего не отправлять
 ```
 
 Отправляются число приватов и распределение по типам. Полностью
@@ -254,13 +244,21 @@ flags:
 Цвета кратковременной подсветки: `color_open` (создание), `color_closed`
 (удаление), `color_info` (`/ps info`), `show_time_ticks`.
 
-### sounds
+### Звуки
 
 Формат: `ЗВУК`, `ЗВУК:громкость` или `ЗВУК:громкость:высота`.
 `none` / `off` / `false` — выключить. Опечатка в имени не роняет плагин —
-в лог уйдёт предупреждение. Свои значения для: `menu_denied`, `menu_success`,
-`raid_attack`, `raid_destroyed`, `raid_nearby`, `intruder_alert`,
-`invite_received`.
+в лог уйдёт предупреждение. Каждый звук лежит рядом со своей механикой:
+
+| Звук | Где |
+|---|---|
+| удар по привату, приват уничтожен, чужак на территории | `features.yml` → `notifications.sounds` (`attack`, `destroyed`, `intruder`) |
+| сигнал соседям о рейде | `siege.yml` → `siege.neighbour_alert_sound` |
+| приглашение в приват | `config.yml` → `settings.invite_sound` |
+| прокачка прочности | `menus/upgrade.yml` → `sounds` (`success`, `denied`) |
+| остальные кнопки меню | действие `[sound] ЗВУК` в `click_commands` |
+
+Старая секция `sounds` из `visuals.yml` ещё читается как запасной вариант.
 
 ### map — Dynmap и BlueMap
 

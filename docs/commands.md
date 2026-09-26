@@ -193,7 +193,7 @@ qweprotectstones.admin.info: true
 
 Команд игроков `expand`, `move`, `greeting`, `farewell` нет.
 Границы администрация меняет через `/qps setbounds`, сообщения входа/выхода
-задаются в `lang/*.yml` и `region-messages`, а флаг `greeting` включает их для региона.
+задаются в `lang/*.yml`, а флаг `greeting` включает их для региона.
 В переводах `%command%` автоматически показывает фактическое имя команды вместо `/ps`.
 
 ---

@@ -60,7 +60,8 @@
 ## Что видят игроки
 
 - **Звуки**: `raid_attack` при ударе по ядру, `raid_destroyed` при падении
-  привата, `raid_nearby` для соседей (visuals.yml → `sounds`).
+  привата (`features.yml` → `notifications.sounds`), сигнал соседям
+  (`siege.yml` → `siege.neighbour_alert_sound`).
 - **Голограмма**: переключается на `hologram_lines_under_attack`, пока идёт
   окно осады (regions.yml).
 - **Уведомления об атаке**: при эффекте `ALERTS` у региона их получают владелец

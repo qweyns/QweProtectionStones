@@ -156,9 +156,18 @@ protection:
     default-physical-action: interact
     # Правый клик по сущности.
     entities:
-      entity: [ITEM_FRAME, GLOW_ITEM_FRAME, ARMOR_STAND, PAINTING]
-      interact: [VILLAGER, WANDERING_TRADER]
-      container: ["*MINECART", "*CHEST_BOAT", "*CHEST_RAFT"]
+      entity:
+        - ITEM_FRAME
+        - GLOW_ITEM_FRAME
+        - ARMOR_STAND
+        - PAINTING
+      interact:
+        - VILLAGER
+        - WANDERING_TRADER
+      container:
+        - "*MINECART"
+        - "*CHEST_BOAT"
+        - "*CHEST_RAFT"
     default-entity-action: container
     # Действия с мобами, у которых свои события.
     entity-actions:
@@ -172,8 +181,18 @@ protection:
   # Блоки не из списков снаряды задевать могут как обычно.
   projectiles:
     blocks:
-      interact: ["#buttons", "#pressure_plates", TARGET, BELL]
-      build: [CHORUS_FLOWER, DECORATED_POT, POINTED_DRIPSTONE, "*CANDLE", "*CANDLE_CAKE", "#campfires"]
+      interact:
+        - "#buttons"
+        - "#pressure_plates"
+        - TARGET
+        - BELL
+      build:
+        - CHORUS_FLOWER
+        - DECORATED_POT
+        - POINTED_DRIPSTONE
+        - "*CANDLE"
+        - "*CANDLE_CAKE"
+        - "#campfires"
 
 # --- УСТАНОВКА ПРИВАТА (антиабуз) --------------------------------------------
 # Право qweprotectstones.bypass.creation-rules снимает все ограничения ниже.
@@ -191,7 +210,11 @@ creation:
   # чтобы одним ядром не отобрать у всех портал в Незер или в Энд.
   # Поддерживаются шаблоны и теги, как в interact. Пустой список — выкл.
   # Проверяется высота ±64 блока от ядра.
-  forbidden-blocks: [NETHER_PORTAL, END_PORTAL, END_PORTAL_FRAME, END_GATEWAY]
+  forbidden-blocks:
+    - NETHER_PORTAL
+    - END_PORTAL
+    - END_PORTAL_FRAME
+    - END_GATEWAY
   forbidden-blocks-radius: 4
 
 # --- ФЛАГИ -------------------------------------------------------------------
@@ -200,4 +223,6 @@ flags:
   # На анархии владелец не должен превращать приват в безопасную зону
   # или неломаемую крепость, поэтому pvp и explosion_damage закрыты.
   # Для обычного выживания поставьте locked: [] и pvp: false в regions.yml.
-  locked: [pvp, explosion_damage]
+  locked:
+    - pvp
+    - explosion_damage

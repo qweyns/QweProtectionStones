@@ -403,6 +403,9 @@ public final class QweProtectStones extends JavaPlugin {
     public RegionTypeRegistry getRegionTypes() { return regionTypes; }
     public RegionStorage getRegionStorage() { return regionStorage; }
     public RegionManager getRegionManager() { return regionManager; }
+    /** Id плагина на bstats.org — свойство самого плагина, а не настройка сервера. */
+    private static final int BSTATS_PLUGIN_ID = 33994;
+
     public ProtectionService getProtectionService() { return protectionService; }
     public org.qweyns.qweprotectstones.diagnostics.PerfStats getPerfStats() { return perfStats; }
 
@@ -435,7 +438,7 @@ public final class QweProtectStones extends JavaPlugin {
 
     private void initMetrics() {
         if (!getConfigManager().getConfig().getBoolean("metrics.enable", true)) return;
-        int pluginId = getConfigManager().getConfig().getInt("metrics.plugin-id", 0);
+        int pluginId = BSTATS_PLUGIN_ID;
         if (pluginId <= 0) return;
 
         org.bstats.bukkit.Metrics metrics = new org.bstats.bukkit.Metrics(this, pluginId);

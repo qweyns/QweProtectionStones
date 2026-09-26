@@ -158,24 +158,27 @@ public final class Tunables {
     }
 
     private void loadSounds(FileConfiguration cfg) {
-        menuDenied = sound(cfg, "menu_denied", "ENTITY_VILLAGER_NO:1.0:1.0");
-        menuSuccess = sound(cfg, "menu_success", "BLOCK_ANVIL_USE:1.0:1.0");
-        raidAttack = sound(cfg, "raid_attack", "ENTITY_ENDER_DRAGON_GROWL:1.0:1.0");
-        raidDestroyed = sound(cfg, "raid_destroyed", "ENTITY_WITHER_DEATH:1.0:1.0");
-        raidNearby = sound(cfg, "raid_nearby", "ENTITY_WITHER_SHOOT:0.4:0.7");
-        intruderAlert = sound(cfg, "intruder_alert", "BLOCK_NOTE_BLOCK_BELL:1.0:1.0");
-        inviteReceived = sound(cfg, "invite_received", "ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2");
+        // Звуки лежат рядом со своими механиками; старые ключи sounds.* читаются как запасной вариант.
+        // Звуки меню прокачки — в menus/upgrade.yml (sounds.success / sounds.denied), здесь только их значения по умолчанию.
+        menuDenied = sound(cfg, "sounds.menu_denied", "sounds.menu_denied", "ENTITY_VILLAGER_NO:1.0:1.0");
+        menuSuccess = sound(cfg, "sounds.menu_success", "sounds.menu_success", "BLOCK_ANVIL_USE:1.0:1.0");
+        raidAttack = sound(cfg, "notifications.sounds.attack", "sounds.raid_attack", "ENTITY_ENDER_DRAGON_GROWL:1.0:1.0");
+        raidDestroyed = sound(cfg, "notifications.sounds.destroyed", "sounds.raid_destroyed", "ENTITY_WITHER_DEATH:1.0:1.0");
+        intruderAlert = sound(cfg, "notifications.sounds.intruder", "sounds.intruder_alert", "BLOCK_NOTE_BLOCK_BELL:1.0:1.0");
+        raidNearby = sound(cfg, "siege.neighbour_alert_sound", "sounds.raid_nearby", "ENTITY_WITHER_SHOOT:0.4:0.7");
+        inviteReceived = sound(cfg, "settings.invite_sound", "sounds.invite_received", "ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2");
     }
 
-    private SoundSetting sound(FileConfiguration cfg, String key, String defaultValue) {
+    private SoundSetting sound(FileConfiguration cfg, String path, String legacyPath, String defaultValue) {
         SoundSetting fallback = SoundSetting.parse(defaultValue, SoundSetting.NONE);
-        String raw = cfg.getString("sounds." + key);
+        String key = cfg.isSet(path) ? path : legacyPath;
+        String raw = cfg.getString(key);
 
         SoundSetting parsed = SoundSetting.parse(raw, null);
         if (parsed == null) {
 
             if (raw != null && !raw.isBlank()) {
-                plugin.getLogger().warning("sounds." + key + ": неизвестный звук '" + raw
+                plugin.getLogger().warning(key + ": неизвестный звук '" + raw
                         + "', использую " + defaultValue);
             }
             return fallback;
@@ -214,14 +217,15 @@ public final class Tunables {
         interactRules = InteractRules.load(cfg, plugin.getLogger());
         borderDispenserItems = cfg.getStringList("protection.border.dispensers.items").stream()
                 .map(value -> value.trim().toUpperCase(Locale.ROOT)).filter(value -> !value.isEmpty()).toList();
-        regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
-        regionLeaveEnabled = cfg.getBoolean("region-messages.leave.enabled", true);
+        // Сообщения входа/выхода всегда идут в чат; выключаются флагом greeting или пустым текстом в lang.
+        regionEnterEnabled = true;
+        regionLeaveEnabled = true;
         homeCancelOnMove = cfg.getBoolean("home.cancel-on-move", true);
         homeCancelOnDamage = cfg.getBoolean("home.cancel-on-damage", true);
         previewMessages = cfg.getBoolean("settings.preview-messages", false);
         // канал ACTIONBAR выпилен: старые конфиги читаем как CHAT
-        regionEnterChannel = channelValue(cfg.getString("region-messages.enter.channel", "CHAT"));
-        regionLeaveChannel = channelValue(cfg.getString("region-messages.leave.channel", "CHAT"));
+        regionEnterChannel = "CHAT";
+        regionLeaveChannel = "CHAT";
 
         List<String> rawLocked = cfg.getStringList("flags.locked");
         for (String raw : rawLocked) {

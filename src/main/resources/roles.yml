@@ -56,28 +56,45 @@ roles:
       display: "Доступ"
       weight: 10
       grantable: true
-      actions: [interact, menu, home, view-members, glow, effects, entry]
+      actions:
+        - interact
+        - menu
+        - home
+        - view-members
+        - glow
+        - effects
+        - entry
 
     container:
       display: "Сундуки"
       weight: 20
       grantable: true
       inherit: access
-      actions: [container]
+      actions:
+        - container
 
     build:
       display: "Строительство"
       weight: 30
       grantable: true
       inherit: container
-      actions: [build, entity]
+      actions:
+        - build
+        - entity
 
     manager:
       display: "Управляющий"
       weight: 40
       grantable: true
       inherit: build
-      actions: [manage, flags, members, ban, rename, upgrade, alerts]
+      actions:
+        - manage
+        - flags
+        - members
+        - ban
+        - rename
+        - upgrade
+        - alerts
 
     # Пример своей роли — раскомментируйте:
     # farmer:
@@ -85,4 +102,6 @@ roles:
     #   weight: 25
     #   grantable: true
     #   inherit: access
-    #   actions: [build, container]
+    #   actions:
+    #     - build
+    #     - container

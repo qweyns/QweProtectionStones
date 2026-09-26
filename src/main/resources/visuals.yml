@@ -30,22 +30,6 @@ visuals:
     animation_ticks: 30 # 0..59 (ограничение TextDisplay)
     lifetime_ticks: 35  # 1..1200
 
-# --- ЗВУКИ -------------------------------------------------------------------
-# Формат: ЗВУК, ЗВУК:громкость или ЗВУК:громкость:высота.
-# Можно указать только имя — громкость и высота будут 1.0.
-# none / off / false — выключить звук.
-# Имена — ключи реестра или старые имена констант (ENTITY_VILLAGER_NO).
-# Опечатка в имени не роняет плагин: в лог уйдёт предупреждение,
-# а звук возьмётся стандартный.
-sounds:
-  menu_denied: ENTITY_VILLAGER_NO:1.0:1.0        # действие в меню недоступно
-  menu_success: BLOCK_ANVIL_USE:1.0:1.0          # успешная покупка или прокачка
-  raid_attack: ENTITY_ENDER_DRAGON_GROWL:1.0:1.0 # по привату ударили
-  raid_destroyed: ENTITY_WITHER_DEATH:1.0:1.0    # приват уничтожен
-  raid_nearby: ENTITY_WITHER_SHOOT:0.4:0.7       # сигнал соседям о рейде
-  intruder_alert: BLOCK_NOTE_BLOCK_BELL:1.0:1.0  # чужак зашёл на территорию
-  invite_received: ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2
-
 # --- КАРТА (Dynmap) --------------------------------------------------------------
 map:
   dynmap:

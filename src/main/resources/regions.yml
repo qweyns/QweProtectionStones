@@ -127,8 +127,13 @@ default_region:
   # рецепт — легальный способ получить предмет, как в ProtectionStones.
   # Пример:
   # recipe:
-  #   pattern: ["AAA", "ABA", "AAA"]   # схема верстака, пробел — пусто
-  #   ingredients: { A: DIAMOND, B: NETHER_STAR }
+  #   pattern:                          # схема верстака, пробел — пусто
+  #     - "AAA"
+  #     - "ABA"
+  #     - "AAA"
+  #   ingredients:
+  #     A: DIAMOND
+  #     B: NETHER_STAR
   #   result_amount: 1                  # сколько ядер за один крафт
   # recipe:
 
@@ -452,8 +457,11 @@ region_types:
   #     lore:
   #       - "<#F2EFFA>Поставьте, чтобы занять территорию 49×49"
   #   recipe:
-  #     pattern: ["EE", "EE"]
-  #     ingredients: { E: EMERALD }
+  #     pattern:
+  #       - "EE"
+  #       - "EE"
+  #     ingredients:
+  #       E: EMERALD
   #     result_amount: 1
   #   radius: 24
   #   radius_y: 64
