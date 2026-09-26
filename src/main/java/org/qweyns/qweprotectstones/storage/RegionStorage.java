@@ -94,8 +94,10 @@ public class RegionStorage {
 
     public void saveNow(Region region) {
         if (region == null || !isLive(region)) return;
-        pendingSaves.remove(region.getId());
-        plugin.getSchedulers().runAsync(() -> dao.saveAll(List.of(region)));
+        // Срочная запись идёт тем же конвейером: иначе она могла обогнать
+        // удаление и воскресить приват в БД после завершения flush().
+        save(region);
+        plugin.getSchedulers().runAsync(this::flush);
     }
 
     /**
@@ -160,7 +162,7 @@ public class RegionStorage {
         return dao == null ? 0 : dao.pruneLog(olderThan);
     }
 
-    private void flush() {
+    private synchronized void flush() {
         if (dao == null) return;
         lastFlushMillis = System.currentTimeMillis();
 
@@ -169,7 +171,7 @@ public class RegionStorage {
             List<Region> toSave = new ArrayList<>(pendingSaves.size());
             for (UUID id : List.copyOf(pendingSaves.keySet())) {
                 Region region = pendingSaves.remove(id);
-                if (region != null) toSave.add(region);
+                if (region != null && isLive(region)) toSave.add(region);
             }
             dao.saveAll(toSave);
         }
@@ -209,7 +211,7 @@ public class RegionStorage {
         }
     }
 
-    public void saveAll(java.util.Collection<Region> regions) {
+    public synchronized void saveAll(java.util.Collection<Region> regions) {
         if (dao != null) dao.saveAll(regions);
     }
 
@@ -248,12 +250,15 @@ public class RegionStorage {
         pendingRentalDeletes.add(regionId);
     }
 
-    public void close() {
+    public synchronized void close() {
         if (flushTask != null) {
             flushTask.cancel();
             flushTask = null;
         }
         flush();
-        if (dao != null) dao.close();
+        if (dao != null) {
+            dao.close();
+            dao = null;
+        }
     }
 }

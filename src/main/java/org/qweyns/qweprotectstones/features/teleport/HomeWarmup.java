@@ -20,7 +20,7 @@ public class HomeWarmup implements Listener {
 
     private final QweProtectStones plugin;
 
-    private record Pending(Schedulers.Task task, Location home, String regionShortId) {
+    private record Pending(UUID token, Schedulers.Task task, Location home, Region region) {
     }
 
     private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
@@ -46,7 +46,9 @@ public class HomeWarmup implements Listener {
 
         int warmup = warmupSeconds();
         if (warmup <= 0) {
-            doTeleport(player, home, region.getShortId());
+            Pending previous = pending.remove(player.getUniqueId());
+            if (previous != null) previous.task().cancel();
+            doTeleport(player, home.clone(), region);
             return true;
         }
 
@@ -55,35 +57,47 @@ public class HomeWarmup implements Listener {
         Pending previous = pending.remove(player.getUniqueId());
         if (previous != null) previous.task().cancel();
 
+        UUID token = UUID.randomUUID();
         Schedulers.Task task = plugin.getSchedulers().runLater(
-                () -> finish(player.getUniqueId()), warmup * 20L);
-        pending.put(player.getUniqueId(), new Pending(task, home, region.getShortId()));
+                () -> plugin.getSchedulers().runAtEntity(player, () -> finish(player, token)), warmup * 20L);
+        pending.put(player.getUniqueId(), new Pending(token, task, home.clone(), region));
 
         player.sendMessage(plugin.getLanguageManager().getMessage("home_warmup",
                 "%seconds%", String.valueOf(warmup), "%id%", region.getShortId()));
         return true;
     }
 
-    private void finish(UUID playerId) {
-        Pending entry = pending.remove(playerId);
-        if (entry == null) return;
+    private void finish(Player player, UUID token) {
+        Pending entry = pending.get(player.getUniqueId());
+        // Старый таймер мог уже передать callback потоку игрока до отмены задачи.
+        if (entry == null || !entry.token().equals(token)
+                || !pending.remove(player.getUniqueId(), entry)) return;
 
-        Player player = plugin.getServer().getPlayer(playerId);
-        if (player == null || !player.isOnline()) return;
+        if (!player.isOnline()) return;
 
-        doTeleport(player, entry.home(), entry.regionShortId());
+        doTeleport(player, entry.home(), entry.region());
     }
 
-    private void doTeleport(Player player, Location home, String regionShortId) {
+    private void doTeleport(Player player, Location home, Region region) {
+        // За время ожидания приват могли удалить, передать или отозвать доступ.
+        if (plugin.getRegionManager().getById(region.getId()) != region
+                || region.isBanned(player.getUniqueId())
+                || region.getTrust(player.getUniqueId()) == null) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("region_not_found",
+                    "%id%", region.getShortId()));
+            return;
+        }
 
         home.setYaw(player.getLocation().getYaw());
         home.setPitch(player.getLocation().getPitch());
 
         player.teleportAsync(home).thenAccept(success -> {
             if (Boolean.TRUE.equals(success)) {
-                cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
-                player.sendMessage(plugin.getLanguageManager().getMessage("home_teleported",
-                        "%id%", regionShortId));
+                plugin.getSchedulers().runAtEntity(player, () -> {
+                    cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+                    player.sendMessage(plugin.getLanguageManager().getMessage("home_teleported",
+                            "%id%", region.getShortId()));
+                });
             }
         });
     }
@@ -95,7 +109,7 @@ public class HomeWarmup implements Listener {
         entry.task().cancel();
         Player player = plugin.getServer().getPlayer(playerId);
         if (player != null) {
-            player.sendMessage(plugin.getLanguageManager().getMessage(messageKey, "%id%", entry.regionShortId()));
+            player.sendMessage(plugin.getLanguageManager().getMessage(messageKey, "%id%", entry.region().getShortId()));
         }
     }
 
@@ -126,7 +140,8 @@ public class HomeWarmup implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        pending.remove(event.getPlayer().getUniqueId());
+        Pending entry = pending.remove(event.getPlayer().getUniqueId());
+        if (entry != null) entry.task().cancel();
         cooldowns.remove(event.getPlayer().getUniqueId());
     }
 

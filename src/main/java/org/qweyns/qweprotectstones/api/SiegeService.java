@@ -32,7 +32,7 @@ public class SiegeService {
     private final Set<UUID> processingRemoval = ConcurrentHashMap.newKeySet();
 
     // TTL не короче удвоенного кулдауна урона, иначе длинный кулдаун молча отключался
-    private Cache<UUID, Long> lastDamageTime;
+    private volatile Cache<UUID, Long> lastDamageTime;
 
     public SiegeService(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -99,7 +99,11 @@ public class SiegeService {
      */
     public boolean damageRegion(Region region, int damage, String explosionType, String attackerName) {
         if (region == null || damage <= 0) return false;
+        if (!plugin.getConfigManager().isSiegeEnabled() || !isDamaging(region, explosionType)) return false;
+        if (plugin.getRegionManager().getById(region.getId()) != region) return false;
         if (processingRemoval.contains(region.getId())) return false;
+        Location core = region.getCoreLocation();
+        if (core == null) return false;
 
         RegionType regionType = plugin.getRegionTypes().byId(region.getTypeId());
         if (regionType != null && regionType.raidImmune()) return false;
@@ -117,9 +121,6 @@ public class SiegeService {
         if (event.isCancelled() || event.getDamage() <= 0) return false;
 
         lastDamageTime.put(region.getId(), now);
-
-        Location core = region.getCoreLocation();
-        if (core == null) return false;
 
         String owner = region.getOwnerName().isEmpty()
                 ? plugin.getLanguageManager().rawTemplate("unknown_owner")

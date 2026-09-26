@@ -5,7 +5,6 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Villager;
@@ -88,12 +87,15 @@ public class EntityProtectionListener implements Listener {
         if (!(event.getPotion().getShooter() instanceof Player thrower)) return;
 
         // зельем не обойти запрет pvp
-        event.getAffectedEntities().removeIf(entity -> {
-            if (!(entity instanceof Player target) || target.equals(thrower)) return false;
+        // API возвращает снимок целей; изменение коллекции не меняет само событие.
+        for (var entity : event.getAffectedEntities()) {
+            if (!(entity instanceof Player target) || target.equals(thrower)) continue;
 
             Region region = protection.regionAt(target.getLocation());
-            return region != null && !protection.flag(region, RegionFlag.PVP);
-        });
+            if (region != null && !protection.flag(region, RegionFlag.PVP)) {
+                event.setIntensity(target, 0.0);
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

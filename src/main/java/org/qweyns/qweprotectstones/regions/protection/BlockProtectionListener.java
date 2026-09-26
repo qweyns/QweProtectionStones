@@ -112,14 +112,22 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockForm(BlockFormEvent event) {
+        if (!isIceOrSnow(event.getNewState().getType())) return;
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && !protection.flag(region, RegionFlag.ICE_AND_SNOW)) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockFade(BlockFadeEvent event) {
+        if (!isIceOrSnow(event.getBlock().getType())) return;
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && !protection.flag(region, RegionFlag.ICE_AND_SNOW)) event.setCancelled(true);
+    }
+
+    // Лёд/снег не должны отключать генераторы камня, гашение огня и другие fade/form.
+    static boolean isIceOrSnow(Material material) {
+        return material == Material.ICE || material == Material.FROSTED_ICE
+                || material == Material.SNOW || material == Material.SNOW_BLOCK;
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
