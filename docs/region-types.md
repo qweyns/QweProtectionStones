@@ -139,7 +139,7 @@ allowed_effects:
 
 ```yaml
 flags:
-  pvp: false                  # PvP между игроками
+  pvp: true                   # PvP между игроками (анархия; закрыт в flags.locked)
   entry: true                 # вход посторонних
   public_access: false        # «публичный доступ»: сундуки открыты всем
   monster_spawning: true      # спавн враждебных мобов
@@ -150,7 +150,7 @@ flags:
   liquid_flow_in: false       # затекание жидкостей снаружи
   pistons_from_outside: false # поршни с внешней стороны
   crop_trample: false         # вытаптывание грядок
-  explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри
+  explosion_damage: true      # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри (рейды; закрыт в flags.locked)
   teleport_in: true           # телепорты внутрь (эндер-жемчуг)
   vehicle_entry: true         # въезд посторонних на лодке, вагонетке, лошади
   item_pickup: true           # подбор предметов посторонними
