@@ -142,22 +142,37 @@ region-messages:
 Флаг привата `greeting` (`/ps flag greeting`) выключает оба сообщения
 для конкретного привата.
 
-### trust
+### Роли (roles.yml)
 
-Минимальный уровень для действий внутри чужого привата
-(`access` < `container` < `build` < `manager` < `owner`):
+Роли участников полностью настраиваются в `roles.yml`: id, название,
+старшинство (`weight`), наследование (`inherit`) и список действий (`actions`).
+Стандартные `access`, `container`, `build`, `manager` — обычные записи,
+их можно переименовать, удалить или добавить свои. Встроенная только роль
+владельца (`owner`), у неё все действия; название задаётся в `owner-display`.
 
 ```yaml
-trust:
-  required:
-    interact: ACCESS      # двери, кнопки, рычаги, кровати
-    container: CONTAINER  # сундуки, бочки, печи, воронки
-    build: BUILD          # ставить и ломать блоки
-    entity: BUILD         # рамки, стойки брони, вагонетки
-    manage: MANAGER       # меню, журнал, приглашения
-  flag_edit_level: MANAGER    # кто меняет флаги
-  member_edit_level: MANAGER  # кто выдаёт доступ и банит
+roles:
+  owner-display: "Владелец"
+  default-role: build            # /ps trust <ник> без роли, автодобавление, импорт
+  public-access-role: container  # что даёт флаг public-access ("" — ничего)
+  aliases: {}                    # старый id -> новый, если переименовали id
+  list:
+    farmer:
+      display: "<#86EFAC>Фермер"
+      weight: 25                 # выдавать/снимать можно только роли ниже своей
+      grantable: true
+      inherit: access
+      actions: [build, container, -glow]   # "-действие" убирает унаследованное, "*" — все
 ```
+
+Действия: `interact`, `container`, `build`, `entity`, `menu`, `manage`, `flags`,
+`members`, `ban`, `rename`, `upgrade`, `home`, `view-members`, `glow`, `effects`,
+`alerts`, `entry`. Продавать и сдавать приват в аренду может только владелец.
+
+id роли хранится в базе. Если роль удалить из конфига, у участников с ней не будет
+прав, но id не потеряется: верните роль или добавьте псевдоним в `aliases`.
+Старая секция `trust` в `config.yml` больше не читается — при запуске в консоль
+выводится предупреждение, если она осталась.
 
 ### admin
 
