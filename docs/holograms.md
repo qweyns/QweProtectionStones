@@ -1,4 +1,20 @@
-# Голограммы
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![VISUALS](https://img.shields.io/badge/QPS-VISUALS-a78bfa?style=flat-square&labelColor=181825)
+
+# 🔮 Голограммы
+
+> [!IMPORTANT]
+> На Folia всегда используется NATIVE. FancyHolograms и DecentHolograms доступны только на Paper.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[Строки](#строки) · [Положение и видимость](#положение-и-видимость) · [hologram_settings](#hologram_settings)
+
+</details>
+
+---
 
 Над ядром каждого привата висит голограмма: владелец, прочность, осада —
 что захотите. Три провайдера: **FancyHolograms** (рекомендуется,
@@ -90,3 +106,7 @@ NATIVE не поддерживает permission-фильтрацию и внеш
 `PERMISSION_REQUIRED`/`MANUAL`: видимость ограничивается расстоянием.
 Не рассчитывайте на эти параметры как на контроль доступа на Folia.
 Полный restart обязателен для выгрузки плагина; горячий unload не поддерживается.
+
+---
+
+[← Эффекты](effects.md) · [Все разделы](README.md) · [Меню и интерфейс →](menus.md)

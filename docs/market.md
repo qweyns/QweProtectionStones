@@ -1,4 +1,20 @@
-# Рынок и аренда
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![GAMEPLAY](https://img.shields.io/badge/QPS-GAMEPLAY-a78bfa?style=flat-square&labelColor=181825)
+
+# 🪙 Рынок и аренда
+
+> [!IMPORTANT]
+> Для рынка нужны Vault и провайдер экономики. PlayerPoints не заменяет их.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[Продажа](#продажа) · [Аренда](#аренда) · [Телепорт домой (features.yml → home)](#телепорт-домой-featuresyml--home)
+
+</details>
+
+---
 
 Требуется **Vault** и любой экономический плагин. Все настройки —
 `features.yml` → `market`.
@@ -65,3 +81,7 @@ home:
 Платёж и передача сериализованы с другими операциями региона, но Vault и SQL
 не образуют распределённую транзакцию. Отказ компенсации требует ручного разбора
 по консольному/критическому журналу. Резервная копия JSON не содержит балансы Vault.
+
+---
+
+[← Осады](siege.md) · [Все разделы](README.md) · [Эффекты →](effects.md)

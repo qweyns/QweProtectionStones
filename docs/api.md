@@ -1,4 +1,20 @@
-# API для разработчиков
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![DEVELOPERS](https://img.shields.io/badge/QPS-DEVELOPERS-a78bfa?style=flat-square&labelColor=181825)
+
+# 🧑‍💻 API для разработчиков
+
+> [!WARNING]
+> На Folia основной поток — не универсальный контекст. Bukkit-операции выполняются в потоке владельца объекта.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[События](#события) · [QpsApi](#qpsapi) · [Осада и сторонние взрывчатки](#осада-и-сторонние-взрывчатки)
+
+</details>
+
+---
 
 Пакет `org.qweyns.qweprotectstones`. Плагин объявляет `api-version: 1.21`.
 
@@ -94,3 +110,7 @@ Region region = plugin.getRegionManager().getRegionAt(location);
 
 Отменяемые события меняются до MONITOR. MONITOR предназначен только для наблюдения:
 плагин, отменяющий событие на этом приоритете, нарушает Bukkit-контракт.
+
+---
+
+[← Интеграции](integrations.md) · [Все разделы](README.md) · [Взрывы и аддоны →](explosions-api.md)

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+  <title id="title">QweProtectStones</title>
+  <desc id="desc">Приваты с характером. Защита территорий, осады и управление. Абстрактное светящееся блок-ядро на тёмном фоне.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101326"/><stop offset="1" stop-color="#211b3b"/></linearGradient>
+    <linearGradient id="accent" x2="1" y2="0"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#67e8f9"/></linearGradient>
+    <linearGradient id="top" x2="1" y2="1"><stop stop-color="#ddd6fe"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+    <linearGradient id="left" x2="0" y2="1"><stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#493780"/></linearGradient>
+    <linearGradient id="right" x2="0" y2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#51429b"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#8b5cf6" stop-opacity=".3"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#c4b5fd" stroke-opacity=".05"/></pattern>
+  </defs>
+  <rect width="1200" height="340" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="340" rx="24" fill="url(#grid)"/>
+  <circle cx="972" cy="166" r="210" fill="url(#halo)"/>
+  <rect x="56" y="51" width="36" height="4" rx="2" fill="url(#accent)"/>
+  <text x="108" y="60" fill="#b7b2d0" font-family="Arial, sans-serif" font-size="15" letter-spacing="3">YOUR WORLD. YOUR RULES.</text>
+  <text x="54" y="133" fill="#f5f3ff" font-family="Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="-2">QweProtectStones</text>
+  <text x="57" y="185" fill="#c4b5fd" font-family="Arial, sans-serif" font-size="29">Приваты с характером.</text>
+  <text x="57" y="224" fill="#b7b2d0" font-family="Arial, sans-serif" font-size="19">Защита территорий · Осады · Управление</text>
+  <rect x="57" y="267" width="305" height="32" rx="16" fill="#c4b5fd" fill-opacity=".09" stroke="#c4b5fd" stroke-opacity=".2"/>
+  <text x="76" y="288" fill="#d9d3ef" font-family="Arial, sans-serif" font-size="13" letter-spacing="1">PAPER 1.21.4   /   JAVA 21   /   QPS</text>
+  <path d="M804 253 976 161 1148 253 976 323Z" fill="none" stroke="#a78bfa" stroke-opacity=".22"/>
+  <path d="M839 249 976 175 1113 249 976 306Z" fill="none" stroke="#67e8f9" stroke-opacity=".18"/>
+  <path d="M886 111 976 65 1066 111 976 160Z" fill="url(#top)"/>
+  <path d="M886 111 976 160 976 263 886 215Z" fill="url(#left)"/>
+  <path d="M976 160 1066 111 1066 215 976 263Z" fill="url(#right)"/>
+  <path d="M886 111 976 160 1066 111M976 160V263" fill="none" stroke="#e9d5ff" stroke-opacity=".5" stroke-width="2"/>
+  <path d="m962 204 10 10 23-30" fill="none" stroke="#ecfeff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="852" cy="81" r="3" fill="#a78bfa"/><circle cx="1101" cy="177" r="4" fill="#67e8f9"/>
+  <path d="M1093 59v14m-7-7h14" stroke="#c4b5fd" stroke-width="2" opacity=".6"/>
+</svg>

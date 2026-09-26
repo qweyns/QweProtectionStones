@@ -1,4 +1,20 @@
-# Эффекты
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![GAMEPLAY](https://img.shields.io/badge/QPS-GAMEPLAY-a78bfa?style=flat-square&labelColor=181825)
+
+# ✨ Эффекты
+
+> [!TIP]
+> Стоимость эффекта в GUI задают действия кнопки в menus/effects.yml, а не effects.purchase.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[Кому достаётся (effects.yml → effect_targets)](#кому-достаётся-effectsyml--effect_targets) · [Какие эффекты доступны](#какие-эффекты-доступны) · [Оплата (menus/effects.yml)](#оплата-menuseffectsyml) · [Как это работает под капотом](#как-это-работает-под-капотом)
+
+</details>
+
+---
 
 Эффекты — постоянные зелья на территории привата. Покупаются в меню
 «Эффекты» (`/ps effects` или клик по ядру), действуют, пока игрок
@@ -61,3 +77,7 @@ click_commands:
 порции чуть больше периода (`timings.effect_duration_ticks`), поэтому при
 выходе с территории эффект исчезает сам. Пересчёт при ходьбе ограничен
 `timings.move_throttle_ms`.
+
+---
+
+[← Рынок и аренда](market.md) · [Все разделы](README.md) · [Голограммы →](holograms.md)
