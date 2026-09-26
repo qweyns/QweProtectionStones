@@ -33,4 +33,12 @@ class RetryQueueTest {
         queue.flush(e -> fail(e));
         assertEquals(1, deletes.get());
     }
+    @Test void identicalRunnableStillRepresentsNewVersion() {
+        RetryQueue<String> queue = new RetryQueue<>();
+        Runnable[] action = new Runnable[1];
+        action[0] = () -> queue.put("id", action[0]);
+        queue.put("id", action[0]);
+        queue.flush(e -> fail(e));
+        assertEquals(1, queue.size());
+    }
 }

@@ -6,7 +6,11 @@ import java.util.function.Consumer;
 
 /** Последняя операция на ключ. Подтверждаем только успешную запись именно этой версии. */
 final class RetryQueue<K> {
-    private record Pending(Runnable write) { }
+    // Именно идентичность версии, даже если вызывающий повторно использует тот же Runnable.
+    private static final class Pending {
+        private final Runnable write;
+        private Pending(Runnable write) { this.write = write; }
+    }
     private final Map<K, Pending> pending = new ConcurrentHashMap<>();
 
     void put(K key, Runnable write) { pending.put(key, new Pending(write)); }
@@ -17,7 +21,7 @@ final class RetryQueue<K> {
     void flush(Consumer<RuntimeException> failure) {
         for (var entry : java.util.List.copyOf(pending.entrySet())) {
             try {
-                entry.getValue().write().run();
+                entry.getValue().write.run();
                 pending.remove(entry.getKey(), entry.getValue());
             } catch (RuntimeException e) {
                 // Новая операция (в том числе delete) не заменяется старой при повторе.

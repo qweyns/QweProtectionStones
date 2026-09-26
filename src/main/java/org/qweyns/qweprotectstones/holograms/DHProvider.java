@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
+    private final java.util.Map<UUID, Object> requests = new ConcurrentHashMap<>();
     // мутируется из потоков разных регионов на Folia
     private final Set<String> activeHolograms = ConcurrentHashMap.newKeySet();
 
@@ -39,8 +40,10 @@ public class DHProvider implements IHologramProvider {
         Location hologramLoc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
         // DHAPI создаёт и двигает сущности в мире — на Folia это можно только из потока региона
+        Object request = new Object();
+        requests.put(region.getId(), request);
         plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
-            if (!plugin.isEnabled() || plugin.getRegionManager().getById(region.getId()) != region) return;
+            if (requests.get(region.getId()) != request || !plugin.isEnabled() || plugin.getRegionManager().getById(region.getId()) != region) return;
             Hologram holo = DHAPI.getHologram(name);
             if (holo == null) {
                 holo = DHAPI.createHologram(name, hologramLoc);
@@ -108,6 +111,7 @@ public class DHProvider implements IHologramProvider {
 
     @Override
     public void remove(UUID regionId) {
+        requests.remove(regionId);
         String name = hologramName(regionId);
 
         Hologram holo = DHAPI.getHologram(name);
@@ -117,6 +121,7 @@ public class DHProvider implements IHologramProvider {
 
     @Override
     public void deleteAll() {
+        requests.clear();
         for (String name : activeHolograms) {
             Hologram holo = DHAPI.getHologram(name);
             if (holo != null) holo.delete();

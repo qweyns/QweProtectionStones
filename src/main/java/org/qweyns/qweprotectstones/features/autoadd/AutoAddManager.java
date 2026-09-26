@@ -56,6 +56,10 @@ public class AutoAddManager implements Listener {
         UUID session = UUID.randomUUID();
         sessions.put(uuid, session);
         loaded.remove(uuid);
+        loadSession(player, uuid, session);
+    }
+
+    private void loadSession(Player player, UUID uuid, UUID session) {
         plugin.getRegionStorage().loadAutoAddAsync(uuid, (friends, isToggledOff) ->
                 plugin.getSchedulers().runAtEntity(player, () -> {
                     if (!session.equals(sessions.get(uuid)) || !player.isOnline()) return;
@@ -64,7 +68,12 @@ public class AutoAddManager implements Listener {
                     autoAddLists.put(uuid, copy);
                     if (isToggledOff) toggledOff.add(uuid); else toggledOff.remove(uuid);
                     loaded.add(uuid);
-                }));
+                }), () -> {
+                    if (!plugin.isEnabled()) return;
+                    plugin.getSchedulers().runAtEntityLater(player, () -> {
+                        if (player.isOnline() && session.equals(sessions.get(uuid))) loadSession(player, uuid, session);
+                    }, 100L);
+                });
     }
 
     private boolean ready(Player player) {

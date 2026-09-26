@@ -123,14 +123,17 @@ public class RegionStorage {
     }
 
     public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
+        loadAutoAddAsync(uuid, callback, () -> { });
+    }
+
+    public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback, Runnable failed) {
         plugin.getSchedulers().runAsync(() -> {
             synchronized (this) {
                 if (closed || dao == null) return;
-                // Сначала предыдущая сессия, затем чтение новой; ошибка не означает пустой список.
                 autoadd.flush(this::writeFailed);
-                if (autoadd.size() != 0) return;
+                if (autoadd.size() != 0) { failed.run(); return; }
                 try { dao.loadAutoAdd(uuid, callback); }
-                catch (RuntimeException e) { writeFailed(e); }
+                catch (RuntimeException e) { writeFailed(e); failed.run(); }
             }
         });
     }
