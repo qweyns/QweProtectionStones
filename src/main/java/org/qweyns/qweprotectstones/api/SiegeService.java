@@ -189,11 +189,23 @@ public class SiegeService {
         return best;
     }
 
+    private final java.util.Map<UUID, Long> lastNeighbourAlert = new ConcurrentHashMap<>();
+
     private void alertNeighbours(Region region, Location core) {
         int radius = plugin.getConfigManager().getConfig().getInt("siege.neighbour_alert_radius", 0);
-        if (radius <= 0) return;
+        if (radius <= 0 || core.getWorld() == null) return;
 
-        for (Player nearby : Bukkit.getOnlinePlayers()) {
+        // TNT-пушка даёт десятки взрывов в секунду: соседей оповещаем не чаще раза в N секунд на приват
+        long cooldownMs = Math.max(0, plugin.getConfigManager().getConfig()
+                .getLong("siege.neighbour_alert_cooldown_seconds", 10)) * 1000L;
+        long now = System.currentTimeMillis();
+        Long previous = lastNeighbourAlert.get(region.getId());
+        if (previous != null && now - previous < cooldownMs) return;
+        lastNeighbourAlert.put(region.getId(), now);
+        if (lastNeighbourAlert.size() > 4096) lastNeighbourAlert.values().removeIf(at -> now - at > cooldownMs);
+
+        // задачи — только игрокам того же мира, а не всему онлайну
+        for (Player nearby : core.getWorld().getPlayers()) {
             plugin.getSchedulers().runAtEntity(nearby, () -> {
                 Location at = nearby.getLocation();
                 if (at.getWorld() == core.getWorld() && at.distanceSquared(core) <= (double) radius * radius)

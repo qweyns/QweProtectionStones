@@ -34,6 +34,29 @@ siege:
   # не получает нового урона. 20 тиков = 1 секунда.
   damage_cooldown_ticks: 20
 
+  # Какой тип взрыва (ключ секции explosions в regions.yml) у каждого источника.
+  # Неизвестные источники получают default_*: по умолчанию OTHER — не вредит,
+  # пока тип привата явно не разрешит OTHER: true. Свои ключи тоже можно вводить.
+  explosion_types:
+    entities:
+      TNT: TNT
+      TNT_MINECART: TNT
+      WITHER: WITHER
+      WITHER_SKULL: WITHER
+      CREEPER: CREEPER
+      END_CRYSTAL: ENDER_CRYSTAL
+      WIND_CHARGE: WIND_CHARGE
+      BREEZE_WIND_CHARGE: WIND_CHARGE
+      FIREBALL: FIREBALL
+      SMALL_FIREBALL: FIREBALL
+      DRAGON_FIREBALL: FIREBALL
+    default_entity: OTHER
+    # Взрывающиеся блоки; поддерживаются шаблоны "*_BED" и "RESPAWN*".
+    blocks:
+      "*_BED": BED
+      RESPAWN_ANCHOR: RESPAWN_ANCHOR
+    default_block: OTHER
+
   # Прочность за один принятый Bukkit-взрыв (1..1000000). API задаёт урон отдельно.
   damage_per_explosion: 1
 
@@ -54,6 +77,8 @@ siege:
   # Радиус (в блоках), в котором соседям слышно, что рядом идёт рейд
   # (звук raid_nearby из visuals.yml + уведомление). 0 — не сообщать соседям.
   neighbour_alert_radius: 48
+  # Не чаще одного оповещения соседей на приват за столько секунд (0 — без ограничения).
+  neighbour_alert_cooldown_seconds: 10
 
   # Сколько секунд приват считается «под атакой» после удара: в это время
   # у голограммы тревожный вид, а плейсхолдеры показывают осаду.

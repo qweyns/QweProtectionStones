@@ -59,6 +59,7 @@ public class RegionStorage {
         try { StorageRecovery.replay(recoveryPath(), dao); }
         catch (java.io.IOException e) { throw new IllegalStateException("Журнал восстановления не применён; запуск запрещён", e); }
         List<Region> loaded = dao.loadAll();
+        loaded.forEach(regions::markPersisted);
         recoveryBlocked = false;
 
         plugin.getLogger().info("Загружено приватов: " + loaded.size() + " (база " + dbType + ").");
@@ -117,6 +118,18 @@ public class RegionStorage {
             count++;
         }
         flush();
+        return count;
+    }
+
+    /** Поставить в очередь приваты, изменённые после последней записи (страховка при остановке). */
+    public int saveDirty(java.util.Collection<Region> all) {
+        if (dao == null || all == null) return 0;
+        int count = 0;
+        for (Region region : all) {
+            if (region == null || !isLive(region) || !regions.isDirty(region)) continue;
+            save(region);
+            count++;
+        }
         return count;
     }
 

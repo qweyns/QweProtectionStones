@@ -224,7 +224,8 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(bypassManager, this);
         pm.registerEvents(regionLifecycleListener, this);
         pm.registerEvents(regionMovementListener, this);
-        pm.registerEvents(new RegionExplosionListener(this, siegeService), this);
+        explosionListener = new RegionExplosionListener(this, siegeService);
+        pm.registerEvents(explosionListener, this);
         pm.registerEvents(new RegionInteractListener(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
@@ -299,8 +300,12 @@ public final class QweProtectStones extends JavaPlugin {
         if (hologramManager != null) hologramManager.deleteAll();
 
         if (regionStorage != null) {
-            // очередь могла не успеть, сохраняем всё синхронно
-            if (regionManager != null) regionStorage.saveAll(regionManager.getAllRegions());
+            // Очередь знает все изменённые приваты: close() синхронно дописывает только их,
+            // а не перезаписывает всю базу (на больших серверах это минуты при остановке).
+            if (regionManager != null) {
+                int dirty = regionStorage.saveDirty(regionManager.getAllRegions());
+                if (dirty > 0) getLogger().info("Дописываю изменённые приваты при остановке: " + dirty);
+            }
             regionStorage.close();
         }
     }
@@ -309,6 +314,8 @@ public final class QweProtectStones extends JavaPlugin {
     public String getPlayerCommandName() {
         return regionCommand == null ? configManager.getCommandName() : regionCommand.getName();
     }
+
+    private RegionExplosionListener explosionListener;
 
     public void reloadEverything() {
         configManager.reload();
@@ -330,6 +337,7 @@ public final class QweProtectStones extends JavaPlugin {
         updateChecker.start();
         rateLimiter.reload();
         siegeService.reload();
+        if (explosionListener != null) explosionListener.reload();
         inviteManager.reload();
         criticalFileLogger.start();
         // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге

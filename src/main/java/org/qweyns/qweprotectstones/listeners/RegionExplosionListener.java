@@ -22,14 +22,59 @@ import org.qweyns.qweprotectstones.regions.RegionFlag;
 import org.qweyns.qweprotectstones.regions.RegionType;
 import org.qweyns.qweprotectstones.regions.event.RegionExplosionTypeEvent;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import org.bukkit.configuration.ConfigurationSection;
 
 /** Защита списка блоков отдельно от побочных эффектов принятого взрыва. */
 public class RegionExplosionListener implements Listener {
     public static final double MAX_DAMAGE_RADIUS = 256.0;
     private final QweProtectStones plugin;
     private final SiegeService siege;
-    public RegionExplosionListener(QweProtectStones plugin, SiegeService siege) { this.plugin = plugin; this.siege = siege; }
+
+    // Всё, что раньше считалось на каждый взрыв, — один раз при старте и /reload.
+    private volatile Settings settings;
+
+    private record Settings(double maxBaseRadius, int damage, Map<String, String> entityTypes,
+                            List<Map.Entry<String, String>> blockTypes, String defaultEntity, String defaultBlock) { }
+
+    public RegionExplosionListener(QweProtectStones plugin, SiegeService siege) {
+        this.plugin = plugin;
+        this.siege = siege;
+    }
+
+    /** Пересчитать кэш после перезагрузки конфигов и типов приватов. */
+    public void reload() { settings = null; }
+
+    private Settings settings() {
+        Settings current = settings;
+        if (current != null) return current;
+        var cfg = plugin.getConfigManager().getConfig();
+        double maximum = baseRadius(null);
+        for (RegionType type : plugin.getRegionTypes().all()) maximum = Math.max(maximum, baseRadius(type));
+        int damage = (int) ConfigValues.boundedLong(cfg, "siege.damage_per_explosion", 1L, 1L, 1000000L);
+
+        Map<String, String> entities = new HashMap<>();
+        ConfigurationSection entitySection = cfg.getConfigurationSection("siege.explosion_types.entities");
+        if (entitySection != null) for (String key : entitySection.getKeys(false)) {
+            String value = entitySection.getString(key);
+            if (value != null && !value.isBlank()) entities.put(key.toUpperCase(Locale.ROOT), value.trim().toUpperCase(Locale.ROOT));
+        }
+        List<Map.Entry<String, String>> blocks = new ArrayList<>();
+        ConfigurationSection blockSection = cfg.getConfigurationSection("siege.explosion_types.blocks");
+        if (blockSection != null) for (String key : blockSection.getKeys(false)) {
+            String value = blockSection.getString(key);
+            if (value != null && !value.isBlank()) blocks.add(Map.entry(key.toUpperCase(Locale.ROOT), value.trim().toUpperCase(Locale.ROOT)));
+        }
+        current = new Settings(maximum, damage, Map.copyOf(entities), List.copyOf(blocks),
+                cfg.getString("siege.explosion_types.default_entity", "OTHER").trim().toUpperCase(Locale.ROOT),
+                cfg.getString("siege.explosion_types.default_block", "OTHER").trim().toUpperCase(Locale.ROOT));
+        settings = current;
+        return current;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) { protect(event.blockList()); }
@@ -37,16 +82,30 @@ public class RegionExplosionListener implements Listener {
     public void onEntityExplode(EntityExplodeEvent event) { protect(event.blockList()); }
 
     private void protect(List<Block> blocks) {
+        if (blocks.isEmpty()) return;
+        String world = blocks.get(0).getWorld().getName();
+        var manager = plugin.getRegionManager();
+        var protection = plugin.getProtectionService();
+        // соседние блоки взрыва почти всегда в одном привате — проверяем его первым
+        Region[] last = new Region[1];
+        Boolean[] lastAllows = new Boolean[1];
         blocks.removeIf(block -> {
-            Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
-            return region != null && (region.isCore(block.getLocation())
-                    || !plugin.getProtectionService().flag(region, RegionFlag.EXPLOSION_DAMAGE));
+            int x = block.getX(), y = block.getY(), z = block.getZ();
+            Region region = last[0] != null && last[0].getBounds().contains(x, y, z) ? last[0]
+                    : manager.getRegionAt(block.getWorld(), x, y, z);
+            if (region == null) return false;
+            if (region.isCore(x, y, z)) return true;
+            if (region != last[0]) {
+                last[0] = region;
+                lastAllows[0] = protection.flag(region, RegionFlag.EXPLOSION_DAMAGE);
+            }
+            return !lastAllows[0];
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockExplodeApplied(BlockExplodeEvent event) {
-        damage(event.getBlock().getLocation(), null, event.getBlock(), "BED", null);
+        damage(event.getBlock().getLocation(), null, event.getBlock(), classifyBlock(event), null);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplodeApplied(EntityExplodeEvent event) {
@@ -55,14 +114,29 @@ public class RegionExplosionListener implements Listener {
         damage(event.getLocation(), event.getEntity(), null, classify(event.getEntityType()), primer);
     }
 
+    /** Тип взрыва сущности — siege.explosion_types.entities в siege.yml. */
     private String classify(EntityType type) {
-        return switch (type) {
-            case WITHER, WITHER_SKULL -> "WITHER";
-            case CREEPER -> "CREEPER";
-            case END_CRYSTAL -> "ENDER_CRYSTAL";
-            case WIND_CHARGE, BREEZE_WIND_CHARGE -> "WIND_CHARGE";
-            default -> "TNT";
-        };
+        Settings current = settings();
+        return current.entityTypes().getOrDefault(type.name(), current.defaultEntity());
+    }
+
+    /** Тип взрыва блока (кровать, якорь возрождения) — siege.explosion_types.blocks; в Paper блок уже заменён воздухом. */
+    private String classifyBlock(BlockExplodeEvent event) {
+        Settings current = settings();
+        String material;
+        try {
+            material = event.getExplodedBlockState().getType().name();
+        } catch (Throwable ignored) {
+            material = event.getBlock().getType().name();
+        }
+        for (Map.Entry<String, String> rule : current.blockTypes()) {
+            String pattern = rule.getKey();
+            boolean matches = pattern.equals(material)
+                    || (pattern.startsWith("*") && material.endsWith(pattern.substring(1)))
+                    || (pattern.endsWith("*") && material.startsWith(pattern.substring(0, pattern.length() - 1)));
+            if (matches) return rule.getValue();
+        }
+        return current.defaultBlock();
     }
 
     private double baseRadius(RegionType type) {
@@ -73,23 +147,23 @@ public class RegionExplosionListener implements Listener {
 
     private void damage(Location center, Entity source, Block block, String defaultType, String primer) {
         if (center.getWorld() == null || !plugin.getConfigManager().isSiegeEnabled()) return;
+        Settings current = settings();
         // Классификация нужна и вне границ привата: именно аддон расширяет область поиска.
         RegionExplosionTypeEvent event = new RegionExplosionTypeEvent(source, block, defaultType);
         Bukkit.getPluginManager().callEvent(event);
-        double maximum = baseRadius(null);
-        for (RegionType type : plugin.getRegionTypes().all()) maximum = Math.max(maximum, baseRadius(type));
-        int radius = (int) Math.ceil(Math.min(MAX_DAMAGE_RADIUS, maximum * event.getDamageRadiusMultiplier()));
+        int radius = (int) Math.ceil(Math.min(MAX_DAMAGE_RADIUS, current.maxBaseRadius() * event.getDamageRadiusMultiplier()));
         RegionBounds bounds = RegionBounds.around(center.getBlockX(), center.getBlockY(), center.getBlockZ(),
                 radius, radius, radius, center.getWorld().getMinHeight(), center.getWorld().getMaxHeight() - 1);
-        int damage = (int) ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "siege.damage_per_explosion", 1L, 1L, 1000000L);
-        for (Region region : plugin.getRegionManager().intersecting(center.getWorld().getName(), bounds)) {
+        List<Region> candidates = plugin.getRegionManager().intersecting(center.getWorld().getName(), bounds);
+        if (candidates.isEmpty()) return;
+        for (Region region : candidates) {
             if (!siege.isDamaging(region, event.getExplosionType())) continue;
             Location core = region.getCoreLocation();
             double allowed = Math.min(MAX_DAMAGE_RADIUS,
                     baseRadius(plugin.getRegionTypes().byId(region.getTypeId())) * event.getDamageRadiusMultiplier());
             if (core == null || core.distanceSquared(center) > allowed * allowed) continue;
-            if (plugin.getSchedulers().ownsLocation(core)) siege.damageRegion(region, damage, event.getExplosionType(), primer);
-            else siege.damageRegionAsync(region, damage, event.getExplosionType(), primer).exceptionally(error -> {
+            if (plugin.getSchedulers().ownsLocation(core)) siege.damageRegion(region, current.damage(), event.getExplosionType(), primer);
+            else siege.damageRegionAsync(region, current.damage(), event.getExplosionType(), primer).exceptionally(error -> {
                 plugin.getLogger().log(java.util.logging.Level.SEVERE, "Ошибка межрегиональной осады", error);
                 return false;
             });

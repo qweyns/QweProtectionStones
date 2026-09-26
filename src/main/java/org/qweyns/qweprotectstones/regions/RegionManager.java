@@ -519,7 +519,11 @@ public class RegionManager {
     public void refreshTypeData() {
         for (Region region : regions.values()) {
             RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
-            if (type != null) region.setMaxDurability(type.maxDurability());
+            // без touch() на каждом привате: иначе /reload помечал бы изменённой всю базу
+            if (type != null && region.getMaxDurability() != Math.max(1, type.maxDurability())) {
+                region.setMaxDurability(type.maxDurability());
+                plugin.getRegionStorage().save(region);
+            }
         }
     }
 }

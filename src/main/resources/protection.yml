@@ -63,6 +63,99 @@ protection:
     # Проверяются все затронутые ядра; при отмене события перенос не фиксируется.
     move-core: false
 
+  # Какое действие роли (см. roles.yml) нужно для взаимодействия в чужом привате.
+  # Списки: точное имя, "*_BUCKET" (окончание), "POTTED_*" (начало),
+  # "*CANDLE*" (подстрока), "#doors" — тег Minecraft. Порядок действий важен:
+  # срабатывает первое подошедшее правило.
+  interact:
+    # Запрещён только клик по блоку — предмет в руке всё равно работает
+    # (можно есть, пить, стрелять, кидать жемчуг, глядя на чужой блок).
+    # false — отменять взаимодействие целиком, как раньше.
+    keep-item-use: true
+    # Правый клик по блоку С ПРЕДМЕТОМ из списка — проверяется первым.
+    # Если действие не разрешено, отменяется всё взаимодействие.
+    items:
+      build:
+        - FLINT_AND_STEEL
+        - FIRE_CHARGE
+        - BONE_MEAL
+        - ARMOR_STAND
+        - END_CRYSTAL
+        - ITEM_FRAME
+        - GLOW_ITEM_FRAME
+        - PAINTING
+        - "*MINECART"
+        - "*_BUCKET"
+        - "*_SPAWN_EGG"
+        - "*_BOAT"
+        - "*_RAFT"
+        - "*_AXE"       # обтёсывание брёвен, очистка меди
+        - "*_HOE"       # вспахивание
+        - "*_SHOVEL"    # тропинки, тушение костра
+        - SHEARS        # тыквы, ульи, лианы
+        - HONEYCOMB     # вощение меди
+        - BRUSH         # подозрительный песок/гравий
+        - GLASS_BOTTLE  # мёд из улья
+        - "*_DYE"       # покраска табличек
+        - INK_SAC
+        - GLOW_INK_SAC
+    # Правый клик по блоку. Контейнеры (сундуки, печи, бочки, воронки...)
+    # определяются автоматически и требуют container-action.
+    blocks:
+      build:
+        - FARMLAND
+        - TURTLE_EGG
+        - SNIFFER_EGG
+        - RESPAWN_ANCHOR
+        - CAKE
+        - "*CANDLE_CAKE"
+        - DRAGON_EGG
+        - SPAWNER
+        - JUKEBOX
+        - COMPOSTER
+        - FLOWER_POT
+        - "POTTED_*"
+        - CAULDRON
+        - "*_CAULDRON"
+        - SWEET_BERRY_BUSH
+        - CAVE_VINES
+        - CAVE_VINES_PLANT
+        - "#all_signs"   # редактирование табличек
+        - REPEATER
+        - COMPARATOR
+        - DAYLIGHT_DETECTOR
+        - "*CANDLE"
+      interact:
+        - "#doors"
+        - "#trapdoors"
+        - "#fence_gates"
+        - "#buttons"
+        - "#beds"
+        - LEVER
+        - CRAFTING_TABLE
+        - ENDER_CHEST
+        - BELL
+        - NOTE_BLOCK
+        - LECTERN
+    # Контейнеры, не попавшие в blocks.
+    container-action: container
+    # Прочие блоки, по которым правый клик что-то делает (по камню — нет,
+    # такие клики вообще не проверяются).
+    default-block-action: container
+    # Нажимные плиты, растяжки, вспашка ногами.
+    physical:
+      build:
+        - FARMLAND
+        - TURTLE_EGG
+        - SNIFFER_EGG
+    default-physical-action: interact
+    # Правый клик по сущности.
+    entities:
+      entity: [ITEM_FRAME, GLOW_ITEM_FRAME, ARMOR_STAND, PAINTING]
+      interact: [VILLAGER, WANDERING_TRADER]
+      container: ["*MINECART", "*CHEST_BOAT", "*CHEST_RAFT"]
+    default-entity-action: container
+
 # --- ФЛАГИ -------------------------------------------------------------------
 flags:
   # Флаги, которые игрок НЕ может менять сам через /ps flag — только админ.

@@ -178,9 +178,18 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
         String action = args[0].toLowerCase(Locale.ROOT);
 
         if (args.length == 2 && REGION_ACTIONS.contains(action)) {
+            // не отдаём клиенту тысячи id: только совпадающие с введённым, не больше 50
             List<String> ids = new ArrayList<>();
-            for (Region region : plugin.getRegionManager().getAllRegions()) ids.add(region.getShortId());
-            return support.filter(ids, args[1]);
+            String typed = args[1].toLowerCase(Locale.ROOT);
+            if (typed.isEmpty()) {
+                for (Region region : plugin.getRegionManager().getAllRegions()) {
+                    ids.add(region.getShortId());
+                    if (ids.size() >= 50) break;
+                }
+            } else {
+                for (Region region : plugin.getRegionManager().findByIdPrefix(typed, 50)) ids.add(region.getShortId());
+            }
+            return ids;
         }
 
         if (args.length == 2 && action.equals("give")) {

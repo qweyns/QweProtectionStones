@@ -21,29 +21,17 @@ import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.regions.Region;
 import org.qweyns.qweprotectstones.regions.TrustLevel;
 import org.qweyns.qweprotectstones.config.Tunables;
+import org.qweyns.qweprotectstones.config.InteractRules;
 
 import java.util.Set;
 
 public class InteractProtectionListener implements Listener {
 
-    private static final Set<Material> BUILD_LEVEL_BLOCKS = Set.of(
-            Material.FARMLAND, Material.TURTLE_EGG, Material.SNIFFER_EGG,
-            Material.RESPAWN_ANCHOR, Material.CAKE, Material.DRAGON_EGG,
-            Material.SPAWNER, Material.JUKEBOX, Material.COMPOSTER);
-
-    private static final Set<Material> BUILD_LEVEL_ITEMS = Set.of(
-            Material.FLINT_AND_STEEL, Material.FIRE_CHARGE, Material.BONE_MEAL,
-            Material.ARMOR_STAND, Material.END_CRYSTAL, Material.ITEM_FRAME,
-            Material.GLOW_ITEM_FRAME, Material.PAINTING, Material.TNT_MINECART,
-            Material.CHEST_MINECART, Material.HOPPER_MINECART, Material.MINECART,
-            Material.FURNACE_MINECART, Material.WATER_BUCKET, Material.LAVA_BUCKET);
-
-    private static final Set<EntityType> CONTAINER_ENTITIES = Set.of(
-            EntityType.CHEST_MINECART, EntityType.HOPPER_MINECART, EntityType.FURNACE_MINECART);
-
+    private final QweProtectStones plugin;
     private final ProtectionService protection;
 
     public InteractProtectionListener(QweProtectStones plugin) {
+        this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
@@ -64,28 +52,38 @@ public class InteractProtectionListener implements Listener {
             return;
         }
 
-        if (protection.can(region, event.getPlayer(), requiredActionFor(block, event))) return;
-
-        if (event.getAction() != Action.PHYSICAL) protection.notifyDenied(event.getPlayer(), region, "interact");
-        event.setCancelled(true);
-    }
-
-    private Tunables.TrustAction requiredActionFor(Block block, PlayerInteractEvent event) {
-        Material type = block.getType();
-
+        InteractRules rules = plugin.getTunables().interactRules();
         if (event.getAction() == Action.PHYSICAL) {
-
-            return type == Material.FARMLAND ? Tunables.TrustAction.BUILD : Tunables.TrustAction.INTERACT;
+            if (!protection.can(region, event.getPlayer(), rules.forPhysical(block.getType()))) event.setCancelled(true);
+            return;
         }
 
         Material item = event.getItem() == null ? Material.AIR : event.getItem().getType();
-        if (BUILD_LEVEL_ITEMS.contains(item) || item.name().endsWith("_SPAWN_EGG")) return Tunables.TrustAction.BUILD;
-        if (BUILD_LEVEL_BLOCKS.contains(type)) return Tunables.TrustAction.BUILD;
-        if (isContainer(block)) return Tunables.TrustAction.CONTAINER;
-        if (isSimpleAccess(type)) return Tunables.TrustAction.INTERACT;
+        Tunables.TrustAction itemAction = rules.forItem(item);
+        if (itemAction != null && !protection.can(region, event.getPlayer(), itemAction)) {
+            // сам предмет запрещён здесь (вёдра, огниво, яйца призыва...) — отменяем целиком
+            protection.notifyDenied(event.getPlayer(), region, "interact");
+            event.setCancelled(true);
+            return;
+        }
 
-        // незнакомое = нужен доступ, безопасный дефолт
-        return Tunables.TrustAction.CONTAINER;
+        Tunables.TrustAction blockAction = rules.forBlock(block.getType());
+        if (blockAction == null) {
+            if (isContainer(block)) blockAction = rules.containers();
+            // по камню/земле правый клик ничего не делает: не спамим «нельзя» при еде и стрельбе,
+            // установка блока проверяется отдельно в BlockPlaceEvent
+            else if (!isInteractable(block.getType())) return;
+            else blockAction = rules.defaultBlock();
+        }
+        if (protection.can(region, event.getPlayer(), blockAction)) return;
+
+        protection.notifyDenied(event.getPlayer(), region, "interact");
+        if (rules.keepItemUse() && itemAction == null) {
+            // запрещаем только клик по блоку: съесть, выпить, натянуть лук, кинуть жемчуг можно
+            event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+        } else {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -103,23 +101,14 @@ public class InteractProtectionListener implements Listener {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private static boolean isInteractable(Material type) {
+        return type.isInteractable();
+    }
+
     private boolean isContainer(Block block) {
         BlockState state = block.getState(false);
         return state instanceof Container;
-    }
-
-    private boolean isSimpleAccess(Material type) {
-        return Tag.DOORS.isTagged(type)
-                || Tag.TRAPDOORS.isTagged(type)
-                || Tag.FENCE_GATES.isTagged(type)
-                || Tag.BUTTONS.isTagged(type)
-                || Tag.BEDS.isTagged(type)
-                || type == Material.LEVER
-                || type == Material.CRAFTING_TABLE
-                || type == Material.ENDER_CHEST
-                || type == Material.BELL
-                || type == Material.NOTE_BLOCK
-                || type == Material.LECTERN;
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -128,22 +117,12 @@ public class InteractProtectionListener implements Listener {
         Region region = protection.regionAt(entity.getLocation());
         if (region == null) return;
 
-        Tunables.TrustAction required = CONTAINER_ENTITIES.contains(entity.getType())
-                ? Tunables.TrustAction.CONTAINER
-                : entityInteractAction(entity);
+        Tunables.TrustAction required = plugin.getTunables().interactRules().forEntity(entity.getType());
 
         if (protection.can(region, event.getPlayer(), required)) return;
 
         protection.notifyDenied(event.getPlayer(), region, "interact");
         event.setCancelled(true);
-    }
-
-    private Tunables.TrustAction entityInteractAction(Entity entity) {
-        return switch (entity.getType()) {
-            case ITEM_FRAME, GLOW_ITEM_FRAME, ARMOR_STAND, PAINTING -> Tunables.TrustAction.ENTITY;
-            case VILLAGER, WANDERING_TRADER -> Tunables.TrustAction.INTERACT;
-            default -> Tunables.TrustAction.CONTAINER;
-        };
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

@@ -25,31 +25,26 @@ public class HopperProtectionListener implements Listener {
         Inventory initiator = event.getInitiator();
         if (initiator == null) return;
 
-        if (plugin.getTunables().hoppersBlockOutflow()) {
-            for (Region sourceRegion : regionsOf(event.getSource())) {
-                if (!inside(initiator, sourceRegion)) { event.setCancelled(true); return; }
-            }
+        // Горячий путь (сотни раз в секунду): без коллекций, один lookup на сторону.
+        if (plugin.getTunables().hoppersBlockOutflow() && foreign(event.getSource(), initiator)) {
+            event.setCancelled(true);
+            return;
         }
-
-        if (plugin.getTunables().hoppersBlockInflow()) {
-            for (Region destRegion : regionsOf(event.getDestination())) {
-                if (!inside(initiator, destRegion)) { event.setCancelled(true); return; }
-            }
+        if (plugin.getTunables().hoppersBlockInflow() && foreign(event.getDestination(), initiator)) {
+            event.setCancelled(true);
         }
     }
 
-    private java.util.Set<Region> regionsOf(Inventory inventory) {
-        java.util.Set<Region> result = new java.util.HashSet<>();
-        if (inventory == null) return result;
+    /** Контейнер (обе половины двойного сундука) в привате, которому инициатор не принадлежит. */
+    private boolean foreign(Inventory inventory, Inventory initiator) {
+        if (inventory == null) return false;
         if (inventory instanceof org.bukkit.inventory.DoubleChestInventory chest) {
-            result.addAll(regionsOf(chest.getLeftSide()));
-            result.addAll(regionsOf(chest.getRightSide()));
-        } else {
-            Location at = inventory.getLocation();
-            Region region = at == null ? null : plugin.getRegionManager().getRegionAt(at);
-            if (region != null) result.add(region);
+            return foreign(chest.getLeftSide(), initiator) || foreign(chest.getRightSide(), initiator);
         }
-        return result;
+        Location at = inventory.getLocation();
+        if (at == null) return false;
+        Region region = plugin.getRegionManager().getRegionAt(at);
+        return region != null && !inside(initiator, region);
     }
 
     private boolean inside(Inventory inventory, Region region) {

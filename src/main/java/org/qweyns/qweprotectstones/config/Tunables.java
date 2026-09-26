@@ -54,6 +54,7 @@ public final class Tunables {
     private boolean borderBonemeal;
     private boolean borderFishing;
     private boolean borderDispensers;
+    private InteractRules interactRules;
     private List<String> borderDispenserItems;
     private boolean regionEnterEnabled;
     private boolean regionLeaveEnabled;
@@ -210,6 +211,7 @@ public final class Tunables {
         borderBonemeal = cfg.getBoolean("protection.border.bonemeal", true);
         borderFishing = cfg.getBoolean("protection.border.fishing", true);
         borderDispensers = cfg.getBoolean("protection.border.dispensers.enable", true);
+        interactRules = InteractRules.load(cfg, plugin.getLogger());
         borderDispenserItems = cfg.getStringList("protection.border.dispensers.items").stream()
                 .map(value -> value.trim().toUpperCase(Locale.ROOT)).filter(value -> !value.isEmpty()).toList();
         regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
@@ -272,6 +274,7 @@ public final class Tunables {
     public boolean borderBonemeal() { return borderBonemeal; }
     public boolean borderFishing() { return borderFishing; }
     public boolean borderDispensers() { return borderDispensers; }
+    public InteractRules interactRules() { return interactRules; }
 
     /** Попадает ли предмет раздатчика под запрет: "*" — все, "*_BUCKET" — по окончанию, "WATER*" — по началу. */
     public boolean dispenserItemBlocked(org.bukkit.Material material) {
