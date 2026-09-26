@@ -33,7 +33,7 @@ class MenuTransactionTest {
         region = new Region(UUID.randomUUID(),"world",new RegionBounds(0,0,0,2,2,2),1,1,1,
                 "small",UUID.randomUUID(),"owner",5,10,1);
         when(plugin.getRegionManager().getById(region.getId())).thenReturn(region);
-        when(plugin.getProtectionService().canManage(player, region)).thenReturn(true);
+        when(plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE)).thenReturn(true);
         when(plugin.getVaultHook().takeMoney(player,10)).thenReturn(true);
         when(plugin.getVaultHook().giveMoney(player,10)).thenReturn(true);
     }

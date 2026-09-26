@@ -140,12 +140,18 @@ public final class TrustLevel {
     /** Роль, которую получает любой игрок во флаге public-access (null — никакой). */
     public static TrustLevel publicRole() { return registry.publicRole; }
 
-    /** Самая младшая роль, которой разрешено действие: для подсказок «нужен уровень ...». */
+    /**
+     * Самая младшая роль, которой разрешено действие: для подсказок «нужна роль ...».
+     * Сначала среди выдаваемых ролей — служебную роль игроку всё равно не выдать.
+     */
     public static TrustLevel lowestWith(TrustAction action) {
+        for (TrustLevel level : registry.grantable) {
+            if (level.allows(action)) return level;
+        }
         for (TrustLevel level : registry.ordered) {
             if (level.allows(action)) return level;
         }
-        return OWNER;
+        return owner();
     }
 
     public static void install(Registry next) {
