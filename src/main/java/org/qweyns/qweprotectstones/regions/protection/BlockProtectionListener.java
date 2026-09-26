@@ -90,8 +90,10 @@ public class BlockProtectionListener implements Listener {
             return;
         }
 
-        if (event.getCause() != BlockIgniteEvent.IgniteCause.LIGHTNING
-                && !protection.flag(region, RegionFlag.FIRE_SPREAD)) {
+        // Молния (в т.ч. от трезубца с «Громовержцем») подчиняется fire_spread, если не разрешено иное.
+        boolean lightningExempt = event.getCause() == BlockIgniteEvent.IgniteCause.LIGHTNING
+                && !plugin.getConfigManager().getConfig().getBoolean("protection.fire.lightning-respects-flag", true);
+        if (!lightningExempt && !protection.flag(region, RegionFlag.FIRE_SPREAD)) {
             event.setCancelled(true);
         }
     }

@@ -41,7 +41,7 @@
 #    allowed_effect / not_allowed_effect  (effect_name: SPEED)
 #
 #  Плейсхолдеры: %player% %region_id% %owner% %name% %members%
-#    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
+#    %durability% %max_durability% %penalty% %penalty_time% %penalty_info% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
 menu_title: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>Управление регионом</gradient></bold>"
@@ -55,7 +55,7 @@ items:
       - "<#F2EFFA>▪ Нажмите, чтобы перейти к"
       - "<#F2EFFA>  укреплению защиты привата."
       - ""
-      - "<#FB7185>⚠ Штраф от недавних атак: <#FDE68A>%penalty%"
+      - "<#FB7185>⚠ Штраф от недавних атак: <#FDE68A>%penalty_info%"
     click_commands:
       - "[openguimenu] upgrade"
       - "[sound] UI_BUTTON_CLICK"

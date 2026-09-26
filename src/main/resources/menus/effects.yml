@@ -49,7 +49,7 @@
 #    allowed_effect / not_allowed_effect  (effect_name: SPEED)
 #
 #  Плейсхолдеры: %player% %region_id% %owner% %name% %members%
-#    %durability% %max_durability% %penalty% %siege% %effect_level_<ИМЯ>%
+#    %durability% %max_durability% %penalty% %penalty_time% %penalty_info% %siege% %effect_level_<ИМЯ>%
 #    и любые из PlaceholderAPI, если он установлен.
 # ------------------------------------------------------------------
 menu_title: "<bold><gradient:#7DD3FC:#E0F2FE>Магазин эффектов</gradient></bold>"

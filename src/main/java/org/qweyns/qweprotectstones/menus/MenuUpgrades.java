@@ -53,6 +53,7 @@ class MenuUpgrades {
             Map<String, String> extra = menus.dynamicPlaceholders("upgrade", region);
             extra.put("%level%", String.valueOf(targetLevel));
             extra.put("%cost%", String.valueOf(upgradeCost(region, currentDurability, targetLevel)));
+            extra.put("%cost_note%", penaltyNote(region, "upgrade_cost_penalty_note"));
             extra.put("%item%", "<translate:" + upgradeMaterial.translationKey() + ">");
 
             String signature = "upgrade|" + targetLevel + "|" + currentDurability + "/" + maxDurability
@@ -123,19 +124,28 @@ class MenuUpgrades {
             return true;
         }
 
-        if (plugin.getPenaltyManager().hasPenalty(region)) {
-            player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_penalty",
-                    "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
-        }
+        // Штраф упоминается в том же сообщении об улучшении, а не отдельным предупреждением.
+        String note = penaltyNote(region, "upgrade_penalty_note");
 
         region.setDurability(targetLevel);
         plugin.getRegionStorage().saveNow(region);
         plugin.getHologramManager().createOrUpdateHologram(region);
 
         plugin.getTunables().menuSuccess().playTo(player);
-        player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_success", "%durability%", String.valueOf(targetLevel)));
+        player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_success",
+                "%durability%", String.valueOf(targetLevel),
+                "%cost%", String.valueOf(totalCost), "%item%", itemName, "%penalty_note%", note));
         menus.render(player, holder, true);
         return true;
+    }
+
+    /** Пометка о штрафе за атаку из lang-шаблона; пустая строка, если штрафа нет. */
+    private String penaltyNote(Region region, String key) {
+        var penalties = plugin.getPenaltyManager();
+        if (!penalties.hasPenalty(region)) return "";
+        return plugin.getLanguageManager().rawTemplate(key,
+                "%multiplier%", String.valueOf(penalties.getPenaltyMultiplier()),
+                "%time%", penalties.remainingText(region));
     }
 
     private long upgradeCost(Region region, int current, int target) {

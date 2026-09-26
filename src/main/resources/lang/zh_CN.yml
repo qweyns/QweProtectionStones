@@ -10,6 +10,7 @@ player_not_found: "%prefix%<#FB7185>未找到玩家 <#FDE68A>%player%<#FB7185>�
 player_not_online: "%prefix%<#FB7185>玩家 <#FDE68A>%player% <#FB7185>当前不在线。"
 unknown_owner: "未知"
 no_penalty: "无"
+penalty_info: "x%multiplier%，剩余 %time%"
 
 # --- Приваты ---
 not_in_region: "%prefix%<#FB7185>你不在领地内。"
@@ -89,6 +90,14 @@ transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>的此类领地已达
 transfer_done: "%prefix%<#86EFAC>领地已转让给 <#FDE68A>%player%<#86EFAC>，你仍是管理。"
 transfer_sale_cancelled: "%prefix%<#FB7185>领地 <#FDE68A>%id% <#FB7185>的出售已取消——领地已转让。"
 transfer_received: "%prefix%<#86EFAC><#FDE68A>%player% <#86EFAC>把领地转让给了你！"
+transfer_offer_sent: "%prefix%<#86EFAC>已向 <#FDE68A>%player% <#86EFAC>发送转让请求，等待 <#FDE68A>%seconds%<#86EFAC> 秒。"
+transfer_offer_received:
+  - "%prefix%<#FDE68A>%player% <#86EFAC>想把领地 <#FDE68A>%type% <#A79FC0>(%id%) <#86EFAC>转让给你"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% transfer accept'><hover:show_text:'<#86EFAC>点击接受'><#86EFAC> ✔ 接受 </#86EFAC></hover></click><dark_gray>]</dark_gray><#A79FC0>  <dark_gray>[</dark_gray><click:run_command:'/%command% transfer deny'><hover:show_text:'<#FB7185>点击拒绝'><#FB7185> ✘ 拒绝 </#FB7185></hover></click><dark_gray>]</dark_gray><#A79FC0>  (<#FDE68A>%seconds%<#A79FC0> 秒)"
+transfer_offer_none: "%prefix%<#FB7185>没有人向你转让领地，或请求已过期。"
+transfer_offer_denied: "%prefix%<#FB7185>你拒绝了领地。"
+transfer_offer_denied_by: "%prefix%<#FDE68A>%player% <#FB7185>拒绝接收领地。"
+transfer_offer_invalid: "%prefix%<#FB7185>请求已失效：领地已删除或更换了主人。"
 delete_confirm:
   - "%prefix%<#FB7185>删除领地 <#FDE68A>%id% <#FB7185>不可逆！<#F2EFFA>请在 <#FDE68A>%seconds% <#F2EFFA>秒内确认："
   - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#FB7185>点击永久删除该领地'><#FB7185> ✖ 删除领地 </#FB7185></hover></click><dark_gray>]</dark_gray>"
@@ -114,8 +123,10 @@ menu_not_found: "%prefix%<#FB7185>menus 文件夹中未找到菜单 <#FDE68A>%me
 too_far_from_block: "%prefix%<#FB7185>请靠近领地核心。"
 upgrades_disabled: "%prefix%<#FB7185>该类型领地没有耐久升级。"
 upgrade_not_enough_items: "%prefix%<#FB7185>你还缺少：<#FDE68A>%amount% %item%"
-upgrade_success: "%prefix%<#86EFAC>耐久已提升至 <#FDE68A>%durability%<#86EFAC>！"
-upgrade_penalty: "%prefix%<#FB7185>注意：因近期袭击，价格提高了 %multiplier% 倍！"
+upgrade_success: "%prefix%<#86EFAC>耐久已升级至 <#FDE68A>%durability%<#86EFAC>，花费 <#FDE68A>%cost% %item%<#86EFAC>。%penalty_note%"
+# Appended to upgrade_success only while an attack penalty is active.
+upgrade_penalty_note: " <#FB7185>因近期遭到攻击价格 x%multiplier%，剩余 <#FDE68A>%time%<#FB7185>。"
+upgrade_cost_penalty_note: " <#FB7185>（x%multiplier%，惩罚剩余 %time%）"
 purchase_failed: "%prefix%<#FB7185>购买失败：余额不足。"
 effect_bought: "%prefix%<#86EFAC>已购买增益 <#C4B5FD>%effect%<#86EFAC>！"
 effect_not_allowed: "%prefix%<#FB7185>该类型领地不允许效果 <#FDE68A>%effect%<#FB7185>。"

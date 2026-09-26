@@ -10,6 +10,7 @@ player_not_found: "%prefix%<#FB7185>Player <#FDE68A>%player% <#FB7185>not found.
 player_not_online: "%prefix%<#FB7185>Player <#FDE68A>%player% <#FB7185>is offline."
 unknown_owner: "Unknown"
 no_penalty: "none"
+penalty_info: "x%multiplier%, %time% left"
 
 # --- Приваты ---
 not_in_region: "%prefix%<#FB7185>You are not inside a region."
@@ -89,6 +90,14 @@ transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>already has the maxim
 transfer_done: "%prefix%<#86EFAC>Region transferred to <#FDE68A>%player%<#86EFAC>. You remain a manager."
 transfer_sale_cancelled: "%prefix%<#FB7185>The sale of region <#FDE68A>%id% <#FB7185>was cancelled — the region has been transferred."
 transfer_received: "%prefix%<#86EFAC><#FDE68A>%player% <#86EFAC>transferred a region to you!"
+transfer_offer_sent: "%prefix%<#86EFAC>Offer sent to <#FDE68A>%player%<#86EFAC>. Waiting <#FDE68A>%seconds%<#86EFAC>s for an answer."
+transfer_offer_received:
+  - "%prefix%<#FDE68A>%player% <#86EFAC>wants to give you the region <#FDE68A>%type% <#A79FC0>(%id%)"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% transfer accept'><hover:show_text:'<#86EFAC>Click to accept'><#86EFAC> ✔ Accept </#86EFAC></hover></click><dark_gray>]</dark_gray><#A79FC0>  <dark_gray>[</dark_gray><click:run_command:'/%command% transfer deny'><hover:show_text:'<#FB7185>Click to deny'><#FB7185> ✘ Deny </#FB7185></hover></click><dark_gray>]</dark_gray><#A79FC0>  (<#FDE68A>%seconds%<#A79FC0> s)"
+transfer_offer_none: "%prefix%<#FB7185>Nobody offered you a region, or the offer expired."
+transfer_offer_denied: "%prefix%<#FB7185>You declined the region."
+transfer_offer_denied_by: "%prefix%<#FDE68A>%player% <#FB7185>declined the region."
+transfer_offer_invalid: "%prefix%<#FB7185>The offer is no longer valid: the region was deleted or changed owner."
 delete_confirm:
   - "%prefix%<#FB7185>Deleting region <#FDE68A>%id% <#FB7185>is irreversible! <#F2EFFA>Confirm within <#FDE68A>%seconds% <#F2EFFA>sec:"
   - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#FB7185>Click to delete the region permanently'><#FB7185> ✖ Delete region </#FB7185></hover></click><dark_gray>]</dark_gray>"
@@ -114,8 +123,10 @@ menu_not_found: "%prefix%<#FB7185>Menu <#FDE68A>%menu% <#FB7185>not found in the
 too_far_from_block: "%prefix%<#FB7185>Get closer to the region core."
 upgrades_disabled: "%prefix%<#FB7185>This region type has no durability upgrades."
 upgrade_not_enough_items: "%prefix%<#FB7185>You don't have enough: <#FDE68A>%amount% %item%"
-upgrade_success: "%prefix%<#86EFAC>Durability upgraded to <#FDE68A>%durability%<#86EFAC>!"
-upgrade_penalty: "%prefix%<#FB7185>Warning: price multiplied by %multiplier%x due to a recent raid!"
+upgrade_success: "%prefix%<#86EFAC>Durability upgraded to <#FDE68A>%durability%<#86EFAC> for <#FDE68A>%cost% %item%<#86EFAC>.%penalty_note%"
+# Appended to upgrade_success only while an attack penalty is active.
+upgrade_penalty_note: " <#FB7185>Price x%multiplier% due to a recent attack, <#FDE68A>%time% <#FB7185>left."
+upgrade_cost_penalty_note: " <#FB7185>(x%multiplier%, penalty %time%)"
 purchase_failed: "%prefix%<#FB7185>Purchase failed: not enough funds."
 effect_bought: "%prefix%<#86EFAC>Upgrade <#C4B5FD>%effect% <#86EFAC>purchased!"
 effect_not_allowed: "%prefix%<#FB7185>Effect <#FDE68A>%effect% <#FB7185>is not allowed for this region type."

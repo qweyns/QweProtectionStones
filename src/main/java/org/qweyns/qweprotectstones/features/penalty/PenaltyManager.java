@@ -22,6 +22,14 @@ public class PenaltyManager {
         return region != null && region.getPenaltyUntil() > System.currentTimeMillis();
     }
 
+    /** Сколько ещё действует штраф, в виде «м:сс» (или «ч:мм:сс»). */
+    public String remainingText(Region region) {
+        long left = region == null ? 0 : Math.max(0, region.getPenaltyUntil() - System.currentTimeMillis());
+        long seconds = (left + 999) / 1000;
+        long h = seconds / 3600, m = seconds % 3600 / 60, s = seconds % 60;
+        return h > 0 ? String.format("%d:%02d:%02d", h, m, s) : String.format("%d:%02d", m, s);
+    }
+
     public int getPenaltyMultiplier() {
         return plugin.getConfigManager().getExplosionPenaltyMultiplier();
     }

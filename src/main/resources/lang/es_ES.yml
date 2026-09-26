@@ -10,6 +10,7 @@ player_not_found: "%prefix%<#FB7185>Jugador <#FDE68A>%player% <#FB7185>no encont
 player_not_online: "%prefix%<#FB7185>El jugador <#FDE68A>%player% <#FB7185>está desconectado."
 unknown_owner: "Desconocido"
 no_penalty: "ninguno"
+penalty_info: "x%multiplier%, quedan %time%"
 
 # --- Приваты ---
 not_in_region: "%prefix%<#FB7185>No estás dentro de una parcela."
@@ -89,6 +90,14 @@ transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>ya tiene el máximo d
 transfer_done: "%prefix%<#86EFAC>Parcela transferida a <#FDE68A>%player%<#86EFAC>. Sigues como encargado."
 transfer_sale_cancelled: "%prefix%<#FB7185>La venta de la parcela <#FDE68A>%id% <#FB7185>fue cancelada — la parcela fue transferida."
 transfer_received: "%prefix%<#86EFAC>¡<#FDE68A>%player% <#86EFAC>te transfirió una parcela!"
+transfer_offer_sent: "%prefix%<#86EFAC>Oferta enviada a <#FDE68A>%player%<#86EFAC>. Esperando <#FDE68A>%seconds%<#86EFAC>s."
+transfer_offer_received:
+  - "%prefix%<#FDE68A>%player% <#86EFAC>quiere darte la región <#FDE68A>%type% <#A79FC0>(%id%)"
+  - "<dark_gray>[</dark_gray><click:run_command:'/%command% transfer accept'><hover:show_text:'<#86EFAC>Haz clic para aceptar'><#86EFAC> ✔ Aceptar </#86EFAC></hover></click><dark_gray>]</dark_gray><#A79FC0>  <dark_gray>[</dark_gray><click:run_command:'/%command% transfer deny'><hover:show_text:'<#FB7185>Haz clic para rechazar'><#FB7185> ✘ Rechazar </#FB7185></hover></click><dark_gray>]</dark_gray><#A79FC0>  (<#FDE68A>%seconds%<#A79FC0> s)"
+transfer_offer_none: "%prefix%<#FB7185>Nadie te ofreció una región o la oferta caducó."
+transfer_offer_denied: "%prefix%<#FB7185>Rechazaste la región."
+transfer_offer_denied_by: "%prefix%<#FDE68A>%player% <#FB7185>rechazó la región."
+transfer_offer_invalid: "%prefix%<#FB7185>La oferta ya no es válida: la región fue eliminada o cambió de dueño."
 delete_confirm:
   - "%prefix%<#FB7185>¡Eliminar la parcela <#FDE68A>%id% <#FB7185>es irreversible! <#F2EFFA>Confirma en <#FDE68A>%seconds% <#F2EFFA>seg:"
   - "<dark_gray>[</dark_gray><click:run_command:'/%command% delete'><hover:show_text:'<#FB7185>Haz clic para eliminar la parcela para siempre'><#FB7185> ✖ Eliminar parcela </#FB7185></hover></click><dark_gray>]</dark_gray>"
@@ -114,8 +123,10 @@ menu_not_found: "%prefix%<#FB7185>¡Menú <#FDE68A>%menu% <#FB7185>no encontrado
 too_far_from_block: "%prefix%<#FB7185>Acércate al núcleo de la parcela."
 upgrades_disabled: "%prefix%<#FB7185>Este tipo no tiene mejoras de durabilidad."
 upgrade_not_enough_items: "%prefix%<#FB7185>No tienes suficiente: <#FDE68A>%amount% %item%"
-upgrade_success: "%prefix%<#86EFAC>¡Durabilidad mejorada a <#FDE68A>%durability%<#86EFAC>!"
-upgrade_penalty: "%prefix%<#FB7185>¡Aviso: precio multiplicado por %multiplier%x por un ataque reciente!"
+upgrade_success: "%prefix%<#86EFAC>Durabilidad mejorada a <#FDE68A>%durability%<#86EFAC> por <#FDE68A>%cost% %item%<#86EFAC>.%penalty_note%"
+# Appended to upgrade_success only while an attack penalty is active.
+upgrade_penalty_note: " <#FB7185>Precio x%multiplier% por un ataque reciente, quedan <#FDE68A>%time%<#FB7185>."
+upgrade_cost_penalty_note: " <#FB7185>(x%multiplier%, multa %time%)"
 purchase_failed: "%prefix%<#FB7185>Compra fallida: fondos insuficientes."
 effect_bought: "%prefix%<#86EFAC>¡Mejora <#C4B5FD>%effect% <#86EFAC>comprada!"
 effect_not_allowed: "%prefix%<#FB7185>El efecto <#FDE68A>%effect% <#FB7185>no está permitido aquí."

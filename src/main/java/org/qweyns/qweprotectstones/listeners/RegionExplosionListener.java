@@ -124,6 +124,9 @@ public class RegionExplosionListener implements Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplodeApplied(EntityExplodeEvent event) {
+        // TNT в воде или лаве по ванили не ломает блоки — по умолчанию не снимает и прочность ядра
+        if (!plugin.getConfigManager().getConfig().getBoolean("siege.liquid_explosions_damage", false)
+                && event.getLocation().getBlock().isLiquid()) return;
         String primer = event.getEntity() instanceof TNTPrimed primed
                 && primed.getSource() instanceof Player player ? player.getName() : null;
         damage(event.getLocation(), event.getEntity(), null, classify(event.getEntityType()), primer);

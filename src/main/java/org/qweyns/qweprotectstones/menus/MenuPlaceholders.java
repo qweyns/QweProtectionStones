@@ -80,6 +80,21 @@ public class MenuPlaceholders {
                     : plugin.getLanguageManager().rawTemplate("no_penalty"));
         }
 
+        if (text.contains("%penalty_info%")) {
+            var penalties = plugin.getPenaltyManager();
+            text = text.replace("%penalty_info%", penalties.hasPenalty(region)
+                    ? plugin.getLanguageManager().rawTemplate("penalty_info",
+                            "%multiplier%", String.valueOf(penalties.getPenaltyMultiplier()),
+                            "%time%", penalties.remainingText(region))
+                    : plugin.getLanguageManager().rawTemplate("no_penalty"));
+        }
+
+        if (text.contains("%penalty_time%")) {
+            text = text.replace("%penalty_time%", plugin.getPenaltyManager().hasPenalty(region)
+                    ? plugin.getPenaltyManager().remainingText(region)
+                    : plugin.getLanguageManager().rawTemplate("no_penalty"));
+        }
+
         if (text.contains("%siege%")) {
             text = text.replace("%siege%", plugin.getLanguageManager()
                     .rawTemplate(plugin.isUnderSiege(region) ? "siege_active" : "siege_calm"));
