@@ -40,7 +40,7 @@ public final class InteractRules {
 
     /** Действие по предмету в руке при клике по блоку; null — предмет правилами не описан. */
     public TrustAction forItem(Material item) {
-        if (item == null || item.isAir()) return null;
+        if (item == null || item == Material.AIR || item == Material.CAVE_AIR || item == Material.VOID_AIR) return null;
         return first(items, item);
     }
 
