@@ -28,7 +28,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             "reload", "bypass", "info", "delete", "save", "stats", "export", "cleanup",
             "give", "setdurability", "setmax", "settype", "setbounds", "tp",
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust",
-            "import", "restore", "backup", "log", "debug", "help");
+            "import", "restore", "backup", "log", "perf", "debug", "help");
 
     private static final Set<String> REGION_ACTIONS = Set.of(
             "info", "delete", "setdurability", "setmax", "settype", "setbounds", "tp",
@@ -97,6 +97,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             case "backup" -> systemCommands.backup(sender);
             case "debug" -> systemCommands.debug(sender);
             case "log" -> systemCommands.log(sender, player, args);
+            case "perf" -> systemCommands.perf(sender, args);
             case "help" -> sendHelp(sender, label, parseHelpPage(args));
             default -> sendUsage(sender, label);
         }
@@ -211,6 +212,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             }
             return ids;
         }
+
+        if (args.length == 2 && action.equals("perf")) return support.filter(List.of("reset"), args[1]);
 
         if (args.length == 2 && action.equals("log")) {
             List<String> ids = new ArrayList<>();

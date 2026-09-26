@@ -30,13 +30,29 @@ public class InteractProtectionListener implements Listener {
     private final QweProtectStones plugin;
     private final ProtectionService protection;
 
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onInteract;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onInteractEntity;
+
     public InteractProtectionListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onInteract = perf.timer("interact");
+        this.perf_onInteractEntity = perf.timer("interact-entity");
         this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
+        long started = perf.start();
+        try {
+            onInteractTimed(event);
+        } finally {
+            perf.stop(perf_onInteract, started);
+        }
+    }
+
+    private void onInteractTimed(PlayerInteractEvent event) {
         Block block = event.getClickedBlock();
         if (block == null) return;
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.PHYSICAL) return;
@@ -113,6 +129,15 @@ public class InteractProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
+        long started = perf.start();
+        try {
+            onInteractEntityTimed(event);
+        } finally {
+            perf.stop(perf_onInteractEntity, started);
+        }
+    }
+
+    private void onInteractEntityTimed(PlayerInteractEntityEvent event) {
         Entity entity = event.getRightClicked();
         Region region = protection.regionAt(entity.getLocation());
         if (region == null) return;

@@ -24,7 +24,7 @@ softdepend:
 commands:
   qweprotectstones:
     description: Администрирование приватов
-    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|log|debug|help>
+    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|log|perf|debug|help>
     # Права проверяет сам плагин: модератору с одним qweprotectstones.admin.tp
     # команда тоже должна открываться (см. admin.require-per-action).
     aliases: [qps, qpstones]
@@ -98,6 +98,9 @@ permissions:
     default: op
     children:
       qweprotectstones.bypass: true
+  qweprotectstones.bypass.creation-rules:
+    description: Ставить приваты без ограничений секции creation (пауза, осада, спавн, порталы)
+    default: op
   qweprotectstones.bypass:
     description: Возможность включить режим обхода защиты (/qps bypass)
     default: op

@@ -34,24 +34,32 @@ public class RegionManager {
 
         WORLD_DISABLED,
 
+        /** Ограничение из секции creation (пауза, осада рядом, спавн, портал). */
+        RULE_DENIED,
+
         CANCELLED
     }
 
-    public record CreateResult(CreateStatus status, Region region, Region blockingRegion, int limit) {
+    public record CreateResult(CreateStatus status, Region region, Region blockingRegion, int limit,
+                               CreationRules.Result rule) {
         public static CreateResult success(Region region) {
-            return new CreateResult(CreateStatus.SUCCESS, region, null, 0);
+            return new CreateResult(CreateStatus.SUCCESS, region, null, 0, null);
         }
 
         public static CreateResult failure(CreateStatus status) {
-            return new CreateResult(status, null, null, 0);
+            return new CreateResult(status, null, null, 0, null);
         }
 
         public static CreateResult blocked(CreateStatus status, Region blockingRegion) {
-            return new CreateResult(status, null, blockingRegion, 0);
+            return new CreateResult(status, null, blockingRegion, 0, null);
         }
 
         public static CreateResult limited(int limit) {
-            return new CreateResult(CreateStatus.LIMIT_REACHED, null, null, limit);
+            return new CreateResult(CreateStatus.LIMIT_REACHED, null, null, limit, null);
+        }
+
+        public static CreateResult denied(CreationRules.Result rule) {
+            return new CreateResult(CreateStatus.RULE_DENIED, null, null, 0, rule);
         }
 
         public boolean successful() {
@@ -79,6 +87,7 @@ public class RegionManager {
         regions.clear();
         regionsByOwner.clear();
         regionsByMember.clear();
+        indexVersion.incrementAndGet();
         byShortId.clear();
         index.clear();
 
@@ -97,7 +106,13 @@ public class RegionManager {
         }
     }
 
+    /** Растёт при любом изменении индекса — по нему кэши поиска понимают, что устарели. */
+    private final java.util.concurrent.atomic.AtomicLong indexVersion = new java.util.concurrent.atomic.AtomicLong();
+
+    public long indexVersion() { return indexVersion.get(); }
+
     private void register(Region region) {
+        indexVersion.incrementAndGet();
         regions.put(region.getId(), region);
         index.add(region);
         byShortId.computeIfAbsent(region.getShortId(), k -> new CopyOnWriteArrayList<>()).add(region.getId());
@@ -126,6 +141,7 @@ public class RegionManager {
     }
 
     private void unregister(Region region) {
+        indexVersion.incrementAndGet();
         regions.remove(region.getId());
         region.setMembershipListener(null);
         for (RegionMember member : region.getMembers()) indexMember(member.uuid(), region.getId(), false);
@@ -281,6 +297,10 @@ public class RegionManager {
 
         Region overlapping = index.firstIntersecting(world.getName(), bounds);
         if (overlapping != null) return CreateResult.blocked(CreateStatus.OVERLAP, overlapping);
+
+        CreationRules rules = plugin.getCreationRules();
+        CreationRules.Result denied = rules == null ? null : rules.check(owner, coreLocation, bounds);
+        if (denied != null) return CreateResult.denied(denied);
 
         if (type.minDistanceToOthers() > 0) {
             RegionBounds padded = bounds.expand(type.minDistanceToOthers());
@@ -524,6 +544,7 @@ public class RegionManager {
                 index.remove(region);
                 region.setBounds(newBounds);
                 index.add(region);
+                indexVersion.incrementAndGet();
             }
             plugin.getRegionStorage().save(region);
             return null;

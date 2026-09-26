@@ -26,20 +26,56 @@ public class RegionMovementListener implements Listener {
 
     private final Map<UUID, UUID> currentRegion = new ConcurrentHashMap<>();
 
+    /**
+     * Последний поиск привата для игрока: при шаге проверка на NORMAL и MONITOR
+     * (и следующий шаг в том же блоке после отмены) не ходят в индекс повторно.
+     * Сбрасывается сам, когда меняется индекс приватов.
+     */
+    private record Lookup(org.bukkit.World world, int x, int y, int z, long version, Region region) { }
+    private final Map<UUID, Lookup> lookups = new ConcurrentHashMap<>();
+
+    private Region lookup(Player player, org.bukkit.Location at) {
+        long version = plugin.getRegionManager().indexVersion();
+        int x = at.getBlockX(), y = at.getBlockY(), z = at.getBlockZ();
+        Lookup cached = lookups.get(player.getUniqueId());
+        if (cached != null && cached.version() == version && cached.world() == at.getWorld()
+                && cached.x() == x && cached.y() == y && cached.z() == z) return cached.region();
+        Region region = protection.regionAt(at);
+        lookups.put(player.getUniqueId(), new Lookup(at.getWorld(), x, y, z, version, region));
+        return region;
+    }
+
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onMove;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onTeleport;
+
     public RegionMovementListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onMove = perf.timer("move");
+        this.perf_onTeleport = perf.timer("teleport");
         this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
+        long started = perf.start();
+        try {
+            onMoveTimed(event);
+        } finally {
+            perf.stop(perf_onMove, started);
+        }
+    }
+
+    private void onMoveTimed(PlayerMoveEvent event) {
         if (!event.hasChangedBlock()) return;
 
         Player player = event.getPlayer();
-        Region to = protection.regionAt(event.getTo());
+        Region to = lookup(player, event.getTo());
         if (to == null) return;
         // Уже внутри (забанили, выключили флаг, приват создан вокруг) — не запираем:
         // игрок может свободно выйти, запрещён только вход снаружи.
+        if (to.getId().equals(currentRegion.get(player.getUniqueId()))) return;
         if (to.equals(protection.regionAt(event.getFrom()))) return;
 
         if (!canEnter(player, to)) {
@@ -53,6 +89,15 @@ public class RegionMovementListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
+        long started = perf.start();
+        try {
+            onTeleportTimed(event);
+        } finally {
+            perf.stop(perf_onTeleport, started);
+        }
+    }
+
+    private void onTeleportTimed(PlayerTeleportEvent event) {
         Region to = protection.regionAt(event.getTo());
         if (to == null) {
             return;
@@ -76,7 +121,7 @@ public class RegionMovementListener implements Listener {
     // Запрет проверяем до MONITOR, но кеш/сообщения меняем только для принятого события.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMoveApplied(PlayerMoveEvent event) {
-        if (event.hasChangedBlock()) handleTransition(event.getPlayer(), protection.regionAt(event.getTo()));
+        if (event.hasChangedBlock()) handleTransition(event.getPlayer(), lookup(event.getPlayer(), event.getTo()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -144,5 +189,6 @@ public class RegionMovementListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         currentRegion.remove(event.getPlayer().getUniqueId());
+        lookups.remove(event.getPlayer().getUniqueId());
     }
 }

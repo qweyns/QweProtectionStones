@@ -22,8 +22,18 @@ public class SystemAdminCommands {
     }
 
     public void reload(CommandSender sender) {
-        plugin.reloadEverything();
+        java.util.List<String> issues = plugin.reloadEverything();
         sender.sendMessage(plugin.getLanguageManager().getMessage("reload_success"));
+        if (issues.isEmpty()) return;
+        var lm = plugin.getLanguageManager();
+        sender.sendMessage(lm.getMessage("reload_issues", "%count%", String.valueOf(issues.size())));
+        int shown = Math.min(issues.size(), 15);
+        for (int i = 0; i < shown; i++) {
+            sender.sendMessage(lm.getMessage("reload_issue_line", "%issue%", issues.get(i).replace("<", "‹")));
+        }
+        if (issues.size() > shown) {
+            sender.sendMessage(lm.getMessage("reload_issues_more", "%count%", String.valueOf(issues.size() - shown)));
+        }
     }
 
     public void bypass(CommandSender sender, Player player) {
@@ -294,6 +304,44 @@ public class SystemAdminCommands {
                         "%detail%", entry.detail() == null ? "" : entry.detail()));
             }
         });
+    }
+
+    /** /qps perf [reset] — время обработчиков событий, очередь записи, приваты по мирам. */
+    public void perf(CommandSender sender, String[] args) {
+        var lm = plugin.getLanguageManager();
+        var stats = plugin.getPerfStats();
+        if (args.length > 1 && args[1].equalsIgnoreCase("reset")) {
+            stats.reset();
+            sender.sendMessage(lm.getMessage("admin_perf_reset"));
+            return;
+        }
+        long seconds = Math.max(1, (System.currentTimeMillis() - stats.sinceMillis()) / 1000);
+        sender.sendMessage(lm.getMessage("admin_perf_header", "%seconds%", String.valueOf(seconds)));
+
+        java.util.Map<String, Integer> perWorld = new java.util.TreeMap<>();
+        for (Region region : plugin.getRegionManager().getAllRegions()) perWorld.merge(region.getWorldName(), 1, Integer::sum);
+        StringBuilder worlds = new StringBuilder();
+        perWorld.forEach((world, count) -> worlds.append(worlds.length() == 0 ? "" : ", ").append(world).append(": ").append(count));
+        sender.sendMessage(lm.getMessage("admin_perf_state",
+                "%regions%", String.valueOf(plugin.getRegionManager().size()),
+                "%worlds%", worlds.length() == 0 ? "-" : worlds.toString(),
+                "%pending%", String.valueOf(plugin.getRegionStorage().pendingCount()),
+                "%players%", String.valueOf(Bukkit.getOnlinePlayers().size())));
+
+        var snapshot = stats.snapshot();
+        if (snapshot.isEmpty()) {
+            sender.sendMessage(lm.getMessage("admin_perf_empty"));
+            return;
+        }
+        for (var entry : snapshot) {
+            sender.sendMessage(lm.getMessage("admin_perf_line",
+                    "%name%", entry.name(),
+                    "%calls%", String.valueOf(entry.calls()),
+                    "%per_second%", String.format(Locale.ROOT, "%.1f", entry.calls() / (double) seconds),
+                    "%avg%", String.format(Locale.ROOT, "%.1f", entry.avgMicros()),
+                    "%max%", String.format(Locale.ROOT, "%.2f", entry.maxMillis()),
+                    "%total%", String.format(Locale.ROOT, "%.1f", entry.totalMillis())));
+        }
     }
 
     public void debug(CommandSender sender) {

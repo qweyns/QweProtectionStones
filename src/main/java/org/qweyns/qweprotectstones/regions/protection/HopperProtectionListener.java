@@ -13,12 +13,26 @@ public class HopperProtectionListener implements Listener {
 
     private final QweProtectStones plugin;
 
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onInventoryMoveItem;
+
     public HopperProtectionListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onInventoryMoveItem = perf.timer("hopper");
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
+        long started = perf.start();
+        try {
+            onInventoryMoveItemTimed(event);
+        } finally {
+            perf.stop(perf_onInventoryMoveItem, started);
+        }
+    }
+
+    private void onInventoryMoveItemTimed(InventoryMoveItemEvent event) {
 
         if (!plugin.getTunables().hoppersEnabled()) return;
 

@@ -68,6 +68,7 @@ public final class QweProtectStones extends JavaPlugin {
     private RegionStorage regionStorage;
     private RegionManager regionManager;
     private ProtectionService protectionService;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perfStats = new org.qweyns.qweprotectstones.diagnostics.PerfStats();
     private BypassManager bypassManager;
 
     private HologramManager hologramManager;
@@ -105,11 +106,27 @@ public final class QweProtectStones extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        var configReport = org.qweyns.qweprotectstones.diagnostics.ConfigReport.capture(getLogger());
+        try {
+            enable();
+            org.qweyns.qweprotectstones.diagnostics.ConfigValidator.validate(configManager.getConfig(), configReport::warn);
+        } finally {
+            configReport.close();
+            configIssues = configReport.issues();
+        }
+        if (!configIssues.isEmpty()) {
+            getLogger().warning("Конфигурация загружена с предупреждениями: " + configIssues.size()
+                    + ". Полный список — выше или в /qps reload.");
+        }
+    }
+
+    private void enable() {
         // планировщик первым, на нём вся асинхронность
         this.schedulers = Schedulers.create(this);
         this.configManager = new ConfigManager(this);
         this.regionConfig = new RegionConfig(this);
         this.tunables = new Tunables(this);
+        perfStats.setEnabled(configManager.getConfig().getBoolean("debug.perf-stats", true));
 
         this.languageManager = new LanguageManager(this);
         this.languageManager.init();
@@ -224,6 +241,8 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(bypassManager, this);
         pm.registerEvents(regionLifecycleListener, this);
         pm.registerEvents(regionMovementListener, this);
+        creationRules = new org.qweyns.qweprotectstones.regions.CreationRules(this);
+        pm.registerEvents(creationRules, this);
         explosionListener = new RegionExplosionListener(this, siegeService);
         pm.registerEvents(explosionListener, this);
         pm.registerEvents(new RegionInteractListener(this), this);
@@ -317,11 +336,30 @@ public final class QweProtectStones extends JavaPlugin {
     }
 
     private RegionExplosionListener explosionListener;
+    private org.qweyns.qweprotectstones.regions.CreationRules creationRules;
 
-    public void reloadEverything() {
+    public org.qweyns.qweprotectstones.regions.CreationRules getCreationRules() { return creationRules; }
+
+    /** Предупреждения последней загрузки конфигов — для /qps reload. */
+    private volatile java.util.List<String> configIssues = java.util.List.of();
+
+    public java.util.List<String> getConfigIssues() { return configIssues; }
+
+    /** Перезагрузка всех конфигов; возвращает предупреждения, найденные при разборе. */
+    public java.util.List<String> reloadEverything() {
+        try (var report = org.qweyns.qweprotectstones.diagnostics.ConfigReport.capture(getLogger())) {
+            reloadEverythingInner();
+            org.qweyns.qweprotectstones.diagnostics.ConfigValidator.validate(configManager.getConfig(), report::warn);
+            configIssues = report.issues();
+        }
+        return configIssues;
+    }
+
+    private void reloadEverythingInner() {
         configManager.reload();
         regionConfig.reload();
         tunables.reload();
+        perfStats.setEnabled(configManager.getConfig().getBoolean("debug.perf-stats", true));
         languageManager.init();
         regionTypes.load();
         regionManager.refreshTypeData();
@@ -339,6 +377,7 @@ public final class QweProtectStones extends JavaPlugin {
         rateLimiter.reload();
         siegeService.reload();
         if (explosionListener != null) explosionListener.reload();
+        if (creationRules != null) creationRules.reload();
         inviteManager.reload();
         criticalFileLogger.start();
         // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге
@@ -365,6 +404,7 @@ public final class QweProtectStones extends JavaPlugin {
     public RegionStorage getRegionStorage() { return regionStorage; }
     public RegionManager getRegionManager() { return regionManager; }
     public ProtectionService getProtectionService() { return protectionService; }
+    public org.qweyns.qweprotectstones.diagnostics.PerfStats getPerfStats() { return perfStats; }
 
     public org.qweyns.qweprotectstones.api.SiegeService getSiegeService() { return siegeService; }
     public BypassManager getBypassManager() { return bypassManager; }

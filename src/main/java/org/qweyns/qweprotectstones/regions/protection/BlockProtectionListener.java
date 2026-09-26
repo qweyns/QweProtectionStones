@@ -37,13 +37,33 @@ public class BlockProtectionListener implements Listener {
     private record CoreMove(Region region, Location target, Region.Operation operation) { }
     private final java.util.Map<org.bukkit.event.block.BlockPistonEvent, List<CoreMove>> coreMoves = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onBlockBreak;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onBlockPlace;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onLiquidFlow;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onEntityChangeBlock;
+
     public BlockProtectionListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onBlockBreak = perf.timer("block-break");
+        this.perf_onBlockPlace = perf.timer("block-place");
+        this.perf_onLiquidFlow = perf.timer("liquid-flow");
+        this.perf_onEntityChangeBlock = perf.timer("entity-change-block");
         this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        long started = perf.start();
+        try {
+            onBlockBreakTimed(event);
+        } finally {
+            perf.stop(perf_onBlockBreak, started);
+        }
+    }
+
+    private void onBlockBreakTimed(BlockBreakEvent event) {
         // ядро не трогаем, это LifecycleListener
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && region.isCore(event.getBlock().getLocation())) return;
@@ -56,6 +76,15 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        long started = perf.start();
+        try {
+            onBlockPlaceTimed(event);
+        } finally {
+            perf.stop(perf_onBlockPlace, started);
+        }
+    }
+
+    private void onBlockPlaceTimed(BlockPlaceEvent event) {
         if (event instanceof org.bukkit.event.block.BlockMultiPlaceEvent multi) {
             for (var state : multi.getReplacedBlockStates()) {
                 if (protection.denyBuild(event.getPlayer(), state.getLocation())) {
@@ -112,6 +141,15 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onLiquidFlow(BlockFromToEvent event) {
+        long started = perf.start();
+        try {
+            onLiquidFlowTimed(event);
+        } finally {
+            perf.stop(perf_onLiquidFlow, started);
+        }
+    }
+
+    private void onLiquidFlowTimed(BlockFromToEvent event) {
         Region target = protection.regionAt(event.getToBlock().getLocation());
         if (target == null) return;
 
@@ -253,6 +291,15 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        long started = perf.start();
+        try {
+            onEntityChangeBlockTimed(event);
+        } finally {
+            perf.stop(perf_onEntityChangeBlock, started);
+        }
+    }
+
+    private void onEntityChangeBlockTimed(EntityChangeBlockEvent event) {
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region == null) return;
 

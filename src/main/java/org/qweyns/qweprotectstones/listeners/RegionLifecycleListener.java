@@ -140,6 +140,16 @@ public class RegionLifecycleListener implements Listener {
                     "%limit%", String.valueOf(result.limit())));
             case NO_PERMISSION -> player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
             case WORLD_DISABLED -> player.sendMessage(plugin.getLanguageManager().getMessage("region_world_disabled"));
+            case RULE_DENIED -> {
+                var rule = result.rule();
+                String key = switch (rule.denial()) {
+                    case COOLDOWN -> "region_create_cooldown";
+                    case NEAR_SIEGE -> "region_create_near_siege";
+                    case NEAR_SPAWN -> "region_create_near_spawn";
+                    case FORBIDDEN_BLOCK -> "region_create_forbidden_block";
+                };
+                player.sendMessage(plugin.getLanguageManager().getMessage(key, "%value%", rule.detail()));
+            }
             case CANCELLED -> {  }
             default -> {  }
         }

@@ -41,7 +41,12 @@ public class RegionExplosionListener implements Listener {
     private record Settings(double maxBaseRadius, int damage, Map<String, String> entityTypes,
                             List<Map.Entry<String, String>> blockTypes, String defaultEntity, String defaultBlock) { }
 
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onEntityExplodeApplied;
+
     public RegionExplosionListener(QweProtectStones plugin, SiegeService siege) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onEntityExplodeApplied = perf.timer("explosion-siege");
         this.plugin = plugin;
         this.siege = siege;
     }
@@ -124,6 +129,15 @@ public class RegionExplosionListener implements Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplodeApplied(EntityExplodeEvent event) {
+        long started = perf.start();
+        try {
+            onEntityExplodeAppliedTimed(event);
+        } finally {
+            perf.stop(perf_onEntityExplodeApplied, started);
+        }
+    }
+
+    private void onEntityExplodeAppliedTimed(EntityExplodeEvent event) {
         // TNT в воде или лаве по ванили не ломает блоки — по умолчанию не снимает и прочность ядра
         if (!plugin.getConfigManager().getConfig().getBoolean("siege.liquid_explosions_damage", false)
                 && event.getLocation().getBlock().isLiquid()) return;
