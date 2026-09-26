@@ -9,13 +9,15 @@ final class RetryQueue<K> {
     // Именно идентичность версии, даже если вызывающий повторно использует тот же Runnable.
     private static final class Pending {
         private final Runnable write;
-        private Pending(Runnable write) { this.write = write; }
+        private final java.util.Map<String,Object> recovery;
+        private Pending(Runnable write, java.util.Map<String,Object> recovery) { this.write = write; this.recovery = recovery; }
     }
     private final Map<K, Pending> pending = new ConcurrentHashMap<>();
 
-    void put(K key, Runnable write) { pending.put(key, new Pending(write)); }
-    void putIf(K key, java.util.function.BooleanSupplier condition, Runnable write) {
-        pending.compute(key, (k, old) -> condition.getAsBoolean() ? new Pending(write) : old);
+    void put(K key, Runnable write) { put(key, write, java.util.Map.of()); }
+    void put(K key, Runnable write, java.util.Map<String,Object> recovery) { pending.put(key, new Pending(write, recovery)); }
+    java.util.List<java.util.Map<String,Object>> recovery() {
+        return pending.values().stream().map(p -> p.recovery).filter(data -> !data.isEmpty()).toList();
     }
     int size() { return pending.size(); }
     void flush(Consumer<RuntimeException> failure) {

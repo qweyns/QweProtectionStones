@@ -20,6 +20,15 @@ final class RegionWriteQueue {
     void delete(UUID id) { pending.put(id, new Write(null)); }
     int size() { return pending.size(); }
 
+    List<Map<String,Object>> recovery(Predicate<Region> live) {
+        List<Map<String,Object>> result = new ArrayList<>();
+        pending.forEach((id, write) -> {
+            if (write.region == null) result.add(StorageRecovery.command("deleteRegion",id));
+            else if (live.test(write.region)) result.add(StorageRecovery.region(write.region));
+        });
+        return result;
+    }
+
     void flush(RegionDao dao, Predicate<Region> live, Consumer<RuntimeException> failure) {
         Map<UUID, Write> saves = new LinkedHashMap<>(), deletes = new LinkedHashMap<>();
         List<Region> snapshots = new ArrayList<>();

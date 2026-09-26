@@ -54,6 +54,8 @@ public class RegionStorage {
         }
 
         dao.init();
+        try { StorageRecovery.replay(recoveryPath(), dao); }
+        catch (java.io.IOException e) { throw new IllegalStateException("Журнал восстановления не применён; запуск запрещён", e); }
         List<Region> loaded = dao.loadAll();
 
         plugin.getLogger().info("Загружено приватов: " + loaded.size() + " (база " + dbType + ").");
@@ -138,7 +140,8 @@ public class RegionStorage {
 
     public void saveAutoAddAsync(UUID uuid, Set<String> friends, boolean toggledOff) {
         Set<String> snapshot = Set.copyOf(friends);
-        autoadd.put(uuid, () -> dao.saveAutoAdd(uuid, snapshot, toggledOff));
+        autoadd.put(uuid, () -> dao.saveAutoAdd(uuid, snapshot, toggledOff),
+                StorageRecovery.command("autoadd",uuid,"friends",List.copyOf(snapshot),"off",toggledOff));
     }
 
     public synchronized void saveAutoAddSync(UUID uuid, Set<String> friends, boolean toggledOff) {
@@ -148,7 +151,7 @@ public class RegionStorage {
 
     public void touchPlayerAsync(UUID uuid, String name) {
         long now = System.currentTimeMillis();
-        players.put(uuid, () -> dao.touchPlayer(uuid, name, now));
+        players.put(uuid, () -> dao.touchPlayer(uuid, name, now), StorageRecovery.command("player",uuid,"name",name,"at",now));
     }
 
     public synchronized Map<UUID, Long> loadLastSeen() {
@@ -156,7 +159,11 @@ public class RegionStorage {
     }
 
     public void log(RegionLogEntry entry) {
-        if (entry != null) logs.put(UUID.randomUUID(), () -> dao.appendLog(List.of(entry)));
+        if (entry != null) {
+            UUID id = UUID.randomUUID();
+            logs.put(id, () -> dao.appendLog(List.of(entry)), StorageRecovery.command("log",id,"region",entry.regionId().toString(),
+                    "at",entry.at(),"name",entry.playerName(),"action",entry.action(),"detail",entry.detail()));
+        }
     }
 
     public void readLogAsync(UUID regionId, int limit, java.util.function.Consumer<List<RegionLogEntry>> callback) {
@@ -183,12 +190,33 @@ public class RegionStorage {
         if (dao == null || closed) return;
         lastFlushMillis = System.currentTimeMillis();
 
+        // Если остался аварийный журнал, сначала обновляем его: старое сохранение
+        // после рестарта не должно отменить более новое успешное удаление.
+        if (plugin.getDataFolder() != null && java.nio.file.Files.exists(recoveryPath()) && !checkpoint()) return;
         regions.flush(dao, this::isLive, this::writeFailed);
         sales.flush(this::writeFailed);
         rentals.flush(this::writeFailed);
         autoadd.flush(this::writeFailed);
         players.flush(this::writeFailed);
         logs.flush(this::writeFailed);
+        checkpoint();
+    }
+
+    private java.nio.file.Path recoveryPath() {
+        return plugin.getDataFolder().toPath().resolve("storage-recovery.yml");
+    }
+
+    private boolean checkpoint() {
+        // JavaPlugin всегда имеет dataFolder; null допустим только в unit-моке.
+        if (plugin.getDataFolder() == null) return true;
+        List<Map<String,Object>> operations = new ArrayList<>(regions.recovery(this::isLive));
+        operations.addAll(sales.recovery()); operations.addAll(rentals.recovery());
+        operations.addAll(autoadd.recovery()); operations.addAll(players.recovery()); operations.addAll(logs.recovery());
+        try { StorageRecovery.write(recoveryPath(),operations); return true; }
+        catch (java.io.IOException e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,"Не удалось записать аварийный журнал БД",e);
+            return false;
+        }
     }
 
     public synchronized void saveAll(java.util.Collection<Region> regions) {
@@ -208,19 +236,22 @@ public class RegionStorage {
 
     public void saveSale(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
         if (sale == null) return;
-        sales.put(sale.regionId(), () -> dao.saveSale(sale));
+        sales.put(sale.regionId(), () -> dao.saveSale(sale), StorageRecovery.command("sale",sale.regionId(),
+                "owner",sale.sellerId().toString(),"name",sale.sellerName(),"price",sale.price(),"at",sale.createdAt()));
     }
 
     public void deleteSale(UUID regionId) {
-        if (regionId != null) sales.put(regionId, () -> dao.deleteSale(regionId));
+        if (regionId != null) sales.put(regionId, () -> dao.deleteSale(regionId), StorageRecovery.command("deleteSale",regionId));
     }
 
     public void saveRental(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
-        if (rental != null) rentals.put(rental.regionId(), () -> dao.saveRental(rental));
+        if (rental != null) rentals.put(rental.regionId(), () -> dao.saveRental(rental), StorageRecovery.command("rental",rental.regionId(),
+                "owner",rental.ownerId().toString(),"name",rental.ownerName(),"price",rental.price(),"minutes",rental.durationMinutes(),
+                "tenant",rental.tenantId() == null ? "" : rental.tenantId().toString(),"tenantName",rental.tenantName(),"until",rental.rentedUntil()));
     }
 
     public void deleteRental(UUID regionId) {
-        if (regionId != null) rentals.put(regionId, () -> dao.deleteRental(regionId));
+        if (regionId != null) rentals.put(regionId, () -> dao.deleteRental(regionId), StorageRecovery.command("deleteRental",regionId));
     }
 
     public synchronized void close() {
@@ -231,7 +262,7 @@ public class RegionStorage {
         }
         flush();
         if (pendingCount() > 0) plugin.getLogger().severe("Остановка с неподтверждёнными записями: "
-                + pendingCount() + ". БД недоступна; требуется восстановление по резервной копии/журналу.");
+                + pendingCount() + ". Проверьте storage-recovery.yml и сообщения о его записи; он применяется до загрузки приватов.");
         if (dao != null) {
             dao.close();
             closed = true;
