@@ -21,19 +21,18 @@ public class RegionExporter {
         this.plugin = plugin;
     }
 
-    public File export() throws IOException {
-        File folder = new File(plugin.getDataFolder(), "exports");
+    public File export() throws IOException { return exportTo("exports"); }
+
+    public File backup() throws IOException { return exportTo("backups"); }
+
+    private synchronized File exportTo(String directory) throws IOException {
+        File folder = new File(plugin.getDataFolder(), directory);
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("не удалось создать папку exports/");
         }
 
         String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-        File target = new File(folder, "regions_" + stamp + ".json");
-        // два экспорта в одну секунду не должны молча перезаписывать друг друга
-        int serial = 2;
-        while (target.exists()) {
-            target = new File(folder, "regions_" + stamp + "_" + serial++ + ".json");
-        }
+        File target = new File(folder, "regions_" + stamp + "_" + java.util.UUID.randomUUID() + ".json");
 
         StringBuilder json = new StringBuilder(1024);
         json.append("{\n  \"exported_at\": \"").append(stamp).append("\",\n");
@@ -44,12 +43,19 @@ public class RegionExporter {
         for (Region region : plugin.getRegionManager().getAllRegions()) {
             if (!first) json.append(",\n");
             first = false;
-            appendRegion(json, region);
+            appendRegion(json, region.snapshot());
         }
 
         json.append("\n  ]\n}\n");
-        Files.writeString(target.toPath(), json.toString(), StandardCharsets.UTF_8);
-        return target;
+        java.nio.file.Path temporary = Files.createTempFile(folder.toPath(), ".qps-", ".tmp");
+        try {
+            Files.writeString(temporary, json.toString(), StandardCharsets.UTF_8);
+            // В пределах одной ФС: готовый файл публикуется целиком или не публикуется.
+            Files.move(temporary, target.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            return target;
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private void appendRegion(StringBuilder json, Region region) {

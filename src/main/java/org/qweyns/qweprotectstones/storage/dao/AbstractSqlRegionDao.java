@@ -270,6 +270,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось добавить колонку " + column, e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -280,6 +281,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             if (rs.next()) return Integer.parseInt(rs.getString("value"));
         } catch (SQLException | NumberFormatException e) {
             log().log(Level.WARNING, "Не удалось прочитать версию схемы", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return 0;
     }
@@ -292,6 +294,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось записать версию схемы", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -308,6 +311,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             loadBans(conn, regions);
         } catch (SQLException e) {
             log().log(Level.SEVERE, "Не удалось загрузить приваты из базы", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return new ArrayList<>(regions.values());
     }
@@ -396,6 +400,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.SEVERE, "Не удалось сохранить " + regions.size() + " приват(ов)", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -518,6 +523,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.SEVERE, "Не удалось удалить приваты из базы", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -565,6 +571,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось обновить время входа " + uuid, e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -581,6 +588,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось загрузить время последнего входа игроков", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return result;
     }
@@ -615,6 +623,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось записать журнал действий", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -637,6 +646,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось прочитать журнал действий", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return entries;
     }
@@ -649,7 +659,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             return ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось очистить журнал действий", e);
-            return 0;
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -669,6 +679,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось загрузить авто-добавление для " + uuid, e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         callback.accept(friends, toggledOff);
     }
@@ -683,6 +694,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось сохранить авто-добавление для " + uuid, e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -703,6 +715,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось прочитать объявления о продаже", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return result;
     }
@@ -721,6 +734,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось сохранить объявление о продаже", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -733,6 +747,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось удалить объявление о продаже", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -756,6 +771,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             }
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось прочитать условия аренды", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
         return result;
     }
@@ -777,6 +793,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось сохранить условия аренды", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 
@@ -789,6 +806,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             log().log(Level.WARNING, "Не удалось удалить условия аренды", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
         }
     }
 

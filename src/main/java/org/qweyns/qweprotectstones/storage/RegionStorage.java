@@ -26,13 +26,12 @@ public class RegionStorage {
     // Читается и меняется под монитором конвейера записи.
     private boolean closed;
 
-    private final Map<UUID, Region> pendingSaves = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingDeletes = ConcurrentHashMap.newKeySet();
-    private final java.util.Queue<RegionLogEntry> pendingLog = new java.util.concurrent.ConcurrentLinkedQueue<>();
-    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> pendingSales = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingSaleDeletes = ConcurrentHashMap.newKeySet();
-    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionRental> pendingRentals = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingRentalDeletes = ConcurrentHashMap.newKeySet();
+    private final RetryQueue<UUID> regions = new RetryQueue<>();
+    private final RetryQueue<UUID> sales = new RetryQueue<>();
+    private final RetryQueue<UUID> rentals = new RetryQueue<>();
+    private final RetryQueue<UUID> autoadd = new RetryQueue<>();
+    private final RetryQueue<UUID> players = new RetryQueue<>();
+    private final RetryQueue<UUID> logs = new RetryQueue<>();
     private volatile long lastFlushMillis;
 
     public RegionStorage(QweProtectStones plugin) {
@@ -74,8 +73,9 @@ public class RegionStorage {
 
     public void save(Region region) {
         if (region == null || !isLive(region)) return;
-        // удаление не снимается: flush пишет удаления после сохранений, при гонке побеждает удаление
-        pendingSaves.put(region.getId(), region);
+        regions.putIf(region.getId(), () -> isLive(region), () -> {
+            if (isLive(region)) dao.saveAll(List.of(region.snapshot()));
+        });
     }
 
     /** Жив ли регион: удалённые из менеджера не должны возвращаться в базу. */
@@ -89,9 +89,7 @@ public class RegionStorage {
     }
 
     public int pendingCount() {
-        return pendingSaves.size() + pendingDeletes.size() + pendingLog.size()
-                + pendingSales.size() + pendingSaleDeletes.size()
-                + pendingRentals.size() + pendingRentalDeletes.size();
+        return regions.size() + sales.size() + rentals.size() + autoadd.size() + players.size() + logs.size();
     }
 
     public void saveNow(Region region) {
@@ -112,7 +110,7 @@ public class RegionStorage {
         int count = 0;
         for (Region region : regions) {
             if (region == null || !isLive(region)) continue;
-            pendingSaves.put(region.getId(), region);
+            save(region);
             count++;
         }
         flush();
@@ -121,100 +119,79 @@ public class RegionStorage {
 
     public void delete(UUID regionId) {
         if (regionId == null) return;
-        pendingSaves.remove(regionId);
-        pendingDeletes.add(regionId);
+        regions.put(regionId, () -> dao.deleteAll(List.of(regionId)));
     }
 
     public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
-        // колбэк прыгает на главный поток: в нём трогают игроков
-        plugin.getSchedulers().runAsync(() -> dao.loadAutoAdd(uuid,
-                (friends, toggledOff) -> plugin.getSchedulers().runNextTick(() -> callback.accept(friends, toggledOff))));
+        plugin.getSchedulers().runAsync(() -> {
+            synchronized (this) {
+                if (closed || dao == null) return;
+                // Сначала предыдущая сессия, затем чтение новой; ошибка не означает пустой список.
+                autoadd.flush(this::writeFailed);
+                if (autoadd.size() != 0) return;
+                try { dao.loadAutoAdd(uuid, callback); }
+                catch (RuntimeException e) { writeFailed(e); }
+            }
+        });
     }
 
     public void saveAutoAddAsync(UUID uuid, Set<String> friends, boolean toggledOff) {
         Set<String> snapshot = Set.copyOf(friends);
-        plugin.getSchedulers().runAsync(() -> dao.saveAutoAdd(uuid, snapshot, toggledOff));
+        autoadd.put(uuid, () -> dao.saveAutoAdd(uuid, snapshot, toggledOff));
     }
 
-    public void saveAutoAddSync(UUID uuid, Set<String> friends, boolean toggledOff) {
-        if (dao != null) dao.saveAutoAdd(uuid, friends, toggledOff);
+    public synchronized void saveAutoAddSync(UUID uuid, Set<String> friends, boolean toggledOff) {
+        saveAutoAddAsync(uuid, friends, toggledOff);
+        flush();
     }
 
     public void touchPlayerAsync(UUID uuid, String name) {
         long now = System.currentTimeMillis();
-        plugin.getSchedulers().runAsync(() -> dao.touchPlayer(uuid, name, now));
+        players.put(uuid, () -> dao.touchPlayer(uuid, name, now));
     }
 
-    public Map<UUID, Long> loadLastSeen() {
-        return dao == null ? Map.of() : dao.loadLastSeen();
+    public synchronized Map<UUID, Long> loadLastSeen() {
+        return dao == null || closed ? Map.of() : dao.loadLastSeen();
     }
 
     public void log(RegionLogEntry entry) {
-        if (entry != null) pendingLog.add(entry);
+        if (entry != null) logs.put(UUID.randomUUID(), () -> dao.appendLog(List.of(entry)));
     }
 
     public void readLogAsync(UUID regionId, int limit, java.util.function.Consumer<List<RegionLogEntry>> callback) {
         plugin.getSchedulers().runAsync(() -> {
-            List<RegionLogEntry> entries = dao.readLog(regionId, limit);
+            List<RegionLogEntry> entries;
+            synchronized (this) {
+                if (dao == null || closed) return;
+                entries = dao.readLog(regionId, limit);
+            }
             plugin.getSchedulers().runNextTick(() -> callback.accept(entries));
         });
     }
 
-    public int pruneLog(long olderThan) {
-        return dao == null ? 0 : dao.pruneLog(olderThan);
+    public synchronized int pruneLog(long olderThan) {
+        return dao == null || closed ? 0 : dao.pruneLog(olderThan);
+    }
+
+    private void writeFailed(RuntimeException failure) {
+        plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                "Запись БД не подтверждена; операция оставлена для повтора", failure);
     }
 
     private synchronized void flush() {
         if (dao == null || closed) return;
         lastFlushMillis = System.currentTimeMillis();
 
-        if (!pendingSaves.isEmpty()) {
-            // забираем по ключу, правка во время флаша не теряется
-            List<Region> toSave = new ArrayList<>(pendingSaves.size());
-            for (UUID id : List.copyOf(pendingSaves.keySet())) {
-                Region region = pendingSaves.remove(id);
-                if (region != null && isLive(region)) toSave.add(region);
-            }
-            dao.saveAll(toSave);
-        }
-
-        if (!pendingDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingDeletes);
-            pendingDeletes.removeAll(toDelete);
-            dao.deleteAll(toDelete);
-        }
-
-        if (!pendingLog.isEmpty()) {
-            List<RegionLogEntry> entries = new ArrayList<>();
-            for (RegionLogEntry entry = pendingLog.poll(); entry != null; entry = pendingLog.poll()) {
-                entries.add(entry);
-            }
-            dao.appendLog(entries);
-        }
-
-        for (UUID id : List.copyOf(pendingSales.keySet())) {
-            org.qweyns.qweprotectstones.features.market.RegionSale sale = pendingSales.remove(id);
-            if (sale != null) dao.saveSale(sale);
-        }
-        if (!pendingSaleDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingSaleDeletes);
-            pendingSaleDeletes.removeAll(toDelete);
-            for (UUID id : toDelete) dao.deleteSale(id);
-        }
-
-        for (UUID id : List.copyOf(pendingRentals.keySet())) {
-            org.qweyns.qweprotectstones.features.market.RegionRental rental = pendingRentals.remove(id);
-            if (rental != null) dao.saveRental(rental);
-        }
-        if (!pendingRentalDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingRentalDeletes);
-            pendingRentalDeletes.removeAll(toDelete);
-            for (UUID id : toDelete) dao.deleteRental(id);
-        }
+        regions.flush(this::writeFailed);
+        sales.flush(this::writeFailed);
+        rentals.flush(this::writeFailed);
+        autoadd.flush(this::writeFailed);
+        players.flush(this::writeFailed);
+        logs.flush(this::writeFailed);
     }
 
     public synchronized void saveAll(java.util.Collection<Region> regions) {
-        if (dao != null && !closed) dao.saveAll(regions);
+        if (dao != null && !closed) saveSnapshot(regions);
     }
 
     public Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> loadSales() {
@@ -230,26 +207,19 @@ public class RegionStorage {
 
     public void saveSale(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
         if (sale == null) return;
-        pendingSaleDeletes.remove(sale.regionId());
-        pendingSales.put(sale.regionId(), sale);
+        sales.put(sale.regionId(), () -> dao.saveSale(sale));
     }
 
     public void deleteSale(UUID regionId) {
-        if (regionId == null) return;
-        pendingSales.remove(regionId);
-        pendingSaleDeletes.add(regionId);
+        if (regionId != null) sales.put(regionId, () -> dao.deleteSale(regionId));
     }
 
     public void saveRental(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
-        if (rental == null) return;
-        pendingRentalDeletes.remove(rental.regionId());
-        pendingRentals.put(rental.regionId(), rental);
+        if (rental != null) rentals.put(rental.regionId(), () -> dao.saveRental(rental));
     }
 
     public void deleteRental(UUID regionId) {
-        if (regionId == null) return;
-        pendingRentals.remove(regionId);
-        pendingRentalDeletes.add(regionId);
+        if (regionId != null) rentals.put(regionId, () -> dao.deleteRental(regionId));
     }
 
     public synchronized void close() {
@@ -259,6 +229,8 @@ public class RegionStorage {
             flushTask = null;
         }
         flush();
+        if (pendingCount() > 0) plugin.getLogger().severe("Остановка с неподтверждёнными записями: "
+                + pendingCount() + ". БД недоступна; требуется восстановление по резервной копии/журналу.");
         if (dao != null) {
             dao.close();
             closed = true;

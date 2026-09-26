@@ -404,3 +404,5 @@ region_name_usage: "%prefix%<#F2EFFA>Usage: <#C4B5FD>/ps name <text><#F2EFFA>, u
 region_name_current: "%prefix%<#F2EFFA>Region name: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Region name: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Region name removed."
+
+autoadd_loading: "Auto-add data is not loaded yet. Please try again later."

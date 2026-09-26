@@ -16,7 +16,7 @@ public final class RegionIndex<T extends Bounded> {
         return ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
     }
 
-    public void add(T value) {
+    public synchronized void add(T value) {
         Map<Long, Set<T>> world = byWorld.computeIfAbsent(value.getWorldName(), k -> new ConcurrentHashMap<>());
         RegionBounds bounds = value.getBounds();
 
@@ -27,7 +27,7 @@ public final class RegionIndex<T extends Bounded> {
         }
     }
 
-    public void remove(T value) {
+    public synchronized void remove(T value) {
         Map<Long, Set<T>> world = byWorld.get(value.getWorldName());
         if (world == null) return;
 
@@ -45,22 +45,22 @@ public final class RegionIndex<T extends Bounded> {
         if (world.isEmpty()) byWorld.remove(value.getWorldName(), world);
     }
 
-    public T at(String worldName, int x, int y, int z) {
+    public synchronized T at(String worldName, int x, int y, int z) {
         for (T value : inChunk(worldName, x >> 4, z >> 4)) {
             if (value.getBounds().contains(x, y, z)) return value;
         }
         return null;
     }
 
-    public Set<T> inChunk(String worldName, int chunkX, int chunkZ) {
+    public synchronized Set<T> inChunk(String worldName, int chunkX, int chunkZ) {
         Map<Long, Set<T>> world = byWorld.get(worldName);
         if (world == null) return Set.of();
 
         Set<T> values = world.get(chunkKey(chunkX, chunkZ));
-        return values == null ? Set.of() : values;
+        return values == null ? Set.of() : Set.copyOf(values);
     }
 
-    public List<T> intersecting(String worldName, RegionBounds bounds) {
+    public synchronized List<T> intersecting(String worldName, RegionBounds bounds) {
         Map<Long, Set<T>> world = byWorld.get(worldName);
         if (world == null) return List.of();
 
@@ -77,7 +77,7 @@ public final class RegionIndex<T extends Bounded> {
         return new ArrayList<>(result);
     }
 
-    public T firstIntersecting(String worldName, RegionBounds bounds) {
+    public synchronized T firstIntersecting(String worldName, RegionBounds bounds) {
         Map<Long, Set<T>> world = byWorld.get(worldName);
         if (world == null) return null;
 
@@ -91,7 +91,7 @@ public final class RegionIndex<T extends Bounded> {
         return null;
     }
 
-    public void clear() {
+    public synchronized void clear() {
         byWorld.clear();
     }
 }

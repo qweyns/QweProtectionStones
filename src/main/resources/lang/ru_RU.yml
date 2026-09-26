@@ -404,3 +404,5 @@ region_name_usage: "%prefix%<#F2EFFA>Использование: <#C4B5FD>/ps na
 region_name_current: "%prefix%<#F2EFFA>Название привата: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Название привата: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Название привата убрано."
+
+autoadd_loading: "Данные авто-добавления ещё не загружены. Повторите позже."

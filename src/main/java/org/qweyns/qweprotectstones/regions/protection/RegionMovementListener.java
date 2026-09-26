@@ -45,14 +45,13 @@ public class RegionMovementListener implements Listener {
             return;
         }
 
-        handleTransition(player, to);
+
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         Region to = protection.regionAt(event.getTo());
         if (to == null) {
-            handleTransition(event.getPlayer(), null);
             return;
         }
 
@@ -65,7 +64,18 @@ public class RegionMovementListener implements Listener {
             return;
         }
 
-        handleTransition(player, to);
+
+    }
+
+    // Запрет проверяем до MONITOR, но кеш/сообщения меняем только для принятого события.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMoveApplied(PlayerMoveEvent event) {
+        if (event.hasChangedBlock()) handleTransition(event.getPlayer(), protection.regionAt(event.getTo()));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleportApplied(PlayerTeleportEvent event) {
+        handleTransition(event.getPlayer(), protection.regionAt(event.getTo()));
     }
 
     /** Регион по последнему перемещению — потокобезопасно для асинхронных вызовов PAPI. */

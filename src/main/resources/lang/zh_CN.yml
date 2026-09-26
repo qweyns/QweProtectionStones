@@ -404,3 +404,5 @@ region_name_usage: "%prefix%<#F2EFFA>用法：<#C4B5FD>/ps name <文本><#F2EFFA
 region_name_current: "%prefix%<#F2EFFA>领地名称：<#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>领地名称：<#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>已清除领地名称。"
+
+autoadd_loading: "自动添加数据尚未加载，请稍后重试。"

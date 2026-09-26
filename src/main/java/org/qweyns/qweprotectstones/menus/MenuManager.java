@@ -240,7 +240,7 @@ public class MenuManager implements Listener {
 
         // статичные предметы не пересобираем дважды в секунду
 
-        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(holder.menuName)) return;
+        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(holder.menuName) && !holder.menuName.equals("upgrade")) return;
         holder.renderedVersion = version;
 
         Inventory inv = holder.inventory;

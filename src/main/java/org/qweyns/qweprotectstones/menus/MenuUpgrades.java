@@ -56,7 +56,7 @@ class MenuUpgrades {
             extra.put("%item%", "<translate:" + upgradeMaterial.translationKey() + ">");
 
             String signature = "upgrade|" + targetLevel + "|" + currentDurability + "/" + maxDurability
-                    + "|" + upgradeMaterial.name();
+                    + "|" + upgradeMaterial.name() + "|" + upgradeCost(region, currentDurability, targetLevel);
             if (signature.equals(holder.slotSignatureAt(slot))) {
                 contents[slot] = holder.slotStackAt(slot);
                 continue;

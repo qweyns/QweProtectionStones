@@ -404,3 +404,5 @@ region_name_usage: "%prefix%<#F2EFFA>Uso: <#C4B5FD>/ps name <texto><#F2EFFA>, ha
 region_name_current: "%prefix%<#F2EFFA>Nombre de la parcela: <#C4B5FD>%value%"
 region_name_set: "%prefix%<#86EFAC>Nombre de la parcela: <#C4B5FD>%value%"
 region_name_cleared: "%prefix%<#86EFAC>Nombre de la parcela eliminado."
+
+autoadd_loading: "Los datos de autoañadido aún no están cargados. Inténtalo más tarde."
