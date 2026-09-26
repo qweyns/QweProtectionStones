@@ -48,6 +48,11 @@ jobs:
               totals = {key: 0 for key in ('tests', 'failures', 'errors', 'skipped')}
               for file in files:
                   root = ET.parse(file).getroot()
+                  for case in root.findall('testcase'):
+                      for failure in list(case.findall('failure')) + list(case.findall('error')):
+                          detail = (failure.get('message') or failure.text or '')[:3000]
+                          detail = detail.encode('unicode_escape').decode().replace('%', '%25')
+                          print(f"::error title=JUnit failure::{case.get('classname')}#{case.get('name')}: {detail}")
                   for key in totals:
                       totals[key] += int(root.get(key, '0'))
               message = ', '.join(f'{key}={value}' for key, value in totals.items())

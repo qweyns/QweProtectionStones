@@ -61,7 +61,7 @@ class StorageRecoveryTest {
         RegionDao dao = mock(RegionDao.class);
         doAnswer(call -> {
             Collection<Region> regions = call.getArgument(0);
-            assertEquals(name,regions.iterator().next().getDisplayName());
+            assertEquals(region.getDisplayName(),regions.iterator().next().getDisplayName());
             return null;
         }).when(dao).saveAll(anyCollection());
         StorageRecovery.replay(journal,dao);

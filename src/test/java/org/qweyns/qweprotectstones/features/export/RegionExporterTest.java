@@ -36,7 +36,7 @@ class RegionExporterTest {
                 assertInstanceOf(Map.class,parsed);
                 List<?> regions = (List<?>)((Map<?,?>)parsed).get("regions");
                 assertEquals(1, regions.size());
-                assertEquals(special.toString(), ((Map<?,?>)regions.getFirst()).get("name"));
+                assertEquals(region.getDisplayName(), ((Map<?,?>)regions.getFirst()).get("name"));
             }
         }
         assertEquals(folder.resolve("backups"), exporter.backup().toPath().getParent());
