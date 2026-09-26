@@ -277,6 +277,7 @@ public class MenuActions {
         region.replaceEffect(effectName, Math.min(255, amplifier));
         taken.commit();
         plugin.getRegionStorage().saveNow(region);
+        plugin.getEffectManager().refreshPlayers();
         player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought",
                 "%effect%", describeEffect(effectName, amplifier)));
         return true;

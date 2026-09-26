@@ -59,6 +59,8 @@ public class EffectManager implements Listener {
         refreshTask = plugin.getSchedulers().runTimer(this::refreshAll, period, period);
     }
 
+    public void refreshPlayers() { refreshAll(); }
+
     private void refreshAll() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             plugin.getSchedulers().runAtEntity(player, () -> {

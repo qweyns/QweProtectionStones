@@ -26,7 +26,7 @@ public class RegionStorage {
     // Читается и меняется под монитором конвейера записи.
     private boolean closed;
 
-    private final RetryQueue<UUID> regions = new RetryQueue<>();
+    private final RegionWriteQueue regions = new RegionWriteQueue();
     private final RetryQueue<UUID> sales = new RetryQueue<>();
     private final RetryQueue<UUID> rentals = new RetryQueue<>();
     private final RetryQueue<UUID> autoadd = new RetryQueue<>();
@@ -73,9 +73,7 @@ public class RegionStorage {
 
     public void save(Region region) {
         if (region == null || !isLive(region)) return;
-        regions.putIf(region.getId(), () -> isLive(region), () -> {
-            if (isLive(region)) dao.saveAll(List.of(region.snapshot()));
-        });
+        regions.save(region, this::isLive);
     }
 
     /** Жив ли регион: удалённые из менеджера не должны возвращаться в базу. */
@@ -119,7 +117,7 @@ public class RegionStorage {
 
     public void delete(UUID regionId) {
         if (regionId == null) return;
-        regions.put(regionId, () -> dao.deleteAll(List.of(regionId)));
+        regions.delete(regionId);
     }
 
     public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
@@ -185,7 +183,7 @@ public class RegionStorage {
         if (dao == null || closed) return;
         lastFlushMillis = System.currentTimeMillis();
 
-        regions.flush(this::writeFailed);
+        regions.flush(dao, this::isLive, this::writeFailed);
         sales.flush(this::writeFailed);
         rentals.flush(this::writeFailed);
         autoadd.flush(this::writeFailed);
