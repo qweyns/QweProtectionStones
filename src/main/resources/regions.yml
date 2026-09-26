@@ -188,6 +188,7 @@ default_region:
     crop_trample: false         # вытаптывание грядок
     explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри привата
     teleport_in: true           # телепорты внутрь (эндер-жемчуг, /ps home чужие)
+    vehicle_entry: true         # въезд посторонних на лодке, вагонетке, лошади
     item_pickup: true           # подбор предметов посторонними
     greeting: true              # показывать приветствие при входе
     leaf_decay: true            # опадание листвы

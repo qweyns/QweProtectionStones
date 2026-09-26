@@ -76,7 +76,10 @@ public class ExtraProtectionListener implements Listener {
             event.setCancelled(true);
     }
 
-    /** Вход в приват на транспорте (лодка, лошадь, вагонетка) подчиняется тем же правилам входа. */
+    /**
+     * Въезд на транспорте: те же правила, что и пешком (флаг entry, баны), плюс флаг vehicle_entry.
+     * Игроки с действием роли entry въезжают всегда.
+     */
     @EventHandler(priority = EventPriority.NORMAL)
     public void onVehicleMove(VehicleMoveEvent event) {
         Location from = event.getFrom(), to = event.getTo();
@@ -87,7 +90,10 @@ public class ExtraProtectionListener implements Listener {
 
         for (Entity passenger : event.getVehicle().getPassengers()) {
             if (!(passenger instanceof Player player)) continue;
-            if (plugin.getRegionMovementListener().canEnter(player, target)) continue;
+            boolean allowed = plugin.getRegionMovementListener().canEnter(player, target)
+                    && (protection.can(target, player, Tunables.TrustAction.ENTRY)
+                    || protection.flag(target, org.qweyns.qweprotectstones.regions.RegionFlag.VEHICLE_ENTRY));
+            if (allowed) continue;
             event.getVehicle().removePassenger(player);
             player.teleportAsync(from.clone().add(0, 0.5, 0));
             protection.sendThrottled(player, plugin.getLanguageManager().getMessage("region_entry_denied"));

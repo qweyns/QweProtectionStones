@@ -152,6 +152,7 @@ flags:
   crop_trample: false         # вытаптывание грядок
   explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри
   teleport_in: true           # телепорты внутрь (эндер-жемчуг)
+  vehicle_entry: true         # въезд посторонних на лодке, вагонетке, лошади
   item_pickup: true           # подбор предметов посторонними
   greeting: true              # приветствие при входе
   leaf_decay: true            # опадание листвы
