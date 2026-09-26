@@ -47,10 +47,7 @@ public class MenuActions {
     public void execute(Player player, List<String> commands, Region region) {
         if (commands == null || commands.isEmpty()) return;
 
-        try (Region.Operation operation = region == null ? null : region.tryOperation()) {
-            if (region != null && (operation == null || plugin.getRegionManager().getById(region.getId()) != region)) return;
-            executeReserved(player, commands, region);
-        }
+        executeReserved(player, commands, region);
     }
 
     private void executeReserved(Player player, List<String> commands, Region region) {
@@ -81,9 +78,17 @@ public class MenuActions {
             }
             if (!Double.isFinite(moneyTotal) || pointsTotal > Integer.MAX_VALUE || expTotal > Integer.MAX_VALUE
                     || paid && results != 1) throw new IllegalArgumentException("Платная цепочка должна содержать ровно одну выдачу");
-            for (String cmd : resolved) {
-                current = cmd;
-                if (!run(player, cmd, region, taken)) { refund(player, taken, cmd); return; }
+            boolean grantEffect = resolved.stream().anyMatch(cmd -> cmd.startsWith(ADD_EFFECT)
+                    || java.util.Arrays.stream(ADD_EFFECT_LEGACY).anyMatch(cmd::startsWith));
+            try (Region.Operation operation = region != null && grantEffect ? region.tryOperation() : null) {
+                if (region != null && (plugin.getRegionManager().getById(region.getId()) != region
+                        || grantEffect && operation == null)) return;
+                // Произвольная команда сама управляет своим регионом: не держим резервацию
+                // вокруг [player]/[console], иначе легитимный /ps delete не мог бы выполниться.
+                for (String cmd : resolved) {
+                    current = cmd;
+                    if (!run(player, cmd, region, taken)) { refund(player, taken, cmd); return; }
+                }
             }
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Ошибка действия меню: " + current, e);

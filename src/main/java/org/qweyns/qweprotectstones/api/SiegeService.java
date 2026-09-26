@@ -27,6 +27,14 @@ import java.util.concurrent.TimeUnit;
 public class SiegeService {
 
     private final QweProtectStones plugin;
+    private volatile boolean closed;
+    private final Set<java.util.concurrent.CompletableFuture<Boolean>> pending = ConcurrentHashMap.newKeySet();
+
+    public void close() {
+        closed = true;
+        pending.forEach(future -> future.complete(false));
+        pending.clear();
+    }
 
     // TTL не короче удвоенного кулдауна урона, иначе длинный кулдаун молча отключался
     private volatile Cache<UUID, Long> lastDamageTime;
@@ -95,7 +103,7 @@ public class SiegeService {
      * @return true — урон прошёл; false — кулдаун, иммунитет или отмена события
      */
     public boolean damageRegion(Region region, int damage, String explosionType, String attackerName) {
-        if (region == null || damage <= 0) return false;
+        if (closed || region == null || damage <= 0) return false;
         if (!plugin.getConfigManager().isSiegeEnabled() || !isDamaging(region, explosionType)) return false;
         if (plugin.getRegionManager().getById(region.getId()) != region) return false;
         Location core = region.getCoreLocation();
@@ -143,10 +151,15 @@ public class SiegeService {
         var result = new java.util.concurrent.CompletableFuture<Boolean>();
         Location core = region == null ? null : region.getCoreLocation();
         if (core == null || !plugin.isEnabled()) { result.complete(false); return result; }
-        plugin.getSchedulers().runAtLocation(core, () -> {
-            try { result.complete(damageRegion(region, damage, type, attacker)); }
-            catch (Throwable e) { result.completeExceptionally(e); }
-        });
+        pending.add(result);
+        result.whenComplete((value, error) -> pending.remove(result));
+        if (closed) { result.complete(false); return result; }
+        try {
+            plugin.getSchedulers().runAtLocation(core, () -> {
+                try { result.complete(damageRegion(region, damage, type, attacker)); }
+                catch (Throwable e) { result.completeExceptionally(e); }
+            });
+        } catch (RuntimeException e) { result.completeExceptionally(e); }
         return result;
     }
 

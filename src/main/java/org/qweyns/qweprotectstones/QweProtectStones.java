@@ -270,6 +270,7 @@ public final class QweProtectStones extends JavaPlugin {
     public void onDisable() {
         // API закрываем первым, чтобы чужие плагины не ловили NPE
         QpsApi.shutdown();
+        if (siegeService != null) siegeService.close();
         if (blueMapIntegration != null) blueMapIntegration.disable();
         if (dynmapIntegration != null) dynmapIntegration.disable();
         // иначе PlaceholderAPI держит мёртвый classloader после reload

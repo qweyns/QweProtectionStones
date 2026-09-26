@@ -34,6 +34,8 @@ public class BlockProtectionListener implements Listener {
 
     private final QweProtectStones plugin;
     private final ProtectionService protection;
+    private record CoreMove(Region region, Location target, Region.Operation operation) { }
+    private final java.util.Map<org.bukkit.event.block.BlockPistonEvent, List<CoreMove>> coreMoves = new java.util.concurrent.ConcurrentHashMap<>();
 
     public BlockProtectionListener(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -163,30 +165,32 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
-        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), true)) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), true)
+                || !reserveCores(event, event.getBlocks(), event.getDirection())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)
+                || !reserveCores(event, event.getBlocks(), event.getDirection())) event.setCancelled(true);
     }
 
     // переносим ядро в данных привата. MONITOR осознанно: updateCore — побочный эффект,
     // запись в регион легитимна только когда ход поршня уже никто не отменит.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonExtendApplied(BlockPistonExtendEvent event) {
-        relocateCore(event.getBlocks(), event.getDirection(), true);
+        applyCoreMoves(event);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonRetractApplied(BlockPistonRetractEvent event) {
-        relocateCore(event.getBlocks(), event.getDirection(), false);
+        applyCoreMoves(event);
     }
 
     private boolean pistonBlocked(Block piston, List<Block> blocks, BlockFace direction, boolean extend) {
         Region pistonRegion = protection.regionAt(piston.getLocation());
-        // при втягивании блоки едут к поршню, то есть против его направления
-        BlockFace movement = extend ? direction : direction.getOppositeFace();
+        // Paper 1.21.4 передаёт направление движения и для retract (уже opposite facing).
+        BlockFace movement = direction;
 
         // голова поршня занимает блок перед собой
         if (extend && violates(pistonRegion, piston.getRelative(direction).getLocation())) return true;
@@ -199,7 +203,8 @@ public class BlockProtectionListener implements Listener {
             // ядро двигать можно, но только внутри его же привата
             Region region = protection.regionAt(block.getLocation());
             if (region != null && region.isCore(block.getLocation())
-                    && !region.contains(block.getRelative(movement).getLocation())) return true;
+                    && (block.getPistonMoveReaction() == org.bukkit.block.PistonMoveReaction.BREAK
+                    || !region.contains(block.getRelative(movement).getLocation()))) return true;
         }
         return false;
     }
@@ -214,19 +219,34 @@ public class BlockProtectionListener implements Listener {
         return !protection.flag(region, RegionFlag.PISTONS_FROM_OUTSIDE);
     }
 
-    private void relocateCore(List<Block> blocks, BlockFace direction, boolean extend) {
-        if (!plugin.getTunables().pistonsCanMoveCore()) return;
-
-        BlockFace movement = extend ? direction : direction.getOppositeFace();
-        java.util.Map<Region, Location> moves = new java.util.LinkedHashMap<>();
+    private boolean reserveCores(org.bukkit.event.block.BlockPistonEvent event, List<Block> blocks, BlockFace movement) {
+        if (!plugin.getTunables().pistonsCanMoveCore()) return true;
+        List<CoreMove> moves = new java.util.ArrayList<>();
         for (Block block : blocks) {
             Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
             if (region == null || !region.isCore(block.getLocation())) continue;
-
-            moves.put(region, block.getRelative(movement).getLocation());
+            Region.Operation op = region.tryOperation();
+            if (op == null) {
+                moves.forEach(move -> move.operation().close());
+                return false;
+            }
+            moves.add(new CoreMove(region, block.getRelative(movement).getLocation(), op));
         }
-        // Сначала собрать исходные ядра: обновление первого не должно менять поиск следующих.
-        moves.forEach((region, at) -> plugin.getRegionManager().updateCore(region, at.getBlockX(), at.getBlockY(), at.getBlockZ()));
+        coreMoves.put(event, moves);
+        return true;
+    }
+
+    private void applyCoreMoves(org.bukkit.event.block.BlockPistonEvent event) {
+        List<CoreMove> moves = coreMoves.remove(event);
+        if (moves == null) return;
+        try {
+            if (!event.isCancelled()) for (CoreMove move : moves) {
+                Location at = move.target();
+                plugin.getRegionManager().updateCoreWithin(move.region(), at.getBlockX(), at.getBlockY(), at.getBlockZ(), move.operation());
+            }
+        } finally {
+            moves.forEach(move -> move.operation().close());
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

@@ -449,6 +449,13 @@ public class RegionManager {
 
     /** Ядро переехало (поршень при protection.pistons.move-core). Границы привата не меняются. */
     public void updateCore(Region region, int x, int y, int z) {
+        try (Region.Operation op = region.tryOperation()) {
+            if (op != null) updateCoreWithin(region, x, y, z, op);
+        }
+    }
+
+    public void updateCoreWithin(Region region, int x, int y, int z, Region.Operation operation) {
+        if (!operation.owns(region) || regions.get(region.getId()) != region) return;
         region.setCore(x, y, z);
         region.touch();
         plugin.getRegionStorage().save(region);

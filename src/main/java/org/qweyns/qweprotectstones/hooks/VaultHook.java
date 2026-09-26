@@ -59,6 +59,6 @@ public class VaultHook {
 
     // копейки от подстановок не должны расходиться с отображаемой ценой
     private static double round(double amount) {
-        return Math.round(amount * 100.0) / 100.0;
+        return java.math.BigDecimal.valueOf(amount).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
     }
 }
