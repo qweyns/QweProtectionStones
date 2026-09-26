@@ -61,7 +61,7 @@ class HomeWarmupTest {
         region = mock(Region.class);
         when(region.getId()).thenReturn(UUID.randomUUID());
         when(region.getShortId()).thenReturn("test");
-        when(region.getTrust(player.getUniqueId())).thenReturn(TrustLevel.BUILD);
+        when(region.getTrust(player.getUniqueId())).thenReturn(TrustLevel.parse("build").orElseThrow());
         manager = mock(RegionManager.class);
         when(plugin.getRegionManager()).thenReturn(manager);
         when(manager.getById(region.getId())).thenReturn(region);

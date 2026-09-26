@@ -53,6 +53,8 @@ public final class Tunables {
     private boolean borderMobTrails;
     private boolean borderBonemeal;
     private boolean borderFishing;
+    private boolean borderDispensers;
+    private List<String> borderDispenserItems;
     private boolean regionEnterEnabled;
     private boolean regionLeaveEnabled;
     private boolean homeCancelOnMove;
@@ -61,34 +63,45 @@ public final class Tunables {
     private String regionEnterChannel;
     private String regionLeaveChannel;
 
-    private Map<TrustAction, TrustLevel> trustRequirements;
     private Set<RegionFlag> lockedFlags;
-    private TrustLevel flagEditLevel;
-    private TrustLevel trustEditLevel;
 
+    /**
+     * Действия, которые роль может разрешать. Список ролей и их действий — roles.yml.
+     * Ключ действия пишется в конфиге строчными буквами через дефис.
+     */
     public enum TrustAction {
-
-        INTERACT("interact", TrustLevel.ACCESS),
-
-        CONTAINER("container", TrustLevel.CONTAINER),
-
-        BUILD("build", TrustLevel.BUILD),
-
-        ENTITY("entity", TrustLevel.BUILD),
-
-        MANAGE("manage", TrustLevel.MANAGER);
+        INTERACT("interact"),          // двери, кнопки, рычаги, кровати, жители
+        CONTAINER("container"),        // сундуки, бочки, печи, вагонетки с сундуком
+        BUILD("build"),                // ставить/ломать блоки, инструменты по блокам
+        ENTITY("entity"),              // рамки, стойки брони, картины, мобы, транспорт
+        MENU("menu"),                  // открыть меню привата (клик по ядру, /ps menu)
+        MANAGE("manage"),              // журнал и прочие функции управляющего
+        FLAGS("flags"),                // менять флаги
+        MEMBERS("members"),            // выдавать/отзывать роли, приглашать
+        BAN("ban"),                    // банить и разбанивать
+        RENAME("rename"),              // название и оформление
+        UPGRADE("upgrade"),            // улучшения прочности и покупка эффектов
+        HOME("home"),                  // /ps home к этому привату
+        VIEW_MEMBERS("view-members"),  // список участников
+        GLOW("glow"),                  // подсветка границ
+        EFFECTS("effects"),            // получать эффекты привата и бонусы опыта
+        ALERTS("alerts"),              // уведомления об атаке
+        ENTRY("entry");                // входить и телепортироваться, даже если флаги запрещают
 
         private final String key;
-        private final TrustLevel fallback;
 
-        TrustAction(String key, TrustLevel fallback) {
-            this.key = key;
-            this.fallback = fallback;
-        }
+        TrustAction(String key) { this.key = key; }
 
         public String key() { return key; }
 
-        public TrustLevel fallback() { return fallback; }
+        public static java.util.Optional<TrustAction> parse(String raw) {
+            if (raw == null) return java.util.Optional.empty();
+            String needle = raw.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+            for (TrustAction action : values()) {
+                if (action.key.equals(needle)) return java.util.Optional.of(action);
+            }
+            return java.util.Optional.empty();
+        }
     }
 
     public Tunables(QweProtectStones plugin) {
@@ -179,20 +192,7 @@ public final class Tunables {
     }
 
     private void loadTrust(FileConfiguration cfg) {
-        Map<TrustAction, TrustLevel> requirements = new EnumMap<>(TrustAction.class);
-        for (TrustAction action : TrustAction.values()) {
-            String raw = cfg.getString("trust.required." + action.key());
-            TrustLevel level = TrustLevel.parse(raw).orElse(null);
-            if (level == null && raw != null && !raw.isBlank()) {
-                plugin.getLogger().warning("trust.required." + action.key() + ": неизвестный уровень '"
-                        + raw + "', использую " + action.fallback().key());
-            }
-            requirements.put(action, level != null ? level : action.fallback());
-        }
-        trustRequirements = Map.copyOf(requirements);
-
-        flagEditLevel = TrustLevel.parse(cfg.getString("trust.flag_edit_level")).orElse(TrustLevel.MANAGER);
-        trustEditLevel = TrustLevel.parse(cfg.getString("trust.member_edit_level")).orElse(TrustLevel.MANAGER);
+        TrustLevel.install(RoleLoader.load(cfg, plugin.getLogger()));
 
         Set<RegionFlag> locked = EnumSet.noneOf(RegionFlag.class);
 
@@ -209,6 +209,9 @@ public final class Tunables {
         borderMobTrails = cfg.getBoolean("protection.border.mob-trails", true);
         borderBonemeal = cfg.getBoolean("protection.border.bonemeal", true);
         borderFishing = cfg.getBoolean("protection.border.fishing", true);
+        borderDispensers = cfg.getBoolean("protection.border.dispensers.enable", true);
+        borderDispenserItems = cfg.getStringList("protection.border.dispensers.items").stream()
+                .map(value -> value.trim().toUpperCase(Locale.ROOT)).filter(value -> !value.isEmpty()).toList();
         regionEnterEnabled = cfg.getBoolean("region-messages.enter.enabled", true);
         regionLeaveEnabled = cfg.getBoolean("region-messages.leave.enabled", true);
         homeCancelOnMove = cfg.getBoolean("home.cancel-on-move", true);
@@ -268,6 +271,19 @@ public final class Tunables {
     public boolean borderMobTrails() { return borderMobTrails; }
     public boolean borderBonemeal() { return borderBonemeal; }
     public boolean borderFishing() { return borderFishing; }
+    public boolean borderDispensers() { return borderDispensers; }
+
+    /** Попадает ли предмет раздатчика под запрет: "*" — все, "*_BUCKET" — по окончанию, "WATER*" — по началу. */
+    public boolean dispenserItemBlocked(org.bukkit.Material material) {
+        String name = material.name();
+        for (String pattern : borderDispenserItems) {
+            if (pattern.equals("*")) return true;
+            if (pattern.startsWith("*") && name.endsWith(pattern.substring(1))) return true;
+            if (pattern.endsWith("*") && name.startsWith(pattern.substring(0, pattern.length() - 1))) return true;
+            if (pattern.equals(name)) return true;
+        }
+        return false;
+    }
     public boolean regionEnterEnabled() { return regionEnterEnabled; }
     public boolean regionLeaveEnabled() { return regionLeaveEnabled; }
     public boolean homeCancelOnMove() { return homeCancelOnMove; }
@@ -287,15 +303,9 @@ public final class Tunables {
 
     public ParticleSetting particles() { return particles; }
 
-    public TrustLevel required(TrustAction action) {
-        return trustRequirements.getOrDefault(action, action.fallback());
-    }
 
     public boolean isFlagLocked(RegionFlag flag) {
         return lockedFlags.contains(flag);
     }
 
-    public TrustLevel flagEditLevel() { return flagEditLevel; }
-
-    public TrustLevel memberEditLevel() { return trustEditLevel; }
 }

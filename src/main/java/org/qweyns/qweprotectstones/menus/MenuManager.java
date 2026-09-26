@@ -421,7 +421,7 @@ public class MenuManager implements Listener {
 
         if (region != null && !isStillTrusted(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_container")));
+                    "%level%", org.qweyns.qweprotectstones.regions.TrustLevel.lowestWith(Tunables.TrustAction.MENU).displayName()));
             plugin.getSchedulers().runAtEntity(player, player::closeInventory);
             return;
         }
@@ -449,7 +449,7 @@ public class MenuManager implements Listener {
 
     private boolean isStillTrusted(Player player, Region region) {
         if (plugin.getRegionManager().getById(region.getId()) == null) return false;
-        return plugin.getProtectionService().has(region, player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.CONTAINER));
+        return plugin.getProtectionService().can(region, player, Tunables.TrustAction.MENU);
     }
 
     private List<String> clickCommands(ConfigurationSection itemCfg, boolean rightClick) {

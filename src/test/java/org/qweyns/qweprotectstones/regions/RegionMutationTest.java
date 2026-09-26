@@ -30,12 +30,12 @@ class RegionMutationTest {
         long version = r.getVersion();
         r.transferOwnership(newOwner, "new");
         assertFalse(r.isBanned(newOwner));
-        assertEquals(TrustLevel.OWNER, r.getTrust(newOwner));
+        assertTrue(r.getTrust(newOwner).isOwner());
         assertTrue(r.getVersion() > version);
     }
     @Test void snapshotDoesNotTrackLaterMutations() {
         Region r = region();
-        r.setMember(UUID.randomUUID(), "friend", TrustLevel.BUILD);
+        r.setMember(UUID.randomUUID(), "friend", TrustLevel.parse("build").orElseThrow());
         r.replaceEffect("SPEED", 1);
         Region copy = r.snapshot();
         r.setDurability(1);

@@ -31,7 +31,7 @@ public class GlowSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, TrustLevel.ACCESS);
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.GLOW);
         if (region == null) return;
 
         boolean enabled = plugin.getVisualManager().toggleGlow(player, region);

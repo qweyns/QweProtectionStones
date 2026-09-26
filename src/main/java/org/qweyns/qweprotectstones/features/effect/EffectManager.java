@@ -118,7 +118,7 @@ public class EffectManager implements Listener {
         List<String> effects = region.getEffects();
         if (effects.isEmpty()) return;
 
-        boolean trusted = plugin.getProtectionService().has(region, player, TrustLevel.ACCESS);
+        boolean trusted = plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.EFFECTS);
         if (changed && !trusted) notifyOwnerAboutIntruder(region, player);
 
         for (String raw : effects) {

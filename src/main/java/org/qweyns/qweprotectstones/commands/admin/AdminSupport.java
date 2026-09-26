@@ -26,12 +26,37 @@ public class AdminSupport {
     }
 
     public Region resolveRegionWithMessage(CommandSender sender, Player player, String[] args) {
+        if (args.length > 1 && !explainIdLookup(sender, args[1])) return null;
         Region region = resolveRegion(player, args);
         if (region == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("region_not_found",
                     "%id%", args.length > 1 ? args[1] : "-"));
         }
         return region;
+    }
+
+    /** false — префикс слишком короткий или неоднозначный (сообщение уже отправлено). */
+    public boolean explainIdLookup(CommandSender sender, String prefix) {
+        var manager = plugin.getRegionManager();
+        String needle = prefix == null ? "" : prefix.trim();
+        if (needle.length() < manager.minIdPrefix()) {
+            sender.sendMessage(plugin.getLanguageManager().getMessage("region_id_too_short",
+                    "%id%", needle, "%min%", String.valueOf(manager.minIdPrefix())));
+            return false;
+        }
+        List<Region> matches = manager.findByIdPrefix(needle, 6);
+        if (matches.size() > 1) {
+            List<String> ids = new java.util.ArrayList<>();
+            for (int i = 0; i < Math.min(5, matches.size()); i++) {
+                Region match = matches.get(i);
+                ids.add(match.getId().toString().substring(0, Math.min(13, match.getId().toString().length()))
+                        + " (" + match.getOwnerName() + ")");
+            }
+            sender.sendMessage(plugin.getLanguageManager().getMessage("region_id_ambiguous",
+                    "%id%", needle, "%matches%", String.join(", ", ids) + (matches.size() > 5 ? ", ..." : "")));
+            return false;
+        }
+        return true;
     }
 
     public OfflinePlayer resolvePlayer(String name) {

@@ -17,7 +17,7 @@ import java.util.Locale;
 public class ConfigManager {
 
     private static final List<String> FILES = List.of(
-            "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml");
+            "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml", "roles.yml");
 
     private final QweProtectStones plugin;
     private volatile FileConfiguration config;

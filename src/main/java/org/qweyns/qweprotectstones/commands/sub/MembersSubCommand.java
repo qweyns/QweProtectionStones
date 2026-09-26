@@ -34,7 +34,7 @@ public class MembersSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, TrustLevel.ACCESS);
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.VIEW_MEMBERS);
         if (region == null) return;
 
         player.sendMessage(plugin.getLanguageManager().getMessage("members_header",
@@ -53,7 +53,7 @@ public class MembersSubCommand extends AbstractRegionSubCommand {
         for (RegionMember member : members) {
             player.sendMessage(plugin.getLanguageManager().getMessage("members_line",
                     "%player%", member.displayName(),
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_" + member.trust().key())));
+                    "%level%", member.trust().displayName()));
         }
     }
 }

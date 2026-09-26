@@ -34,7 +34,7 @@ public class LogSubCommand extends AbstractRegionSubCommand {
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
 
-        Region region = regionWithTrust(player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.MANAGE));
+        Region region = regionWithTrust(player, Tunables.TrustAction.MANAGE);
         if (region == null) return;
 
         if (!plugin.getConfigManager().getConfig().getBoolean("settings.action_log.enable", true)) {

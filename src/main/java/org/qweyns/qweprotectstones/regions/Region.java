@@ -164,7 +164,15 @@ public final class Region implements Bounded {
 
     public String getOwnerName() { return ownerName != null ? ownerName : ""; }
 
-    public synchronized void transferOwnership(UUID newOwnerId, String newOwnerName) {
+    public void transferOwnership(UUID newOwnerId, String newOwnerName) {
+        transferOwnership(newOwnerId, newOwnerName, null);
+    }
+
+    /**
+     * Смена владельца. Участники и баны сохраняются — новый владелец сам решит, кого оставить.
+     * @param previousOwnerRole роль бывшего владельца в привате; null — он не остаётся участником
+     */
+    public synchronized void transferOwnership(UUID newOwnerId, String newOwnerName, TrustLevel previousOwnerRole) {
         UUID previousOwner = this.ownerId;
         String previousName = this.ownerName;
 
@@ -174,8 +182,9 @@ public final class Region implements Bounded {
         bannedPlayers.remove(newOwnerId);
         touch();
 
-        if (previousOwner != null && !previousOwner.equals(newOwnerId)) {
-            members.put(previousOwner, new RegionMember(previousOwner, previousName, TrustLevel.MANAGER, System.currentTimeMillis()));
+        if (previousOwner != null && !previousOwner.equals(newOwnerId) && previousOwnerRole != null
+                && !previousOwnerRole.isOwner()) {
+            members.put(previousOwner, new RegionMember(previousOwner, previousName, previousOwnerRole, System.currentTimeMillis()));
         }
     }
 
@@ -215,7 +224,7 @@ public final class Region implements Bounded {
 
     public TrustLevel getTrust(UUID uuid) {
         if (uuid == null) return null;
-        if (isOwner(uuid)) return TrustLevel.OWNER;
+        if (isOwner(uuid)) return TrustLevel.owner();
 
         RegionMember member = members.get(uuid);
         return member != null ? member.trust() : null;
@@ -230,8 +239,9 @@ public final class Region implements Bounded {
         return player != null && hasTrust(player.getUniqueId(), required);
     }
 
+    /** Только чтение: изменения — через setFlag/resetFlag, иначе они не попадут в базу. */
     public Map<RegionFlag, Boolean> getFlagOverrides() {
-        return flagOverrides;
+        return java.util.Collections.unmodifiableMap(flagOverrides);
     }
 
     public Optional<Boolean> getFlagOverride(RegionFlag flag) {
@@ -243,7 +253,7 @@ public final class Region implements Bounded {
         touch();
     }
 
-    public void resetFlag(RegionFlag flag) {
+    public synchronized void resetFlag(RegionFlag flag) {
         flagOverrides.remove(flag);
         touch();
     }

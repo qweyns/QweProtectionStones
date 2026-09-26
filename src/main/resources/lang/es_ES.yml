@@ -23,6 +23,8 @@ region_limit_reached: "%prefix%<#FB7185>Límite de parcelas de este tipo alcanza
 region_world_disabled: "%prefix%<#FB7185>Este tipo de parcela está deshabilitado en este mundo."
 region_placed_as_block: "%prefix%<#A79FC0>Colocado como bloque normal — sin parcela."
 region_not_found: "%prefix%<#FB7185>Parcela <#FDE68A>%id% <#FB7185>no encontrada."
+region_id_too_short: "%prefix%<#FB7185>El id <#FDE68A>%id% <#FB7185>es demasiado corto: usa al menos <#FDE68A>%min%<#FB7185> caracteres."
+region_id_ambiguous: "%prefix%<#FB7185>Varias parcelas coinciden con <#FDE68A>%id%<#FB7185>: <#FDE68A>%matches%<#FB7185>. Especifica más."
 region_world_not_loaded: "%prefix%<#FB7185>El mundo <#FDE68A>%world% <#FB7185>no está cargado."
 
 # --- Защита ---

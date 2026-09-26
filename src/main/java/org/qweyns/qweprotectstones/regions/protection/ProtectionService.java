@@ -44,7 +44,7 @@ public class ProtectionService {
 
     public TrustLevel trustOf(Region region, Player player) {
         if (region == null || player == null) return null;
-        if (bypasses(player)) return TrustLevel.OWNER;
+        if (bypasses(player)) return TrustLevel.owner();
 
         // бан сильнее всех прав
         if (region.isBanned(player.getUniqueId())) return null;
@@ -52,17 +52,29 @@ public class ProtectionService {
         TrustLevel explicit = region.getTrust(player.getUniqueId());
         if (explicit != null) return explicit;
 
-        // публичный: пользоваться можно, ломать нельзя
-        return flag(region, RegionFlag.PUBLIC_ACCESS) ? TrustLevel.CONTAINER : null;
+        // публичный приват: роль из roles.public-access-role
+        return flag(region, RegionFlag.PUBLIC_ACCESS) ? TrustLevel.publicRole() : null;
     }
 
     public boolean isBanned(Region region, Player player) {
         return region != null && player != null && !bypasses(player) && region.isBanned(player.getUniqueId());
     }
 
+    /** Разрешено ли игроку действие в привате — по набору действий его роли (roles.yml). */
+    public boolean can(Region region, Player player, Tunables.TrustAction action) {
+        TrustLevel trust = trustOf(region, player);
+        return trust != null && trust.allows(action);
+    }
+
+    /** Иерархическая проверка по весу роли (API, требования меню trust_level). */
     public boolean has(Region region, Player player, TrustLevel required) {
         TrustLevel trust = trustOf(region, player);
-        return trust != null && trust.atLeast(required);
+        return trust != null && required != null && trust.atLeast(required);
+    }
+
+    public boolean allows(Player player, Location location, Tunables.TrustAction action) {
+        Region region = regionAt(location);
+        return region == null || can(region, player, action);
     }
 
     public boolean allows(Player player, Location location, TrustLevel required) {
@@ -70,16 +82,8 @@ public class ProtectionService {
         return region == null || has(region, player, required);
     }
 
-    public TrustLevel requiredFor(Tunables.TrustAction action) {
-        return plugin.getTunables().required(action);
-    }
-
-    public boolean allows(Player player, Location location, Tunables.TrustAction action) {
-        return allows(player, location, requiredFor(action));
-    }
-
     public boolean canManage(Player player, Region region) {
-        return region != null && has(region, player, requiredFor(Tunables.TrustAction.MANAGE));
+        return region != null && can(region, player, Tunables.TrustAction.MANAGE);
     }
 
     public boolean flag(Region region, RegionFlag flag) {
@@ -119,15 +123,15 @@ public class ProtectionService {
 
     /** Регион уже найден вызывающим — не ищем второй раз. */
     public boolean denyBuild(Player player, Region region) {
-        if (region == null || has(region, player, requiredFor(Tunables.TrustAction.BUILD))) return false;
+        if (region == null || can(region, player, Tunables.TrustAction.BUILD)) return false;
 
         notifyDenied(player, region);
         return true;
     }
 
-    public boolean denyInteract(Player player, Location location, TrustLevel required) {
+    public boolean denyInteract(Player player, Location location, Tunables.TrustAction action) {
         Region region = regionAt(location);
-        if (region == null || has(region, player, required)) return false;
+        if (region == null || can(region, player, action)) return false;
 
         notifyDenied(player, region);
         return true;

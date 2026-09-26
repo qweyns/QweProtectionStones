@@ -53,7 +53,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        Region region = regionWithTrust(player, TrustLevel.OWNER);
+        Region region = regionAsOwner(player);
         if (region == null) return;
 
         if (!allowDuringSiege() && plugin.isUnderSiege(region)) {
@@ -164,7 +164,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             region = regionUnderFeet(player);
         } else {
 
-            region = regionWithTrust(player, TrustLevel.OWNER);
+            region = regionAsOwner(player);
         }
         if (region == null) return;
 

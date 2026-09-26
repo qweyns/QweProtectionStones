@@ -48,7 +48,7 @@ public class BanSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getTunables().memberEditLevel());
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.BAN);
         if (region == null) return;
 
         switch (mode) {

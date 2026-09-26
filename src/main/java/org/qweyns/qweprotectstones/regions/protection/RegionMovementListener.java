@@ -56,7 +56,7 @@ public class RegionMovementListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        boolean trusted = protection.has(to, player, protection.requiredFor(Tunables.TrustAction.INTERACT));
+        boolean trusted = protection.can(to, player, Tunables.TrustAction.INTERACT);
 
         if (!trusted && (!protection.flag(to, RegionFlag.TELEPORT_IN) || !canEnter(player, to))) {
             event.setCancelled(true);
@@ -87,7 +87,7 @@ public class RegionMovementListener implements Listener {
     private boolean canEnter(Player player, Region region) {
 
         if (protection.isBanned(region, player)) return false;
-        if (protection.has(region, player, protection.requiredFor(Tunables.TrustAction.INTERACT))) return true;
+        if (protection.can(region, player, Tunables.TrustAction.INTERACT)) return true;
 
         return protection.flag(region, RegionFlag.ENTRY);
     }

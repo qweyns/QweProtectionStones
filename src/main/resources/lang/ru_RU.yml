@@ -23,6 +23,8 @@ region_limit_reached: "%prefix%<#FB7185>Достигнут лимит прива
 region_world_disabled: "%prefix%<#FB7185>В этом мире нельзя создавать такой приват."
 region_placed_as_block: "%prefix%<#A79FC0>Блок поставлен как обычный — приват не создан."
 region_not_found: "%prefix%<#FB7185>Приват <#FDE68A>%id% <#FB7185>не найден."
+region_id_too_short: "%prefix%<#FB7185>Слишком короткий id <#FDE68A>%id%<#FB7185>: укажите не меньше <#FDE68A>%min%<#FB7185> символов."
+region_id_ambiguous: "%prefix%<#FB7185>Под <#FDE68A>%id% <#FB7185>подходят несколько приватов: <#FDE68A>%matches%<#FB7185>. Уточните id."
 region_world_not_loaded: "%prefix%<#FB7185>Мир <#FDE68A>%world% <#FB7185>не загружен."
 
 # --- Защита ---

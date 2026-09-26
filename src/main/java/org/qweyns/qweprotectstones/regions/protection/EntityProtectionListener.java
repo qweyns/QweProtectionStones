@@ -56,7 +56,7 @@ public class EntityProtectionListener implements Listener {
         // враждебных бить можно всегда, иначе приват ферма мобов
         if (victim instanceof Monster) return;
 
-        if (protection.has(region, attacker, protection.requiredFor(Tunables.TrustAction.ENTITY))) return;
+        if (protection.can(region, attacker, Tunables.TrustAction.ENTITY)) return;
 
         boolean protectedVictim = victim instanceof Animals || victim instanceof Villager || victim instanceof Tameable;
         if (protectedVictim && !protection.flag(region, RegionFlag.ANIMAL_PROTECTION)) return;
@@ -118,7 +118,7 @@ public class EntityProtectionListener implements Listener {
             return;
         }
 
-        if (!protection.has(region, remover, protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (!protection.can(region, remover, Tunables.TrustAction.ENTITY)) {
             protection.notifyDenied(remover, region, "interact");
             event.setCancelled(true);
         }
@@ -136,7 +136,7 @@ public class EntityProtectionListener implements Listener {
         Player attacker = resolveAttacker(event.getAttacker());
         if (attacker == null) return;
 
-        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), Tunables.TrustAction.ENTITY)) {
             event.setCancelled(true);
         }
     }
@@ -146,7 +146,7 @@ public class EntityProtectionListener implements Listener {
         Player attacker = resolveAttacker(event.getAttacker());
         if (attacker == null) return;
 
-        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), Tunables.TrustAction.ENTITY)) {
             event.setCancelled(true);
         }
     }
@@ -175,7 +175,7 @@ public class EntityProtectionListener implements Listener {
         Region region = protection.regionAt(event.getItem().getLocation());
         if (region == null) return;
 
-        if (protection.has(region, player, protection.requiredFor(Tunables.TrustAction.INTERACT))) return;
+        if (protection.can(region, player, Tunables.TrustAction.INTERACT)) return;
         if (!protection.flag(region, RegionFlag.ITEM_PICKUP)) event.setCancelled(true);
     }
 }

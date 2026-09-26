@@ -358,8 +358,10 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                 UUID memberId = parseUuid(rs.getString("player_uuid"));
                 if (region == null || memberId == null) continue;
 
-                TrustLevel trust = TrustLevel.parse(rs.getString("trust")).orElse(TrustLevel.BUILD);
-                region.restoreMember(new RegionMember(memberId, rs.getString("player_name"), trust, rs.getLong("added_at")));
+                // id роли как есть: удалённая из roles.yml роль не должна теряться при следующей записи
+                String role = rs.getString("trust");
+                if (role == null || role.isBlank()) role = TrustLevel.defaultRole().id();
+                region.restoreMember(new RegionMember(memberId, rs.getString("player_name"), role, rs.getLong("added_at")));
             }
         }
     }
@@ -453,7 +455,7 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     insert.setString(1, region.getId().toString());
                     insert.setString(2, member.uuid().toString());
                     insert.setString(3, member.name());
-                    insert.setString(4, member.trust().name());
+                    insert.setString(4, member.role());
                     insert.setLong(5, member.addedAt());
                     insert.addBatch();
                 }
@@ -486,6 +488,9 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     @Override
     public void deleteAll(Collection<UUID> regionIds) {
         if (regionIds == null || regionIds.isEmpty()) return;
+        // журнал снесённого привата нужен для разбора рейдов и гриферства; чистится по сроку (keep_days)
+        boolean keepLogOnDelete = plugin != null
+                && plugin.getConfigManager().getConfig().getBoolean("settings.action_log.keep_on_delete", true);
 
         try (Connection conn = dataSource.getConnection()) {
             boolean previousAutoCommit = conn.getAutoCommit();
@@ -506,13 +511,15 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
                     flags.addBatch();
                     bans.setString(1, raw);
                     bans.addBatch();
-                    log.setString(1, raw);
-                    log.addBatch();
+                    if (!keepLogOnDelete) {
+                        log.setString(1, raw);
+                        log.addBatch();
+                    }
                 }
                 members.executeBatch();
                 flags.executeBatch();
                 bans.executeBatch();
-                log.executeBatch();
+                if (!keepLogOnDelete) log.executeBatch();
                 regions.executeBatch();
                 conn.commit();
             } catch (SQLException e) {

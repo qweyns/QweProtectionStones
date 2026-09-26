@@ -23,6 +23,8 @@ region_limit_reached: "%prefix%<#FB7185>该类型领地已达上限：<#FDE68A>%
 region_world_disabled: "%prefix%<#FB7185>该世界禁止创建此类领地。"
 region_placed_as_block: "%prefix%<#A79FC0>已作为普通方块放置 — 未创建领地。"
 region_not_found: "%prefix%<#FB7185>未找到领地 <#FDE68A>%id%<#FB7185>。"
+region_id_too_short: "%prefix%<#FB7185>ID <#FDE68A>%id% <#FB7185>太短：至少需要 <#FDE68A>%min%<#FB7185> 个字符。"
+region_id_ambiguous: "%prefix%<#FB7185>有多个领地匹配 <#FDE68A>%id%<#FB7185>：<#FDE68A>%matches%<#FB7185>。请输入更完整的 ID。"
 region_world_not_loaded: "%prefix%<#FB7185>世界 <#FDE68A>%world% <#FB7185>未加载。"
 
 # --- Защита ---

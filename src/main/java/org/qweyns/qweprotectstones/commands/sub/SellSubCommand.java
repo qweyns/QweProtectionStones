@@ -55,7 +55,7 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.regions.TrustLevel.OWNER);
+        Region region = regionAsOwner(player);
         if (region == null) return;
 
         if (!allowDuringSiege() && plugin.isUnderSiege(region)) {

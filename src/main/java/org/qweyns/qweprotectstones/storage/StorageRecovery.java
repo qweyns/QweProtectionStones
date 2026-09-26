@@ -24,7 +24,7 @@ final class StorageRecovery {
         var b = r.getBounds();
         List<Map<String,Object>> members = new ArrayList<>();
         for (var member : r.getMembers()) members.add(Map.of("uuid",member.uuid().toString(),
-                "name",member.displayName(),"trust",member.trust().name(),"at",member.addedAt()));
+                "name",member.displayName(),"trust",member.role(),"at",member.addedAt()));
         Map<String, Boolean> flags = new LinkedHashMap<>();
         r.getFlagOverrides().forEach((key,value) -> flags.put(key.name(),value));
         Map<String,String> bans = new LinkedHashMap<>();
@@ -55,7 +55,7 @@ final class StorageRecovery {
         r.setPenaltyUntil(number(data,"penalty"));
         for (Object raw : (List<?>)data.get("members")) {
             Map<?,?> m = (Map<?,?>)raw;
-            r.restoreMember(new RegionMember(uuid(text(m,"uuid")),text(m,"name"),TrustLevel.valueOf(text(m,"trust")),number(m,"at")));
+            r.restoreMember(new RegionMember(uuid(text(m,"uuid")),text(m,"name"),text(m,"trust"),number(m,"at")));
         }
         ((Map<?,?>)data.get("flags")).forEach((key,value) -> r.setFlag(RegionFlag.valueOf(key.toString()), (Boolean)value));
         ((Map<?,?>)data.get("bans")).forEach((key,value) -> r.restoreBan(uuid(key.toString()),value.toString()));

@@ -137,9 +137,9 @@ public class MarketManager {
                 refund(buyer, sale.price(), region);
                 return false;
             }
-            plugin.getRegionManager().transferWithin(region, buyer.getUniqueId(), buyer.getName(), op);
-            region.removeMember(sale.sellerId());
-            plugin.getRegionStorage().save(region);
+            // участники и баны остаются — покупатель сам решит, кого оставить
+            plugin.getRegionManager().transferWithin(region, buyer.getUniqueId(), buyer.getName(), op,
+                    plugin.getRegionManager().configuredRole("market.sell.seller-role", ""));
             return true;
         }
     }
@@ -215,8 +215,8 @@ public class MarketManager {
     }
 
     public TrustLevel rentTrustLevel() {
-        return TrustLevel.parse(plugin.getConfigManager().getConfig().getString("market.rent.trust-level", "container"))
-                .orElse(TrustLevel.CONTAINER);
+        TrustLevel role = plugin.getRegionManager().configuredRole("market.rent.trust-level", "container");
+        return role != null ? role : TrustLevel.defaultRole();
     }
 
     public void expireRentals() {

@@ -35,7 +35,7 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.CONTAINER));
+        Region region = regionWithTrust(player, Tunables.TrustAction.MENU);
         if (region == null) return;
 
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());

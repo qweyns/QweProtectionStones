@@ -38,7 +38,7 @@ public class RegionInteractListener implements Listener {
         if (region == null || !region.isCore(block.getLocation())) return;
 
         Player player = event.getPlayer();
-        boolean trusted = plugin.getProtectionService().has(region, player, TrustLevel.ACCESS);
+        boolean trusted = plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.MENU);
 
         // яйцо призыва: либо ваниль, либо меню, не оба сразу
 

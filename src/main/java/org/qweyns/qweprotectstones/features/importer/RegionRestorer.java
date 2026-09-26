@@ -105,10 +105,11 @@ public class RegionRestorer {
             for (Object memberEntry : members) {
                 if (!(memberEntry instanceof Map<?, ?> member)) continue;
                 UUID memberId = uuid(String.valueOf(member.get("uuid")));
-                var trust = TrustLevel.parse(String.valueOf(member.get("trust")));
+                Object rawTrust = member.get("trust");
+                String trust = rawTrust == null ? "" : String.valueOf(rawTrust).trim();
                 if (memberId == null || trust.isEmpty()) continue;
                 region.restoreMember(new RegionMember(memberId,
-                        string(member.get("name")), trust.get(), System.currentTimeMillis()));
+                        string(member.get("name")), trust, System.currentTimeMillis()));
             }
         }
 

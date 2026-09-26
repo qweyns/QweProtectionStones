@@ -133,26 +133,43 @@ public class RegionManager {
         return id == null ? null : regions.get(id);
     }
 
+    /** Минимальная длина префикса id в командах: короткий префикс совпадает со многими приватами. */
+    public int minIdPrefix() {
+        int configured = plugin.getConfigManager() == null ? 4
+                : plugin.getConfigManager().getConfig().getInt("settings.min-id-prefix", 4);
+        return Math.max(1, Math.min(8, configured));
+    }
+
+    /**
+     * Приват по префиксу id — только если совпадение единственное и префикс не короче
+     * {@link #minIdPrefix()}. Иначе null: команда не должна действовать на «первый попавшийся».
+     */
     public Region getByShortId(String shortId) {
         if (shortId == null || shortId.isBlank()) return null;
-        String needle = shortId.toLowerCase(java.util.Locale.ROOT);
+        String needle = shortId.trim().toLowerCase(java.util.Locale.ROOT);
+        if (needle.length() < minIdPrefix()) return null;
+        List<Region> matches = findByIdPrefix(needle, 2);
+        return matches.size() == 1 ? matches.get(0) : null;
+    }
 
-        // префикс длиннее индексного (полный UUID) — редкий путь, точный проход
-        if (needle.length() > 8) {
-            for (Region region : regions.values()) {
-                if (region.getId().toString().startsWith(needle)) return region;
-            }
-            return null;
-        }
+    /** До limit приватов, чей id начинается с префикса (без проверки минимальной длины). */
+    public List<Region> findByIdPrefix(String prefix, int limit) {
+        if (prefix == null || prefix.isBlank() || limit <= 0) return List.of();
+        String needle = prefix.trim().toLowerCase(java.util.Locale.ROOT);
+        List<Region> result = new ArrayList<>();
 
-        for (Map.Entry<String, List<UUID>> entry : byShortId.tailMap(needle).entrySet()) {
-            if (!entry.getKey().startsWith(needle)) break;
+        // префикс длиннее индексного (полный UUID) — редкий путь, точный проход по кандидатам
+        String indexKey = needle.length() > 8 ? needle.substring(0, 8) : needle;
+        for (Map.Entry<String, List<UUID>> entry : byShortId.tailMap(indexKey).entrySet()) {
+            if (!entry.getKey().startsWith(indexKey)) break;
             for (UUID id : entry.getValue()) {
                 Region region = regions.get(id);
-                if (region != null) return region;
+                if (region == null || !region.getId().toString().startsWith(needle)) continue;
+                result.add(region);
+                if (result.size() >= limit) return result;
             }
         }
-        return null;
+        return result;
     }
 
     public List<Region> getRegionsOf(UUID ownerId) {
@@ -372,23 +389,45 @@ public class RegionManager {
     }
 
     public boolean transferRegion(Region region, UUID newOwnerId, String newOwnerName, Player actor) {
+        return transferRegion(region, newOwnerId, newOwnerName, actor, configuredRole("transfer.previous-owner-role", "manager"));
+    }
+
+    /** @param previousOwnerRole роль бывшего владельца; null — он не остаётся участником */
+    public boolean transferRegion(Region region, UUID newOwnerId, String newOwnerName, Player actor, TrustLevel previousOwnerRole) {
         if (region == null || newOwnerId == null) return false;
         try (Region.Operation operation = region.tryOperation()) {
             if (operation == null || regions.get(region.getId()) != region) return false;
             if (org.qweyns.qweprotectstones.regions.event.RegionEvents.fireTransfer(region, actor, newOwnerId, newOwnerName)) return false;
-            return transferWithin(region, newOwnerId, newOwnerName, operation);
+            return transferWithin(region, newOwnerId, newOwnerName, operation, previousOwnerRole);
         }
     }
 
-    /** Фиксация после проверки события и (для покупки) успешной оплаты. */
+    /** Роль из конфига по id; пусто или неизвестная роль — null (без доступа). */
+    public TrustLevel configuredRole(String path, String fallback) {
+        String raw = plugin.getConfigManager().getConfig().getString(path, fallback);
+        if (raw == null || raw.isBlank()) return null;
+        TrustLevel role = TrustLevel.parse(raw).orElse(null);
+        if (role == null) plugin.getLogger().warning(path + ": роль '" + raw + "' не найдена в roles.yml — доступ не выдаётся.");
+        return role == null || role.isOwner() ? null : role;
+    }
+
     public boolean transferWithin(Region region, UUID newOwnerId, String newOwnerName, Region.Operation operation) {
+        return transferWithin(region, newOwnerId, newOwnerName, operation, null);
+    }
+
+    /** Фиксация после проверки события и (для покупки) успешной оплаты. Участники и баны сохраняются. */
+    public boolean transferWithin(Region region, UUID newOwnerId, String newOwnerName, Region.Operation operation,
+                                  TrustLevel previousOwnerRole) {
         if (operation == null || !operation.owns(region) || newOwnerId == null) return false;
         synchronized (index) {
             if (regions.get(region.getId()) != region) return false;
             UUID previousOwner = region.getOwnerId();
-            region.transferOwnership(newOwnerId, newOwnerName);
+            region.transferOwnership(newOwnerId, newOwnerName, previousOwnerRole);
             Set<UUID> previous = previousOwner == null ? null : regionsByOwner.get(previousOwner);
-            if (previous != null) previous.remove(region.getId());
+            if (previous != null) {
+                previous.remove(region.getId());
+                if (previous.isEmpty()) regionsByOwner.remove(previousOwner, previous);
+            }
             regionsByOwner.computeIfAbsent(newOwnerId, k -> ConcurrentHashMap.newKeySet()).add(region.getId());
         }
         if (plugin.getMarketManager() != null)

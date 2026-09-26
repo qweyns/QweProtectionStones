@@ -238,9 +238,9 @@ public class MenuActions {
         if (region == null || argument.isEmpty()) return false;
 
         // эффекты — настройка привата, покупка доступна управляющим
-        if (!plugin.getProtectionService().canManage(player, region)) {
+        if (!plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));
+                    "%level%", org.qweyns.qweprotectstones.regions.TrustLevel.lowestWith(org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE).displayName()));
             return false;
         }
 

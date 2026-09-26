@@ -117,7 +117,7 @@ public class RegionExporter {
             first = false;
             json.append("{\"uuid\": \"").append(member.uuid())
                     .append("\", \"name\": \"").append(escape(member.displayName()))
-                    .append("\", \"trust\": \"").append(member.trust().key()).append("\"}");
+                    .append("\", \"trust\": \"").append(member.role()).append("\"}");
         }
         json.append("],\n");
     }

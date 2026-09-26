@@ -83,7 +83,7 @@ public class BlockProtectionListener implements Listener {
         Player igniter = event.getPlayer();
         if (igniter != null) {
 
-            if (!protection.has(region, igniter, protection.requiredFor(Tunables.TrustAction.BUILD))) {
+            if (!protection.can(region, igniter, Tunables.TrustAction.BUILD)) {
                 protection.notifyDenied(igniter, region);
                 event.setCancelled(true);
             }
@@ -261,7 +261,7 @@ public class BlockProtectionListener implements Listener {
         }
 
         if (event.getEntity() instanceof Player player) {
-            if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
+            if (!protection.can(region, player, Tunables.TrustAction.BUILD)) {
                 protection.notifyDenied(player, region);
                 event.setCancelled(true);
             }

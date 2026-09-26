@@ -57,7 +57,7 @@ class MarketTransactionTest {
             bukkit.when(Bukkit::getPluginManager).thenReturn(mock(PluginManager.class));
             bukkit.when(() -> Bukkit.getOfflinePlayer(owner.getUniqueId())).thenReturn(mock(OfflinePlayer.class));
             UUID previous = UUID.randomUUID();
-            region.setMember(previous, "old", TrustLevel.CONTAINER);
+            region.setMember(previous, "old", TrustLevel.parse("container").orElseThrow());
             var field = MarketManager.class.getDeclaredField("rentals"); field.setAccessible(true);
             @SuppressWarnings("unchecked") Map<UUID, RegionRental> rentals = (Map<UUID, RegionRental>) field.get(market);
             rentals.put(region.getId(), new RegionRental(region.getId(), owner.getUniqueId(), "owner",100,10,previous,"old",1));

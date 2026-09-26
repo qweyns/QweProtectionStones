@@ -53,7 +53,7 @@ public class DecorationSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getTunables().memberEditLevel());
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.RENAME);
         if (region == null) return;
 
         if (args.length == 0) {

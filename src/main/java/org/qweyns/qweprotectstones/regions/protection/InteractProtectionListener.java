@@ -59,13 +59,12 @@ public class InteractProtectionListener implements Listener {
         // клик по ядру разбирает InteractListener
         if (region.isCore(block.getLocation()) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             // Основная рука обработана меню; offhand не должен открывать контейнер-ядро.
-            if (!protection.has(region, event.getPlayer(), event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND
-                    ? TrustLevel.ACCESS : protection.requiredFor(Tunables.TrustAction.CONTAINER))) event.setCancelled(true);
+            if (!protection.can(region, event.getPlayer(), event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND
+                    ? Tunables.TrustAction.MENU : Tunables.TrustAction.CONTAINER)) event.setCancelled(true);
             return;
         }
 
-        TrustLevel required = protection.requiredFor(requiredActionFor(block, event));
-        if (protection.has(region, event.getPlayer(), required)) return;
+        if (protection.can(region, event.getPlayer(), requiredActionFor(block, event))) return;
 
         if (event.getAction() != Action.PHYSICAL) protection.notifyDenied(event.getPlayer(), region, "interact");
         event.setCancelled(true);
@@ -96,7 +95,7 @@ public class InteractProtectionListener implements Listener {
         for (var side : java.util.List.of(chest.getLeftSide(), chest.getRightSide())) {
             var location = side.getLocation();
             if (location != null) {
-                if (protection.denyInteract(player, location, protection.requiredFor(Tunables.TrustAction.CONTAINER))) {
+                if (protection.denyInteract(player, location, Tunables.TrustAction.CONTAINER)) {
                     event.setCancelled(true);
                     return;
                 }
@@ -129,11 +128,11 @@ public class InteractProtectionListener implements Listener {
         Region region = protection.regionAt(entity.getLocation());
         if (region == null) return;
 
-        TrustLevel required = protection.requiredFor(CONTAINER_ENTITIES.contains(entity.getType())
+        Tunables.TrustAction required = CONTAINER_ENTITIES.contains(entity.getType())
                 ? Tunables.TrustAction.CONTAINER
-                : entityInteractAction(entity));
+                : entityInteractAction(entity);
 
-        if (protection.has(region, event.getPlayer(), required)) return;
+        if (protection.can(region, event.getPlayer(), required)) return;
 
         protection.notifyDenied(event.getPlayer(), region, "interact");
         event.setCancelled(true);
@@ -149,7 +148,7 @@ public class InteractProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onArmorStand(PlayerArmorStandManipulateEvent event) {
-        if (protection.denyInteract(event.getPlayer(), event.getRightClicked().getLocation(), protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (protection.denyInteract(event.getPlayer(), event.getRightClicked().getLocation(), Tunables.TrustAction.ENTITY)) {
             event.setCancelled(true);
         }
     }
@@ -158,7 +157,7 @@ public class InteractProtectionListener implements Listener {
     public void onLecternBook(PlayerTakeLecternBookEvent event) {
         if (event.getLectern().getLocation() == null) return;
 
-        if (protection.denyInteract(event.getPlayer(), event.getLectern().getLocation(), protection.requiredFor(Tunables.TrustAction.CONTAINER))) {
+        if (protection.denyInteract(event.getPlayer(), event.getLectern().getLocation(), Tunables.TrustAction.CONTAINER)) {
             event.setCancelled(true);
         }
     }

@@ -166,10 +166,10 @@ public class AutoAddManager implements Listener {
 
             if (RegionEvents.fireMemberChange(region, null, target.getUniqueId(),
                     target.getName() != null ? target.getName() : name,
-                    org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.BUILD)) {
+                    org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.defaultRole())) {
                 continue;
             }
-            region.setMember(target.getUniqueId(), target.getName() != null ? target.getName() : name, TrustLevel.BUILD);
+            region.setMember(target.getUniqueId(), target.getName() != null ? target.getName() : name, TrustLevel.defaultRole());
             added++;
         }
 

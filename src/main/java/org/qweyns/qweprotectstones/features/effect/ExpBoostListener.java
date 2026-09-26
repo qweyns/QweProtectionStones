@@ -48,7 +48,7 @@ public class ExpBoostListener implements Listener {
     private boolean hasExpBoost(Player player, Location location) {
         Region region = plugin.getRegionManager().getRegionAt(location);
         if (region == null) return false;
-        if (!plugin.getProtectionService().has(region, player, TrustLevel.ACCESS)) return false;
+        if (!plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.EFFECTS)) return false;
 
         return region.hasEffect("EXP_BOOST");
     }

@@ -91,9 +91,9 @@ class MenuUpgrades {
     }
 
     private boolean upgrade(Player player, MenuHolder holder, Region region, int slotIndex) {
-        if (!plugin.getProtectionService().canManage(player, region)) {
+        if (!plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));
+                    "%level%", org.qweyns.qweprotectstones.regions.TrustLevel.lowestWith(org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE).displayName()));
             return true;
         }
 

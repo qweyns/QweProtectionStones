@@ -92,7 +92,7 @@ public class NotificationManager {
         notifyPlayer(region.getOwnerId(), messageKey, sound, placeholders);
 
         region.getMembers().stream()
-                .filter(member -> member.trust().atLeast(org.qweyns.qweprotectstones.regions.TrustLevel.MANAGER))
+                .filter(member -> member.trust().allows(org.qweyns.qweprotectstones.config.Tunables.TrustAction.ALERTS))
                 .forEach(member -> notifyPlayer(member.uuid(), messageKey, sound, placeholders));
     }
 

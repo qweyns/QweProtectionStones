@@ -53,7 +53,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
     }
 
     private void invite(Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getTunables().memberEditLevel());
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.MEMBERS);
         if (region == null) return;
 
         if (args.length == 0) {
@@ -75,10 +75,10 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        TrustLevel level = TrustLevel.BUILD;
+        TrustLevel level = TrustLevel.defaultRole();
         if (args.length > 1) {
             var parsed = TrustLevel.parse(args[1]);
-            if (parsed.isEmpty() || parsed.get() == TrustLevel.OWNER) {
+            if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().grantable())) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level", "%levels%", levelNames()));
                 return;
             }
@@ -96,7 +96,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
+        String levelName = level.displayName();
         player.sendMessage(plugin.getLanguageManager().getMessage("invite_sent",
                 "%player%", target.getName(), "%level%", levelName));
         plugin.getLanguageManager().sendList(target, "invite_received",
@@ -140,7 +140,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
         region.setMember(player.getUniqueId(), player.getName(), invite.level());
         plugin.getRegionStorage().save(region);
 
-        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + invite.level().key());
+        String levelName = invite.level().displayName();
         player.sendMessage(plugin.getLanguageManager().getMessage("invite_accepted",
                 "%owner%", region.getOwnerName(), "%level%", levelName));
 

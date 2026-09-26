@@ -15,7 +15,7 @@ class StorageRecoveryTest {
         Region r = new Region(UUID.randomUUID(),"unloaded-world",new RegionBounds(-1,0,-1,1,10,1),0,5,0,
                 "deleted-type",UUID.randomUUID(),"owner",5,10,1);
         UUID member = UUID.randomUUID(), banned = UUID.randomUUID();
-        r.restoreMember(new RegionMember(member,"member",TrustLevel.BUILD,123));
+        r.restoreMember(new RegionMember(member,"member",TrustLevel.parse("build").orElseThrow(),123));
         r.ban(banned,"banned"); r.setPenaltyUntil(5678); r.replaceEffect("SPEED",1);
         r.setFlag(RegionFlag.PVP,false); r.restoreStats(7,1234,"attacker");
         Region copy = StorageRecovery.decodeRegion(StorageRecovery.region(r));

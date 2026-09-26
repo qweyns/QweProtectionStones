@@ -23,6 +23,8 @@ region_limit_reached: "%prefix%<#FB7185>Region limit reached for this type: <#FD
 region_world_disabled: "%prefix%<#FB7185>This region type is disabled in this world."
 region_placed_as_block: "%prefix%<#A79FC0>Placed as a normal block — no region created."
 region_not_found: "%prefix%<#FB7185>Region <#FDE68A>%id% <#FB7185>not found."
+region_id_too_short: "%prefix%<#FB7185>Id <#FDE68A>%id% <#FB7185>is too short: use at least <#FDE68A>%min%<#FB7185> characters."
+region_id_ambiguous: "%prefix%<#FB7185>Several regions match <#FDE68A>%id%<#FB7185>: <#FDE68A>%matches%<#FB7185>. Please be more specific."
 region_world_not_loaded: "%prefix%<#FB7185>World <#FDE68A>%world% <#FB7185>is not loaded."
 
 # --- Защита ---
