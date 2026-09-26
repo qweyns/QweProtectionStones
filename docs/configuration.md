@@ -3,7 +3,10 @@
 Настройки разложены по темам, чтобы каждый файл был коротким. Отсутствующие
 ключи берутся из встроенных значений по умолчанию, поэтому после обновлений
 старые конфиги продолжают работать. Почти всё применяется командой
-`/qps reload`; исключения — имя команды и настройки базы данных.
+`/qps reload`; исключения — команда/алиасы, БД, connect timeout HTTP-клиентов
+и регистрация интеграций при старте. Подробнее — [установка](installation.md).
+Это fallback в памяти: существующие YAML не перезаписываются. Для `regions.yml`
+наследование идёт из вашего `default_region`; меню редактируются отдельно.
 
 | Файл | Содержание |
 | --- | --- |
@@ -23,6 +26,7 @@
 database:
   type: "SQLITE"        # SQLITE или MYSQL
   table_prefix: "qps_"  # префикс таблиц
+  sqlite_busy_timeout_ms: 5000 # SQLite; 0..60000 мс, нужен рестарт
   # дальше — только для MYSQL:
   host: "localhost"
   port: 3306
@@ -36,7 +40,7 @@ database:
 Один сервер — одна база данных. Кэш регионов живёт в памяти инстанса:
 при подключении одной MySQL к сети серверов соседний инстанс не увидит
 созданий, удалений и сделок рынка до перезапуска. Для сети серверов
-нужна общая шина изменений (Redis pub/sub) — её в плагине пока нет.
+используйте отдельную БД для каждого сервера; общей шины изменений в плагине нет.
 
 ### settings
 
@@ -210,7 +214,7 @@ flags:
 
 ### visuals.particle — частицы границ
 
-`type` (учитывается у DUST), `size`, `density` (0.5 — вдвое плотнее,
+`type` (тип частицы; цвет учитывается только у DUST), `size`, `density` (0.5 — вдвое плотнее,
 2.0 — вдвое реже и дешевле), `max_points` (потолок точек на каркас).
 
 ### visuals.boundaries — подсветка
@@ -229,3 +233,43 @@ flags:
 ### map — Dynmap и BlueMap
 
 См. [Интеграции → Карты](integrations.md#карты).
+
+## Дополнительные настраиваемые параметры
+
+Значения по умолчанию сохраняют прежнее поведение. Новые числовые параметры
+ограничиваются диапазоном, не допускают бесконечного ожидания/переполнения;
+NaN/Infinity у double заменяются fallback. Диапазоны — техническая защита.
+
+| Файл | Ключ | По умолчанию | Диапазон / применение |
+|---|---|---|---|
+| config.yml | `database.sqlite_busy_timeout_ms` | 5000 | 0..60000 мс, рестарт |
+| config.yml | `settings.critical_log.flush_ticks` | 100 | 1..72000 тиков, reload |
+| config.yml | `settings.action_log.prune_interval_minutes` | 1440 | 1..525600 минут, reload |
+| config.yml | `settings.action_log.prune_initial_delay_seconds` | 120 | 1..86400 секунд, reload |
+| config.yml | `timings.autoadd_retry_ticks` | 100 | 1..72000 тиков, следующий повтор |
+| config.yml | `updates.initial-delay-ticks` | 100 | 1..72000 тиков, reload |
+| config.yml | `updates.http-timeout-seconds` | 10 | 1..120 секунд; request — следующий запрос, connect — рестарт |
+| features.yml | `notifications.rate-limit-seconds` | 15 | 0..86400 секунд; 0 — без задержки, следующий alert |
+| features.yml | `notifications.http-timeout-seconds` | 5 | 1..120 секунд; request — следующий запрос, connect — рестарт |
+| siege.yml | `siege.damage_per_explosion` | 1 | 1..1000000 HP за Bukkit-взрыв, следующий взрыв |
+| visuals.yml | `visuals.boundaries.vertical_radius` | 8 | 1..256 блоков вверх/вниз вокруг ядра, новая подсветка |
+| visuals.yml | `visuals.boundaries.glow_color_first` | #00FF00 | Первый цвет /ps glow |
+| visuals.yml | `visuals.boundaries.glow_color_second` | #008000 | Второй цвет /ps glow |
+| visuals.yml | `visuals.damage_indicator.offset_y` | 1.2 | 0..16 блоков, следующий индикатор |
+| visuals.yml | `visuals.damage_indicator.rise` | 1.2 | 0..16 блоков |
+| visuals.yml | `visuals.damage_indicator.spread` | 0.2 | 0..1 блока; 0 — без случайного смещения |
+| visuals.yml | `visuals.damage_indicator.animation_ticks` | 30 | 0..59 тиков, ограничение TextDisplay |
+| visuals.yml | `visuals.damage_indicator.lifetime_ticks` | 35 | 1..1200 тиков |
+
+## Локализация и хардкод
+
+`lang/*.yml` содержит сообщения игроков. `%command%` подставляет фактически
+зарегистрированное имя игровой команды (до рестарта оно прежнее, даже если
+config уже отредактирован). `menu_default_title` — заголовок меню без `menu_title`.
+Оформление конкретного меню задаётся в самом `menus/*.yml`; язык сообщений
+не переводит автоматически ваши lore, названия типов и строк голограмм.
+
+Консольные сообщения об ошибках, SQL-схема, имена PDC, HTTP-протокол,
+защитные границы поиска и контракты атомарных операций остаются в коде.
+Не следует превращать их в произвольные настройки: это нарушит совместимость
+данных или позволит обойти защиту. Все значения fallback тоже остаются в JAR.

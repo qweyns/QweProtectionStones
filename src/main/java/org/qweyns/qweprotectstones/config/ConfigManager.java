@@ -20,7 +20,7 @@ public class ConfigManager {
             "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml");
 
     private final QweProtectStones plugin;
-    private FileConfiguration config;
+    private volatile FileConfiguration config;
 
     public ConfigManager(QweProtectStones plugin) {
         this.plugin = plugin;

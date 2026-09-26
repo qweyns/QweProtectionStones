@@ -4,12 +4,13 @@
 
 ## События
 
-Все события отменяемые, в пакете `org.qweyns.qweprotectstones.regions.event`:
+События находятся в пакете `org.qweyns.qweprotectstones.regions.event`:
 
 | Событие | Когда | Что можно |
 | --- | --- | --- |
 | `RegionCreateEvent` | Перед созданием привата | Отменить создание |
 | `RegionDeleteEvent` | Перед удалением | Отменить удаление; причина `Reason`: `BROKEN`, `DESTROYED_BY_RAID`, `COMMAND`, `ADMIN`, `EXPIRED` |
+| `RegionExplosionTypeEvent` | До поиска регионов взрыва | Изменить тип/множитель радиуса; не отменяемое |
 | `RegionDamageEvent` | Перед снятием прочности | Отменить или изменить урон |
 | `RegionFlagChangeEvent` | Перед сменой флага | Отменить смену |
 | `RegionMemberChangeEvent` | Перед выдачей/отзывом доступа | Отменить |
@@ -51,7 +52,7 @@ public void onRegionDamage(RegionDamageEvent event) {
 | `flagAt(Location, RegionFlag)` | Значение флага в точке (вне приватов — разрешающее) |
 | `isUnderSiege(Region)` | Идёт ли осада |
 
-### Управление (только основной поток сервера)
+### Управление (поток-владелец Bukkit-объекта)
 
 | Метод | Описание |
 | --- | --- |
@@ -62,7 +63,7 @@ public void onRegionDamage(RegionDamageEvent event) {
 
 ```java
 QpsApi api = QpsApi.get();
-if (!api.isAvailable()) return;
+if (api == null) return;
 
 Region region = api.getRegionAt(player.getLocation());
 if (region != null && api.isUnderSiege(region)) {
@@ -80,4 +81,16 @@ Region region = plugin.getRegionManager().getRegionAt(location);
 
 Потокобезопасность: геометрические запросы (`getRegionAt`, границы, флаги)
 можно звать из любого потока; создание и удаление приватов — только из
-основного потока сервера (или через планировщик вашего плагина).
+основного потока Paper либо соответствующего регионального/entity-потока Folia.
+Чтение Bukkit-сущностей не становится async-безопасным из-за использования API.
+Не меняйте живой Region в обход сервисов: прямые мутации не составляют транзакцию.
+
+## Осада и сторонние взрывчатки
+
+`damageRegion` требует поток ядра; `damageRegionAsync` выполняет переход к ядру.
+Есть `isExplosionDamaging`, `isSiegeEnabled`, `getSiegeService`, `getRegionType`,
+`regionTypeOf` и `getRegionTypes`. Детали, примеры и защитные пределы —
+[API взрывов](explosions-api.md).
+
+Отменяемые события меняются до MONITOR. MONITOR предназначен только для наблюдения:
+плагин, отменяющий событие на этом приоритете, нарушает Bukkit-контракт.

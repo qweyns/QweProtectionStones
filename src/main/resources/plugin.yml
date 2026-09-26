@@ -2,7 +2,7 @@ name: QweProtectStones
 version: '${project.version}'
 main: org.qweyns.qweprotectstones.QweProtectStones
 api-version: '1.21'
-# Планировщик абстрагирован (scheduler/Schedulers), региональные задачи работают на Folia.
+# Планировщик абстрагирован; на Folia голограммы только NATIVE, обслуживание — полным restart.
 folia-supported: true
 author: qweyns
 description: Приваты на блоках-ядрах с прочностью, осадами, голограммами и эффектами

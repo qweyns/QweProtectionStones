@@ -71,4 +71,48 @@ class ConfigurationContractTest {
         assertEquals("/land trust",manager.rawTemplate("usage"));
         assertEquals("/region trust",manager.rawTemplate("usage","%command%","region"));
     }
+
+    @Test void knownGlobalConfigReadersHaveBundledDefaults() throws Exception {
+        var merged = new YamlConfiguration();
+        for (String file : List.of("config", "protection", "siege", "effects", "visuals", "features")) {
+            var loaded = YamlConfiguration.loadConfiguration(RESOURCES.resolve(file + ".yml").toFile());
+            for (String key : loaded.getKeys(false)) {
+                assertFalse(merged.isSet(key), "Секция дублируется: " + key);
+                merged.set(key,loaded.get(key));
+            }
+        }
+        var patterns = List.of(
+                java.util.regex.Pattern.compile("\\.get(?:Boolean|Int|Long|Double|String|StringList)\\(\"([\\w.-]+)\""),
+                java.util.regex.Pattern.compile("bounded(?:Long|Double)\\([^,]+,\\s*\"([\\w.-]+)\""));
+        try (var files = Files.walk(Path.of("src/main/java"))) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                String source = Files.readString(file);
+                for (var pattern : patterns) {
+                    var matcher = pattern.matcher(source);
+                    while (matcher.find()) {
+                        String key = matcher.group(1);
+                        if (key.endsWith(".") || !key.contains(".")) continue;
+                        String root = key.substring(0,key.indexOf('.'));
+                        if (merged.isConfigurationSection(root)) assertTrue(merged.contains(key),file + ": " + key);
+                    }
+                }
+            }
+        }
+    }
+    @Test void documentationLocalLinksExist() throws Exception {
+        List<Path> pages = new ArrayList<>(); pages.add(Path.of("README.md"));
+        try (var files = Files.list(Path.of("docs"))) {
+            pages.addAll(files.filter(p -> p.toString().endsWith(".md")).toList());
+        }
+        var pattern = java.util.regex.Pattern.compile("\\]\\(([^)#]+)(?:#[^)]*)?\\)");
+        for (Path page : pages) {
+            var matcher = pattern.matcher(Files.readString(page));
+            while (matcher.find()) {
+                String target = matcher.group(1);
+                if (target.contains("://") || target.startsWith("mailto:")) continue;
+                Path parent = page.toAbsolutePath().getParent();
+                assertTrue(Files.exists(parent.resolve(target)),page + " -> " + target);
+            }
+        }
+    }
 }
