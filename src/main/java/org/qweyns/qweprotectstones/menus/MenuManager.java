@@ -364,6 +364,7 @@ public class MenuManager implements Listener {
         UUID regionId = event.getRegion().getId();
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             plugin.getSchedulers().runAtEntity(viewer, () -> {
+                if (plugin.getRegionManager().getById(regionId) != null) return;
                 // Инвентарь читаем в потоке игрока и перепроверяем именно в момент закрытия:
                 // за тик он мог открыть сундук или меню другого привата.
                 if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) return;

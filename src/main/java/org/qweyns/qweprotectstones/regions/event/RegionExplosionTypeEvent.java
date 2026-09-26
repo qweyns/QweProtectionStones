@@ -73,7 +73,9 @@ public class RegionExplosionTypeEvent extends Event {
     public double getDamageRadiusMultiplier() { return damageRadiusMultiplier; }
 
     public void setDamageRadiusMultiplier(double multiplier) {
-        this.damageRadiusMultiplier = Math.max(0.01, multiplier);
+        if (!Double.isFinite(multiplier) || multiplier <= 0)
+            throw new IllegalArgumentException("Множитель радиуса должен быть конечным и положительным");
+        this.damageRadiusMultiplier = Math.min(100.0, multiplier);
     }
 
     @Override

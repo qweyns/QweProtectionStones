@@ -116,8 +116,6 @@ public class AbandonedRegionTask {
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (core == null || type == null) return;
 
-        plugin.getSchedulers().runAtLocation(core, () -> {
-            if (core.getBlock().getType() == type.material()) core.getBlock().setType(Material.AIR);
-        });
+        org.qweyns.qweprotectstones.utils.CoreBlocks.clearLater(plugin, region, core);
     }
 }

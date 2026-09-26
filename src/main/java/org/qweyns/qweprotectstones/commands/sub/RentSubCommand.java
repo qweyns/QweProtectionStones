@@ -86,7 +86,10 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        plugin.getMarketManager().offerForRent(region, player, price, minutes);
+        if (!plugin.getMarketManager().offerForRent(region, player, price, minutes)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("rent_occupied"));
+            return;
+        }
         plugin.getCriticalFileLogger().log("MARKET_RENT_LIST",
                 "by=" + player.getName() + " region=" + region.getShortId()
                         + " price=" + price + " minutes=" + minutes);
@@ -172,20 +175,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        if (rental.tenantId() != null) {
-            if (!RegionEvents.fireMemberChange(region, player, rental.tenantId(), rental.tenantName(),
-                    RegionMemberChangeEvent.Action.UNTRUST, null)) {
-                region.removeMember(rental.tenantId());
-                plugin.getRegionStorage().save(region);
-            }
-            Player tenant = plugin.getServer().getPlayer(rental.tenantId());
-            if (tenant != null) {
-                tenant.sendMessage(plugin.getLanguageManager().getMessage("rent_expired",
-                        "%id%", region.getShortId()));
-            }
-        }
-
-        plugin.getMarketManager().cancelRental(region);
+        if (!plugin.getMarketManager().cancelRental(region)) return;
         player.sendMessage(plugin.getLanguageManager().getMessage("rent_cancelled",
                 "%id%", region.getShortId()));
     }

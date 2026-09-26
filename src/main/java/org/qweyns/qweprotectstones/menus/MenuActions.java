@@ -47,21 +47,54 @@ public class MenuActions {
     public void execute(Player player, List<String> commands, Region region) {
         if (commands == null || commands.isEmpty()) return;
 
-        // списанное в цепочке возвращается, если дальше что-то не удалось
-        Payments taken = new Payments();
-        for (String raw : commands) {
-            String cmd = placeholders.apply(player, raw, region, null);
-            try {
-                if (!run(player, cmd, region, taken)) {
-                    refund(player, taken, cmd);
-                    return;
-                }
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "Ошибка выполнения действия меню: " + cmd, e);
-                refund(player, taken, cmd);
-                return;
-            }
+        try (Region.Operation operation = region == null ? null : region.tryOperation()) {
+            if (region != null && (operation == null || plugin.getRegionManager().getById(region.getId()) != region)) return;
+            executeReserved(player, commands, region);
         }
+    }
+
+    private void executeReserved(Player player, List<String> commands, Region region) {
+        Payments taken = new Payments();
+        String current = "preflight";
+        try {
+            // Все подстановки/суммы проверяются до первого списания. После результата
+            // новые списания запрещены: произвольная console-команда необратима.
+            java.util.List<String> resolved = new java.util.ArrayList<>();
+            boolean resultSeen = false;
+            int results = 0;
+            double moneyTotal = 0, pointsTotal = 0, expTotal = 0;
+            boolean paid = false;
+            for (String raw : commands) {
+                String cmd = placeholders.apply(player, raw, region, null);
+                resolved.add(cmd);
+                String payment = cmd.startsWith(TAKE_MONEY) ? TAKE_MONEY : cmd.startsWith(TAKE_POINTS) ? TAKE_POINTS
+                        : cmd.startsWith(TAKE_EXP) ? TAKE_EXP : null;
+                if (payment != null) {
+                    Double amount = parseAmount(cmd.substring(payment.length()));
+                    if (amount == null || resultSeen) throw new IllegalArgumentException("Оплата должна предшествовать выдаче");
+                    paid = true;
+                    if (payment.equals(TAKE_MONEY)) moneyTotal += amount;
+                    else if (payment.equals(TAKE_POINTS)) pointsTotal += Math.ceil(amount);
+                    else expTotal += Math.ceil(amount);
+                }
+                if (isResult(cmd)) { resultSeen = true; results++; }
+            }
+            if (!Double.isFinite(moneyTotal) || pointsTotal > Integer.MAX_VALUE || expTotal > Integer.MAX_VALUE
+                    || paid && results != 1) throw new IllegalArgumentException("Платная цепочка должна содержать ровно одну выдачу");
+            for (String cmd : resolved) {
+                current = cmd;
+                if (!run(player, cmd, region, taken)) { refund(player, taken, cmd); return; }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "Ошибка действия меню: " + current, e);
+            refund(player, taken, current);
+        }
+    }
+
+    private static boolean isResult(String cmd) {
+        if (cmd.startsWith(PLAYER) || cmd.startsWith(CONSOLE) || cmd.startsWith(CONNECT) || cmd.startsWith(ADD_EFFECT)) return true;
+        for (String legacy : ADD_EFFECT_LEGACY) if (cmd.startsWith(legacy)) return true;
+        return false;
     }
 
     private boolean run(Player player, String cmd, Region region, Payments taken) {
@@ -96,7 +129,7 @@ public class MenuActions {
             return true;
         }
 
-        return runSimple(player, cmd, region);
+        return runSimple(player, cmd, region, taken);
     }
 
     private boolean paymentFailed(Player player, boolean hookEnabled) {
@@ -124,15 +157,22 @@ public class MenuActions {
 
     private void refund(Player player, Payments taken, String failedCmd) {
         if (!taken.any()) return;
+        if (taken.committed()) {
+            plugin.getLogger().warning("Результат уже выдан/команда запущена; автоматического возврата нет: " + failedCmd);
+            return;
+        }
 
-        if (taken.money() > 0) plugin.getVaultHook().giveMoney(player, taken.money());
-        if (taken.points() > 0) plugin.getPlayerPointsHook().givePoints(player, taken.points());
+        boolean refunded = true;
+        if (taken.money() > 0) refunded &= plugin.getVaultHook().giveMoney(player, taken.money());
+        if (taken.points() > 0) refunded &= plugin.getPlayerPointsHook().givePoints(player, taken.points());
+        if (!refunded) plugin.getLogger().severe("Возврат меню не подтверждён для " + player.getUniqueId()
+                + "; требуется ручная компенсация денег/очков");
         if (taken.exp() > 0) player.giveExpLevels(taken.exp());
-        plugin.getLogger().warning("Действие меню не удалось ('" + failedCmd + "') — списанное возвращено: "
+        plugin.getLogger().warning("Действие меню не удалось ('" + failedCmd + "') — запрошен возврат: "
                 + taken.money() + " денег, " + taken.points() + " очков, " + taken.exp() + " уровней опыта.");
     }
 
-    private boolean runSimple(Player player, String cmd, Region region) {
+    private boolean runSimple(Player player, String cmd, Region region, Payments taken) {
         if (cmd.startsWith(CLOSE)) {
             // закрытие изнутри клика рассинхронизирует клиент — следующим тиком
             plugin.getSchedulers().runAtEntity(player, player::closeInventory);
@@ -143,23 +183,26 @@ public class MenuActions {
         } else if (cmd.startsWith(MESSAGE)) {
             player.sendMessage(ColorUtil.formatComponent(cmd.substring(MESSAGE.length())));
         } else if (cmd.startsWith(PLAYER)) {
+            taken.commit();
             player.performCommand(cmd.substring(PLAYER.length()));
         } else if (cmd.startsWith(CONSOLE)) {
+            taken.commit();
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.substring(CONSOLE.length()));
         } else if (cmd.startsWith(SOUND)) {
             playSound(player, cmd.substring(SOUND.length()).trim());
         } else if (cmd.startsWith(CONNECT)) {
+            taken.commit();
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Connect");
             out.writeUTF(cmd.substring(CONNECT.length()).trim());
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
         } else if (cmd.startsWith(ADD_EFFECT)) {
-            return addEffect(player, region, cmd.substring(ADD_EFFECT.length()).trim());
+            return addEffect(player, region, cmd.substring(ADD_EFFECT.length()).trim(), taken);
         } else {
             for (String legacy : ADD_EFFECT_LEGACY) {
                 if (!cmd.startsWith(legacy)) continue;
 
-                return addEffect(player, region, cmd.substring(legacy.length()).trim());
+                return addEffect(player, region, cmd.substring(legacy.length()).trim(), taken);
             }
         }
         return true;
@@ -186,7 +229,7 @@ public class MenuActions {
 
     // цену задаёт само меню ([takemoney] и т.п. выше по списку) —
     // здесь только проверки и выдача, дважды не списываем
-    private boolean addEffect(Player player, Region region, String argument) {
+    private boolean addEffect(Player player, Region region, String argument, Payments taken) {
         if (region == null || argument.isEmpty()) return false;
 
         // эффекты — настройка привата, покупка доступна управляющим
@@ -225,7 +268,10 @@ public class MenuActions {
             return false;
         }
 
-        plugin.getEffectManager().addCustomEffect(region, effectName, amplifier);
+        // Точка фиксации — сама выдача; последующие эффекты/сообщения не делают её бесплатной.
+        region.replaceEffect(effectName, Math.min(255, amplifier));
+        taken.commit();
+        plugin.getRegionStorage().saveNow(region);
         player.sendMessage(plugin.getLanguageManager().getMessage("effect_bought",
                 "%effect%", describeEffect(effectName, amplifier)));
         return true;

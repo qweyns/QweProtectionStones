@@ -89,7 +89,7 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        plugin.getMarketManager().listForSale(region, player, price);
+        if (!plugin.getMarketManager().listForSale(region, player, price)) return;
         plugin.getCriticalFileLogger().log("MARKET_SELL_LIST",
                 "by=" + player.getName() + " region=" + region.getShortId() + " price=" + price);
         player.sendMessage(plugin.getLanguageManager().getMessage("sell_listed",

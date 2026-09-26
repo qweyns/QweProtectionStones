@@ -84,6 +84,13 @@ class MenuUpgrades {
         Region region = holder.region;
         if (region == null) return true;
 
+        try (Region.Operation operation = region.tryOperation()) {
+            if (operation == null || plugin.getRegionManager().getById(region.getId()) != region) return true;
+            return upgrade(player, holder, region, slotIndex);
+        }
+    }
+
+    private boolean upgrade(Player player, MenuHolder holder, Region region, int slotIndex) {
         if (!plugin.getProtectionService().canManage(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
                     "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));

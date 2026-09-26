@@ -58,13 +58,9 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        if (RegionEvents.fireTransfer(region, player, target.getUniqueId(), target.getName())) return;
-        plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName());
-
-        if (plugin.getMarketManager().handleOwnershipChange(region, target.getUniqueId(), target.getName())) {
-            player.sendMessage(plugin.getLanguageManager().getMessage("transfer_sale_cancelled",
-                    "%id%", region.getShortId()));
-        }
+        boolean hadSale = plugin.getMarketManager().getSale(region) != null;
+        if (!plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName(), player)) return;
+        if (hadSale) player.sendMessage(plugin.getLanguageManager().getMessage("transfer_sale_cancelled", "%id%", region.getShortId()));
 
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);

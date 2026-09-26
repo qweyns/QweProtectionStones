@@ -154,6 +154,12 @@ public final class QpsApi {
         return plugin.getSiegeService().damageRegion(region, damage, explosionType, attackerName);
     }
 
+    /** Безопасный межрегиональный урон; не блокируйте поток сервера ожиданием результата. */
+    public java.util.concurrent.CompletableFuture<Boolean> damageRegionAsync(Region region, int damage,
+                                                                           String type, String attacker) {
+        return plugin.getSiegeService().damageRegionAsync(region, damage, type, attacker);
+    }
+
     /** Вредит ли взрыв данного типа прочности этого привата (правила explosions + raid_immune). */
     public boolean isExplosionDamaging(Region region, String explosionType) {
         return plugin.getSiegeService().isDamaging(region, explosionType);

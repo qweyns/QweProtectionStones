@@ -330,13 +330,8 @@ public class RegionAdminCommands {
             return;
         }
 
-        if (RegionEvents.fireTransfer(region, player, target.getUniqueId(), target.getName())) {
-            sender.sendMessage(plugin.getLanguageManager().getMessage("admin_action_cancelled"));
-            return;
-        }
-
         UUID previousOwner = region.getOwnerId();
-        plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName());
+        if (!plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName(), player)) return;
         if (forgetPrevious && previousOwner != null) {
             region.removeMember(previousOwner);
             plugin.getRegionStorage().save(region);

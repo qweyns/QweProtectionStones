@@ -34,6 +34,11 @@ public interface Schedulers {
 
     boolean isFolia();
 
+    /** Проверка владения локацией, без обращения к блокам. */
+    default boolean ownsLocation(Location location) {
+        return !isFolia() ? org.bukkit.Bukkit.isPrimaryThread() : org.bukkit.Bukkit.isOwnedByCurrentRegion(location);
+    }
+
     static Schedulers create(Plugin plugin) {
         return FoliaSchedulers.isFoliaServer()
                 ? new FoliaSchedulers(plugin)
