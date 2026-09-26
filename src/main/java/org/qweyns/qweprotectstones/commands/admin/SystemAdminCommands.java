@@ -218,6 +218,84 @@ public class SystemAdminCommands {
         plugin.getBackupTask().run();
     }
 
+    /**
+     * /qps log [id] [кол-во] — журнал любого привата, в том числе уже удалённого
+     * (его записи остаются, если settings.action_log.keep_on_delete).
+     */
+    public void log(CommandSender sender, Player player, String[] args) {
+        var lm = plugin.getLanguageManager();
+        if (!plugin.getConfigManager().getConfig().getBoolean("settings.action_log.enable", true)) {
+            sender.sendMessage(lm.getMessage("log_disabled"));
+            return;
+        }
+        int limit = plugin.getTunables().logPageSize();
+        if (args.length > 2) {
+            try {
+                limit = Math.max(1, Math.min(plugin.getTunables().logMaxPageSize(), Integer.parseInt(args[2])));
+            } catch (NumberFormatException ignored) {
+                // оставляем размер страницы по умолчанию
+            }
+        }
+        final int pageSize = limit;
+
+        if (args.length < 2) {
+            Region here = player == null ? null : plugin.getRegionManager().getRegionAt(player.getLocation());
+            if (here == null) {
+                sender.sendMessage(lm.getMessage("admin_log_usage"));
+                return;
+            }
+            showLog(sender, here.getId(), here.getShortId(), false, pageSize);
+            return;
+        }
+
+        String prefix = args[1].toLowerCase(Locale.ROOT);
+        List<Region> alive = plugin.getRegionManager().findByIdPrefix(prefix, 2);
+        if (alive.size() == 1) {
+            showLog(sender, alive.get(0).getId(), alive.get(0).getShortId(), false, pageSize);
+            return;
+        }
+        int minLength = Math.max(4, plugin.getRegionManager().minIdPrefix());
+        if (prefix.length() < minLength) {
+            sender.sendMessage(lm.getMessage("admin_log_prefix_short", "%length%", String.valueOf(minLength)));
+            return;
+        }
+        plugin.getRegionStorage().findLoggedRegionsAsync(prefix, 10, ids -> {
+            if (ids.isEmpty()) {
+                sender.sendMessage(lm.getMessage("admin_log_not_found", "%id%", prefix));
+                return;
+            }
+            if (ids.size() > 1) {
+                List<String> names = new java.util.ArrayList<>();
+                for (java.util.UUID id : ids) names.add(id.toString());
+                sender.sendMessage(lm.getMessage("admin_log_ambiguous", "%ids%", String.join(", ", names)));
+                return;
+            }
+            java.util.UUID id = ids.get(0);
+            boolean deleted = plugin.getRegionManager().getById(id) == null;
+            showLog(sender, id, id.toString(), deleted, pageSize);
+        });
+    }
+
+    private void showLog(CommandSender sender, java.util.UUID regionId, String label, boolean deleted, int limit) {
+        var lm = plugin.getLanguageManager();
+        sender.sendMessage(lm.getMessage("log_header", "%region%", label));
+        if (deleted) sender.sendMessage(lm.getMessage("admin_log_deleted"));
+        plugin.getRegionStorage().readLogAsync(regionId, limit, entries -> {
+            if (entries.isEmpty()) {
+                sender.sendMessage(lm.getMessage("log_empty"));
+                return;
+            }
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("dd.MM.yy HH:mm");
+            for (var entry : entries) {
+                sender.sendMessage(lm.getMessage("log_line",
+                        "%time%", format.format(new java.util.Date(entry.at())),
+                        "%player%", entry.playerName() == null ? "?" : entry.playerName(),
+                        "%action%", lm.rawTemplate("log_action_" + entry.action()),
+                        "%detail%", entry.detail() == null ? "" : entry.detail()));
+            }
+        });
+    }
+
     public void debug(CommandSender sender) {
         long uptimeMinutes = (System.currentTimeMillis() - enabledAt) / 60_000L;
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_debug_header",

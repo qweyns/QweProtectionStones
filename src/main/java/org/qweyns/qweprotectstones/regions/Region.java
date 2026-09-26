@@ -48,6 +48,18 @@ public final class Region implements Bounded {
 
     private final AtomicLong version = new AtomicLong();
 
+    /** Уведомление менеджера о смене состава участников (для индекса «игрок → приваты»). Не копируется. */
+    private transient volatile java.util.function.BiConsumer<Region, UUID> membershipListener;
+
+    public void setMembershipListener(java.util.function.BiConsumer<Region, UUID> listener) {
+        this.membershipListener = listener;
+    }
+
+    private void membershipChanged(UUID uuid) {
+        java.util.function.BiConsumer<Region, UUID> listener = membershipListener;
+        if (listener != null && uuid != null) listener.accept(this, uuid);
+    }
+
     public Region(UUID id, String world, RegionBounds bounds, int coreX, int coreY, int coreZ,
                  String typeId, UUID ownerId, String ownerName,
                  int durability, int maxDurability, long createdAt) {
@@ -186,6 +198,8 @@ public final class Region implements Bounded {
                 && !previousOwnerRole.isOwner()) {
             members.put(previousOwner, new RegionMember(previousOwner, previousName, previousOwnerRole, System.currentTimeMillis()));
         }
+        membershipChanged(newOwnerId);
+        if (previousOwner != null) membershipChanged(previousOwner);
     }
 
     public boolean isOwner(UUID uuid) {
@@ -210,15 +224,22 @@ public final class Region implements Bounded {
         members.compute(uuid, (key, existing) -> existing == null
                 ? new RegionMember(uuid, name, trust, System.currentTimeMillis())
                 : new RegionMember(uuid, name != null ? name : existing.name(), trust, existing.addedAt()));
+        membershipChanged(uuid);
     }
 
     public synchronized void restoreMember(RegionMember member) {
-        if (member != null && !isOwner(member.uuid())) members.put(member.uuid(), member);
+        if (member != null && !isOwner(member.uuid())) {
+            members.put(member.uuid(), member);
+            membershipChanged(member.uuid());
+        }
     }
 
     public synchronized boolean removeMember(UUID uuid) {
         boolean removed = members.remove(uuid) != null;
-        if (removed) touch();
+        if (removed) {
+            touch();
+            membershipChanged(uuid);
+        }
         return removed;
     }
 
@@ -302,6 +323,7 @@ public final class Region implements Bounded {
         bannedPlayers.put(uuid, name == null ? "" : name);
         members.remove(uuid);
         touch();
+        membershipChanged(uuid);
     }
 
     public synchronized boolean unban(UUID uuid) {

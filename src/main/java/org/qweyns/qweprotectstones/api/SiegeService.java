@@ -82,8 +82,11 @@ public class SiegeService {
                 : plugin.getConfigManager().getDamageCooldownTicks();
         if (cooldownTicks <= 0) return 0;
 
-        Long last = lastDamageTime.getIfPresent(region.getId());
-        if (last == null) return 0;
+        // Время последнего урона сохраняется в базе вместе с приватом, поэтому
+        // рестарт сервера кулдаун не сбрасывает.
+        Long cached = lastDamageTime.getIfPresent(region.getId());
+        long last = Math.max(cached == null ? 0 : cached, region.getLastAttackAt());
+        if (last <= 0) return 0;
         return Math.max(0, last + cooldownTicks * 50L - System.currentTimeMillis());
     }
 

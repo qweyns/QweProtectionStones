@@ -189,6 +189,17 @@ public class RegionStorage {
         });
     }
 
+    public void findLoggedRegionsAsync(String idPrefix, int limit, java.util.function.Consumer<List<UUID>> callback) {
+        plugin.getSchedulers().runAsync(() -> {
+            List<UUID> ids;
+            synchronized (this) {
+                if (dao == null || closed) return;
+                ids = dao.findLoggedRegions(idPrefix, limit);
+            }
+            plugin.getSchedulers().runNextTick(() -> callback.accept(ids));
+        });
+    }
+
     public synchronized int pruneLog(long olderThan) {
         return dao == null || closed ? 0 : dao.pruneLog(olderThan);
     }

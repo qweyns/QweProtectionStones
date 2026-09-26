@@ -28,7 +28,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             "reload", "bypass", "info", "delete", "save", "stats", "export", "cleanup",
             "give", "setdurability", "setmax", "settype", "setbounds", "tp",
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust",
-            "import", "restore", "backup", "debug", "help");
+            "import", "restore", "backup", "log", "debug", "help");
 
     private static final Set<String> REGION_ACTIONS = Set.of(
             "info", "delete", "setdurability", "setmax", "settype", "setbounds", "tp",
@@ -96,6 +96,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             case "restore" -> systemCommands.restore(sender, args);
             case "backup" -> systemCommands.backup(sender);
             case "debug" -> systemCommands.debug(sender);
+            case "log" -> systemCommands.log(sender, player, args);
             case "help" -> sendHelp(sender, label, parseHelpPage(args));
             default -> sendUsage(sender, label);
         }
@@ -188,6 +189,14 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 }
             } else {
                 for (Region region : plugin.getRegionManager().findByIdPrefix(typed, 50)) ids.add(region.getShortId());
+            }
+            return ids;
+        }
+
+        if (args.length == 2 && action.equals("log")) {
+            List<String> ids = new ArrayList<>();
+            for (Region region : plugin.getRegionManager().findByIdPrefix(args[1].toLowerCase(Locale.ROOT), 50)) {
+                ids.add(region.getShortId());
             }
             return ids;
         }

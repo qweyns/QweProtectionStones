@@ -66,6 +66,8 @@ public class RegionManager {
 
     private final Map<UUID, Region> regions = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> regionsByOwner = new ConcurrentHashMap<>();
+    /** Игрок → приваты, где он участник (не владелец). Обновляется по уведомлениям Region. */
+    private final Map<UUID, Set<UUID>> regionsByMember = new ConcurrentHashMap<>();
     // префикс короткого id -> кто им владеет; skip-листа умеет искать по префиксу
     private final ConcurrentSkipListMap<String, List<UUID>> byShortId = new ConcurrentSkipListMap<>();
 
@@ -76,6 +78,7 @@ public class RegionManager {
     public void loadAll(Collection<Region> loaded) {
         regions.clear();
         regionsByOwner.clear();
+        regionsByMember.clear();
         byShortId.clear();
         index.clear();
 
@@ -101,10 +104,31 @@ public class RegionManager {
         if (region.getOwnerId() != null) {
             regionsByOwner.computeIfAbsent(region.getOwnerId(), k -> ConcurrentHashMap.newKeySet()).add(region.getId());
         }
+        region.setMembershipListener(this::onMembershipChanged);
+        for (RegionMember member : region.getMembers()) indexMember(member.uuid(), region.getId(), true);
+    }
+
+    private void onMembershipChanged(Region region, UUID player) {
+        boolean member = regions.get(region.getId()) == region
+                && !region.isOwner(player) && region.getMember(player).isPresent();
+        indexMember(player, region.getId(), member);
+    }
+
+    private void indexMember(UUID player, UUID regionId, boolean add) {
+        if (add) {
+            regionsByMember.computeIfAbsent(player, k -> ConcurrentHashMap.newKeySet()).add(regionId);
+            return;
+        }
+        regionsByMember.computeIfPresent(player, (k, set) -> {
+            set.remove(regionId);
+            return set.isEmpty() ? null : set;
+        });
     }
 
     private void unregister(Region region) {
         regions.remove(region.getId());
+        region.setMembershipListener(null);
+        for (RegionMember member : region.getMembers()) indexMember(member.uuid(), region.getId(), false);
         index.remove(region);
 
         List<UUID> ids = byShortId.get(region.getShortId());
@@ -186,8 +210,12 @@ public class RegionManager {
 
     public List<Region> getAccessibleRegions(UUID playerId) {
         List<Region> result = new ArrayList<>(getRegionsOf(playerId));
-        for (Region region : regions.values()) {
-            if (!region.isOwner(playerId) && region.getMember(playerId).isPresent()) result.add(region);
+        Set<UUID> ids = regionsByMember.get(playerId);
+        if (ids == null) return result;
+        for (UUID id : ids) {
+            Region region = regions.get(id);
+            // перепроверка: индекс мог отстать на мгновение при параллельной правке
+            if (region != null && !region.isOwner(playerId) && region.getMember(playerId).isPresent()) result.add(region);
         }
         return result;
     }
@@ -324,10 +352,12 @@ public class RegionManager {
     public final class PreparedDeletion implements AutoCloseable {
         private final Region region;
         private final Region.Operation operation;
-        private PreparedDeletion(Region region, Region.Operation operation) {
-            this.region = region; this.operation = operation;
+        private final RegionDeleteEvent.Reason reason;
+        private final Player actor;
+        private PreparedDeletion(Region region, Region.Operation operation, RegionDeleteEvent.Reason reason, Player actor) {
+            this.region = region; this.operation = operation; this.reason = reason; this.actor = actor;
         }
-        public boolean commit() { return commitDeletion(region, operation); }
+        public boolean commit() { return commitDeletion(region, operation, reason, actor); }
         @Override public void close() { operation.close(); }
     }
 
@@ -337,7 +367,7 @@ public class RegionManager {
         if (operation == null) return null;
         try {
             if (!allowDeletion(region, reason, actor)) { operation.close(); return null; }
-            return new PreparedDeletion(region, operation);
+            return new PreparedDeletion(region, operation, reason, actor);
         } catch (RuntimeException | Error e) { operation.close(); throw e; }
     }
 
@@ -357,10 +387,11 @@ public class RegionManager {
     /** Внутренняя часть осады: операция уже зарезервирована вызывающим. */
     public boolean deleteWithin(Region region, RegionDeleteEvent.Reason reason, Player actor, Region.Operation operation) {
         return operation != null && operation.owns(region) && allowDeletion(region, reason, actor)
-                && commitDeletion(region, operation);
+                && commitDeletion(region, operation, reason, actor);
     }
 
-    private boolean commitDeletion(Region region, Region.Operation operation) {
+    private boolean commitDeletion(Region region, Region.Operation operation,
+                                   RegionDeleteEvent.Reason reason, Player actor) {
         if (!operation.owns(region)) return false;
         synchronized (index) {
             if (regions.get(region.getId()) != region) return false;
@@ -370,6 +401,7 @@ public class RegionManager {
         }
         if (plugin.getMarketManager() != null) plugin.getMarketManager().clearWithin(region, operation);
         plugin.getRegionStorage().delete(region.getId());
+        Bukkit.getPluginManager().callEvent(new org.qweyns.qweprotectstones.regions.event.RegionDeletedEvent(region, actor, reason));
         return true;
     }
 

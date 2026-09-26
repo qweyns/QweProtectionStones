@@ -26,6 +26,7 @@
 | --- | --- | --- |
 | `RegionCreateEvent` | Перед созданием привата | Отменить создание |
 | `RegionDeleteEvent` | Перед удалением | Отменить удаление; причина `Reason`: `BROKEN`, `DESTROYED_BY_RAID`, `COMMAND`, `ADMIN`, `EXPIRED` |
+| `RegionDeletedEvent` | После удаления | Не отменяется; гарантирует, что приват удалён — чистить данные аддона, возвращать деньги. Те же `getPlayer()` и `getReason()` |
 | `RegionExplosionTypeEvent` | До поиска регионов взрыва | Изменить тип/множитель радиуса; не отменяемое |
 | `RegionDamageEvent` | Перед снятием прочности | Отменить или изменить урон |
 | `RegionFlagChangeEvent` | Перед сменой флага | Отменить смену |

@@ -357,10 +357,9 @@ public class MenuManager implements Listener {
     }
 
     // приват уничтожен — никто не должен остаться в его меню.
-    // MONITOR осознанно: closeInventory — побочный эффект, допустимый только когда
-    // событие доработало всех слушателей и отменить удаление уже нельзя.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onRegionDelete(RegionDeleteEvent event) {
+    // Событие после удаления: отменить его уже нельзя, закрывать меню безопасно.
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRegionDelete(org.qweyns.qweprotectstones.regions.event.RegionDeletedEvent event) {
         UUID regionId = event.getRegion().getId();
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             plugin.getSchedulers().runAtEntity(viewer, () -> {

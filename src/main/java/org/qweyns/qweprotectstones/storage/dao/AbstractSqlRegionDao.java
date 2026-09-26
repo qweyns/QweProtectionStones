@@ -635,6 +635,31 @@ public abstract class AbstractSqlRegionDao implements RegionDao {
     }
 
     @Override
+    public List<UUID> findLoggedRegions(String idPrefix, int limit) {
+        List<UUID> ids = new ArrayList<>();
+        String prefix = idPrefix == null ? "" : idPrefix.toLowerCase(java.util.Locale.ROOT).replaceAll("[^0-9a-f-]", "");
+        String sql = "SELECT DISTINCT region_id FROM " + logTable() + " WHERE region_id LIKE ? LIMIT ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, prefix + "%");
+            ps.setInt(2, Math.max(1, limit));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    try {
+                        ids.add(UUID.fromString(rs.getString(1)));
+                    } catch (IllegalArgumentException ignored) {
+                        // битая строка в журнале — пропускаем
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log().log(Level.WARNING, "Не удалось найти приваты в журнале", e);
+            throw new IllegalStateException("Ошибка операции БД", e);
+        }
+        return ids;
+    }
+
+    @Override
     public List<RegionLogEntry> readLog(UUID regionId, int limit) {
         List<RegionLogEntry> entries = new ArrayList<>();
         String sql = "SELECT at, player_name, action, detail FROM " + logTable()
