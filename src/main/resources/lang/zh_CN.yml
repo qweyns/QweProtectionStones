@@ -1,6 +1,6 @@
 # --- Общие ---
-# 提示：任何键都可以写成多行列表——
-# 每个 '-' 行都会作为单独的聊天行发送；'- ""' 表示空行。
+# Чат-сообщения поддерживают списки строк; пустая строка даёт отступ.
+# prefix, имена, подписи и raw-шаблоны (например menu_default_title) оставляйте строками.
 prefix: "<bold><gradient:#A78BFA:#C4B5FD:#F9A8D4>QPS</gradient></bold> <#A79FC0>» "
 no_permission: "%prefix%<#FB7185>你没有权限！"
 reload_success: "%prefix%<#86EFAC>配置已重载！"
