@@ -32,7 +32,7 @@ public class RegionStorage {
     private final RetryQueue<UUID> rentals = new RetryQueue<>();
     private final RetryQueue<UUID> autoadd = new RetryQueue<>();
     private final RetryQueue<UUID> players = new RetryQueue<>();
-    private final RetryQueue<UUID> logs = new RetryQueue<>();
+    private final LogWriteQueue logs = new LogWriteQueue();
     private volatile long lastFlushMillis;
 
     public RegionStorage(QweProtectStones plugin) {
@@ -162,11 +162,7 @@ public class RegionStorage {
     }
 
     public void log(RegionLogEntry entry) {
-        if (entry != null) {
-            UUID id = UUID.randomUUID();
-            logs.put(id, () -> dao.appendLog(List.of(entry)), StorageRecovery.command("log",id,"region",entry.regionId().toString(),
-                    "at",entry.at(),"name",entry.playerName(),"action",entry.action(),"detail",entry.detail()));
-        }
+        if (entry != null) logs.add(entry);
     }
 
     public void readLogAsync(UUID regionId, int limit, java.util.function.Consumer<List<RegionLogEntry>> callback) {
@@ -201,7 +197,7 @@ public class RegionStorage {
         rentals.flush(this::writeFailed);
         autoadd.flush(this::writeFailed);
         players.flush(this::writeFailed);
-        logs.flush(this::writeFailed);
+        logs.flush(dao,this::writeFailed);
         checkpoint();
     }
 
