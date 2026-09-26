@@ -158,7 +158,16 @@ public class RegionExporter {
 
     private static String escape(String value) {
         if (value == null) return "";
-        return value.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        StringBuilder escaped = new StringBuilder(value.length());
+        final char backslash = 92;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"' || c == backslash) escaped.append(backslash).append(c);
+            // YAML тоже читает export: NEL/разделители строк нельзя отдавать сырыми.
+            else if (Character.isISOControl(c) || Character.isSurrogate(c) || c == 0x2028 || c == 0x2029)
+                escaped.append(backslash).append('u').append(String.format(java.util.Locale.ROOT, "%04x", (int)c));
+            else escaped.append(c);
+        }
+        return escaped.toString();
     }
 }

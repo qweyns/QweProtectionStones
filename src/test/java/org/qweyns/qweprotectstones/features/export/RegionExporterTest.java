@@ -18,6 +18,11 @@ class RegionExporterTest {
         when(plugin.getPluginMeta().getVersion()).thenReturn("test");
         Region region = new Region(UUID.randomUUID(),"world",new RegionBounds(0,0,0,2,2,2),1,1,1,
                 "small",UUID.randomUUID(),"owner",5,10,1);
+        StringBuilder special = new StringBuilder("start");
+        for (int c=0;c<32;c++) special.append((char)c);
+        for (int c=127;c<160;c++) special.append((char)c);
+        special.append((char)0x2028).append((char)0x2029).appendCodePoint(0x1F600).append('"').append((char)92).append("end");
+        region.restoreDecoration(special.toString());
         when(plugin.getRegionManager().getAllRegions()).thenReturn(List.of(region));
         RegionExporter exporter = new RegionExporter(plugin);
         Set<Path> files = new HashSet<>();
@@ -29,7 +34,9 @@ class RegionExporterTest {
                 assertTrue(files.add(file));
                 Object parsed = new org.yaml.snakeyaml.Yaml().load(Files.readString(file));
                 assertInstanceOf(Map.class,parsed);
-                assertEquals(1, ((List<?>)((Map<?,?>)parsed).get("regions")).size());
+                List<?> regions = (List<?>)((Map<?,?>)parsed).get("regions");
+                assertEquals(1, regions.size());
+                assertEquals(special.toString(), ((Map<?,?>)regions.getFirst()).get("name"));
             }
         }
         assertEquals(folder.resolve("backups"), exporter.backup().toPath().getParent());
