@@ -67,13 +67,8 @@ database:
 | `language` | `ru_RU`, `en_US`, `es_ES`, `zh_CN` |
 | `command.name` / `command.aliases` | Игровая команда и алиасы (рестарт) |
 | `region_cooldown_seconds` | Пауза между созданием приватов (антиспам; 0 — выкл) |
-| `preview-messages` | Подсказка в actionbar при ядре в руке: влезет ли приват |
-| `invite_expire_seconds` | Сколько живёт приглашение `/ps invite` |
-| `upgrade_item` | Предмет оплаты прокачки (тип может переопределить) |
-| `upgrade_cost_multiplier` / `upgrade_tax` | Цена уровня: N × множитель + налог |
-| `menu_command_radius` | С какого расстояния `/ps menu` достаёт до ядра |
 
-**Заброшенные приваты** (`settings.abandoned`): `enable`, `inactive_days`,
+**Заброшенные приваты** (features.yml → `abandoned`): `enable`, `inactive_days`,
 `check_interval_minutes`, `keep_upgraded` (не трогать прокачанные),
 `skip_listed` (не трогать выставленные на продажу и в аренду).
 
@@ -87,7 +82,14 @@ database:
 `file-name`, `rotate-size-mb` (при превышении файл переименовывается
 в `.old`, хранится одна предыдущая копия).
 
-**Свои меню** (`settings.custom_menus`): позволяет отдать меню стороннему
+**Прокачка** (config.yml → `upgrade`): `item` — предмет оплаты, `cost_multiplier` и `tax` —
+цена уровня N × множитель + налог. Тип привата может переопределить всё это в regions.yml.
+
+**Меню** (config.yml → `menus`): `command_radius` — с какого расстояния `/ps menu` достаёт до ядра.
+
+**Приглашения** (features.yml → `invites`): `expire_seconds`, `sound`.
+
+**Свои меню** (config.yml → `menus.custom`): позволяет отдать меню стороннему
 плагину (DeluxeMenus и т.п.). Для каждого из `main` / `upgrade` / `effects`:
 `action: MENU` (встроенное) или `COMMAND` + список команд с `%player%` и
 `%region_id%` (форматы `[console]` / `[message]` / от игрока).
@@ -254,7 +256,7 @@ flags:
 |---|---|
 | удар по привату, приват уничтожен, чужак на территории | `features.yml` → `notifications.sounds` (`attack`, `destroyed`, `intruder`) |
 | сигнал соседям о рейде | `siege.yml` → `siege.neighbour_alert_sound` |
-| приглашение в приват | `config.yml` → `settings.invite_sound` |
+| приглашение в приват | `features.yml` → `invites.sound` |
 | прокачка прочности | `menus/upgrade.yml` → `sounds` (`success`, `denied`) |
 | остальные кнопки меню | действие `[sound] ЗВУК` в `click_commands` |
 
@@ -285,6 +287,8 @@ NaN/Infinity у double заменяются fallback. Диапазоны — т�
 | visuals.yml | `visuals.boundaries.vertical_radius` | 8 | 1..256 блоков вверх/вниз вокруг ядра, новая подсветка |
 | visuals.yml | `visuals.boundaries.glow_color_first` | #00FF00 | Первый цвет /ps glow |
 | visuals.yml | `visuals.boundaries.glow_color_second` | #008000 | Второй цвет /ps glow |
+| visuals.yml | `visuals.damage_indicator.enabled` | true | всплывающие цифры урона над ядром |
+| visuals.yml | `visuals.preview-messages` | false | подсказка в actionbar при ядре в руке: влезет ли приват |
 | visuals.yml | `visuals.damage_indicator.offset_y` | 1.2 | 0..16 блоков, следующий индикатор |
 | visuals.yml | `visuals.damage_indicator.rise` | 1.2 | 0..16 блоков |
 | visuals.yml | `visuals.damage_indicator.spread` | 0.2 | 0..1 блока; 0 — без случайного смещения |
@@ -323,3 +327,19 @@ config уже отредактирован). `menu_default_title` — загол
 ## Проверка конфигов
 
 Если плагин не понял какую-то настройку (неизвестный материал, роль, сущность, значение не из списка), он заменяет её значением по умолчанию и пишет предупреждение. `/qps reload` показывает все такие предупреждения списком, а при запуске в консоль выводится их общее число.
+
+
+## Перенесённые настройки
+
+Если на сервере настройка лежит по старому пути, она продолжает работать, а в консоли
+при загрузке появится подсказка, куда её перенести.
+
+| Было | Стало |
+|---|---|
+| `settings.upgrade_item`, `upgrade_cost_multiplier`, `upgrade_tax` | config.yml → `upgrade.item`, `cost_multiplier`, `tax` |
+| `settings.menu_command_radius`, `settings.custom_menus` | config.yml → `menus.command_radius`, `menus.custom` |
+| `settings.invite_expire_seconds`, `settings.invite_sound` | features.yml → `invites.expire_seconds`, `invites.sound` |
+| `settings.abandoned` | features.yml → `abandoned` |
+| `settings.preview-messages` | visuals.yml → `visuals.preview-messages` |
+| `siege.damage_indicator` | visuals.yml → `visuals.damage_indicator.enabled` |
+| `map` в visuals.yml | features.yml → `map` (путь тот же) |

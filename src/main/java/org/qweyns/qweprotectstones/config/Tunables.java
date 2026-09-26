@@ -166,7 +166,7 @@ public final class Tunables {
         raidDestroyed = sound(cfg, "notifications.sounds.destroyed", "sounds.raid_destroyed", "ENTITY_WITHER_DEATH:1.0:1.0");
         intruderAlert = sound(cfg, "notifications.sounds.intruder", "sounds.intruder_alert", "BLOCK_NOTE_BLOCK_BELL:1.0:1.0");
         raidNearby = sound(cfg, "siege.neighbour_alert_sound", "sounds.raid_nearby", "ENTITY_WITHER_SHOOT:0.4:0.7");
-        inviteReceived = sound(cfg, "settings.invite_sound", "sounds.invite_received", "ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2");
+        inviteReceived = sound(cfg, "invites.sound", "sounds.invite_received", "ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2");
     }
 
     private SoundSetting sound(FileConfiguration cfg, String path, String legacyPath, String defaultValue) {
@@ -222,7 +222,7 @@ public final class Tunables {
         regionLeaveEnabled = true;
         homeCancelOnMove = cfg.getBoolean("home.cancel-on-move", true);
         homeCancelOnDamage = cfg.getBoolean("home.cancel-on-damage", true);
-        previewMessages = cfg.getBoolean("settings.preview-messages", false);
+        previewMessages = cfg.getBoolean("visuals.preview-messages", false);
         // канал ACTIONBAR выпилен: старые конфиги читаем как CHAT
         regionEnterChannel = "CHAT";
         regionLeaveChannel = "CHAT";

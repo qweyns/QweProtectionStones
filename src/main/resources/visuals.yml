@@ -1,5 +1,5 @@
 # ============================================================
-#   QweProtectStones — как приваты выглядят и звучат (visuals.yml)
+#   QweProtectStones — как приваты выглядят (visuals.yml)
 # ============================================================
 
 # --- ВИЗУАЛЬНЫЕ НАСТРОЙКИ ------------------------------------------------------
@@ -22,31 +22,15 @@ visuals:
     glow_color_second: "#008000"
     show_time_ticks: 40      # сколько тиков показывается подсветка
 
-  # Всплывающий урон. Выключатель — siege.damage_indicator в siege.yml.
+  # Подсказка в actionbar, когда блок-ядро в руке: влезет ли приват
+  # и не пересекается ли он с чужим. По умолчанию выключена.
+  preview-messages: false
+
+  # Всплывающие цифры урона над ядром при взрыве.
   damage_indicator:
+    enabled: true
     offset_y: 1.2       # начальная высота, 0..16
     rise: 1.2           # подъём, 0..16
     spread: 0.2         # случайный разброс X/Z, 0..1; 0 — без разброса
     animation_ticks: 30 # 0..59 (ограничение TextDisplay)
     lifetime_ticks: 35  # 1..1200
-
-# --- КАРТА (Dynmap) --------------------------------------------------------------
-map:
-  dynmap:
-    # Рисовать границы приватов на Dynmap, если он установлен.
-    enable: true
-    layer_name: "Приваты"
-    line_color: "#A78BFA"
-    fill_color: "#C4B5FD"
-    fill_opacity: 0.25
-  bluemap:
-    # Рисовать границы приватов на BlueMap, если он установлен (API 2.x).
-    enable: true
-    marker_set_label: "Приваты"
-    line_color: "#A78BFA"
-    fill_color: "#C4B5FD"
-    fill_opacity: 0.25
-    line_width: 2
-    # Слой можно скрыть по умолчанию и включать кнопкой в интерфейсе карты.
-    default_hidden: false
-    toggleable: true

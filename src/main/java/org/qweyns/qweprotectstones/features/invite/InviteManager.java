@@ -37,7 +37,7 @@ public class InviteManager {
     }
 
     private long expireSeconds() {
-        long seconds = plugin.getConfigManager().getConfig().getLong("settings.invite_expire_seconds", 120L);
+        long seconds = plugin.getConfigManager().getConfig().getLong("invites.expire_seconds", 120L);
         return seconds > 0 ? seconds : 120L;
     }
 

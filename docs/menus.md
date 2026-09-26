@@ -110,7 +110,7 @@ click_requirement:
 ## Сторонние меню вместо встроенных
 
 Если хотите отдать меню стороннему плагину (DeluxeMenus и т.п.) —
-`settings.custom_menus` в config.yml:
+`menus.custom` в config.yml:
 
 ```yaml
 custom_menus:

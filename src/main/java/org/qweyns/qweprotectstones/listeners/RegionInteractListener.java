@@ -62,7 +62,7 @@ public class RegionInteractListener implements Listener {
 
         if (player.isSneaking()) return;
 
-        String action = plugin.getConfigManager().getConfig().getString("settings.custom_menus.main.action", "MENU");
+        String action = plugin.getConfigManager().getConfig().getString("menus.custom.main.action", "MENU");
         if (action.equalsIgnoreCase("COMMAND")) {
             runCustomCommands(player, region);
             return;
@@ -73,7 +73,7 @@ public class RegionInteractListener implements Listener {
 
     private void runCustomCommands(Player player, Region region) {
         List<String> commands = plugin.getConfigManager().getConfig()
-                .getStringList("settings.custom_menus.main.commands");
+                .getStringList("menus.custom.main.commands");
 
         for (String raw : commands) {
             String parsed = raw.replace("%player%", player.getName())

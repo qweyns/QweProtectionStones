@@ -70,7 +70,7 @@ default_region:
   enable_durability_upgrade: true
 
   # Переопределение оплаты прокачки для этого типа.
-  # item: "" — общий предмет из config.yml (settings.upgrade_item).
+  # item: "" — общий предмет из config.yml (upgrade.item).
   # cost_multiplier / tax: -1 — общие значения из config.yml.
   upgrade:
     item: ""

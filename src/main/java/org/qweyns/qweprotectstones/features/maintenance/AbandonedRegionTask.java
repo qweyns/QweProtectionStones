@@ -41,19 +41,19 @@ public class AbandonedRegionTask {
     }
 
     private boolean isEnabled() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.enable", false);
+        return plugin.getConfigManager().getConfig().getBoolean("abandoned.enable", false);
     }
 
     private int inactiveDays() {
-        return Math.max(1, plugin.getConfigManager().getConfig().getInt("settings.abandoned.inactive_days", 60));
+        return Math.max(1, plugin.getConfigManager().getConfig().getInt("abandoned.inactive_days", 60));
     }
 
     private int checkIntervalMinutes() {
-        return Math.max(5, plugin.getConfigManager().getConfig().getInt("settings.abandoned.check_interval_minutes", 60));
+        return Math.max(5, plugin.getConfigManager().getConfig().getInt("abandoned.check_interval_minutes", 60));
     }
 
     private boolean keepUpgraded() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.keep_upgraded", true);
+        return plugin.getConfigManager().getConfig().getBoolean("abandoned.keep_upgraded", true);
     }
 
     public void sweep() {
@@ -103,7 +103,7 @@ public class AbandonedRegionTask {
         int limit = maxPerSweep();
         if (limit > 0 && doomed.size() > limit) {
             plugin.getLogger().warning("Автоочистка: кандидатов " + doomed.size() + ", за проход удаляю не больше "
-                    + limit + " (settings.abandoned.max_per_sweep).");
+                    + limit + " (abandoned.max_per_sweep).");
             doomed = doomed.subList(0, limit);
         }
 
@@ -148,7 +148,7 @@ public class AbandonedRegionTask {
 
     private java.util.Set<String> activeMemberRoles() {
         java.util.Set<String> result = new java.util.HashSet<>();
-        for (String raw : plugin.getConfigManager().getConfig().getStringList("settings.abandoned.active_member_roles")) {
+        for (String raw : plugin.getConfigManager().getConfig().getStringList("abandoned.active_member_roles")) {
             String id = raw.trim().toLowerCase(java.util.Locale.ROOT);
             if (id.equals("*")) { result.add(id); continue; }
             // псевдонимы из roles.yml приводим к настоящему id
@@ -174,15 +174,15 @@ public class AbandonedRegionTask {
     }
 
     private boolean dryRun() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.dry_run", false);
+        return plugin.getConfigManager().getConfig().getBoolean("abandoned.dry_run", false);
     }
 
     private int maxPerSweep() {
-        return Math.max(0, plugin.getConfigManager().getConfig().getInt("settings.abandoned.max_per_sweep", 50));
+        return Math.max(0, plugin.getConfigManager().getConfig().getInt("abandoned.max_per_sweep", 50));
     }
 
     private boolean skipListed() {
-        return plugin.getConfigManager().getConfig().getBoolean("settings.abandoned.skip_listed", true);
+        return plugin.getConfigManager().getConfig().getBoolean("abandoned.skip_listed", true);
     }
 
     private boolean isListed(Region region) {
