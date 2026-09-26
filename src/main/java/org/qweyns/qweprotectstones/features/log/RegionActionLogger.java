@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.log;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,13 +42,14 @@ public class RegionActionLogger implements Listener {
         }
         if (!isEnabled()) return;
 
-        long dayTicks = 20L * 60 * 60 * 24;
+        long period = ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "settings.action_log.prune_interval_minutes", 1440L, 1L, 525600L) * 1200L;
+        long delay = ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "settings.action_log.prune_initial_delay_seconds", 120L, 1L, 86400L) * 20L;
         pruneTask = plugin.getSchedulers().runAsyncTimer(() -> {
             // срок читаем каждый раз — переживает /reload без рестарта задачи
             int keepDays = Math.max(1, plugin.getConfigManager().getConfig().getInt("settings.action_log.keep_days", 14));
             int removed = plugin.getRegionStorage().pruneLog(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(keepDays));
             if (removed > 0) plugin.getLogger().info("Журнал действий: удалено старых записей — " + removed);
-        }, 20L * 120, dayTicks);
+        }, delay, period);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

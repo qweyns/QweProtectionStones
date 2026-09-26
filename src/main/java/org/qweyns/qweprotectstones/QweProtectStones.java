@@ -305,6 +305,11 @@ public final class QweProtectStones extends JavaPlugin {
         }
     }
 
+    /** Реальное зарегистрированное имя: смена settings.command требует рестарта. */
+    public String getPlayerCommandName() {
+        return regionCommand == null ? configManager.getCommandName() : regionCommand.getName();
+    }
+
     public void reloadEverything() {
         configManager.reload();
         regionConfig.reload();

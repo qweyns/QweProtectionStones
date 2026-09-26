@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.autoadd;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -72,7 +74,7 @@ public class AutoAddManager implements Listener {
                     if (!plugin.isEnabled()) return;
                     plugin.getSchedulers().runAtEntityLater(player, () -> {
                         if (player.isOnline() && session.equals(sessions.get(uuid))) loadSession(player, uuid, session);
-                    }, 100L);
+                    }, ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "timings.autoadd_retry_ticks", 100L, 1L, 72000L));
                 });
     }
 

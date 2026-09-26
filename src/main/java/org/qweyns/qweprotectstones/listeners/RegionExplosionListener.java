@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.listeners;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -79,14 +81,15 @@ public class RegionExplosionListener implements Listener {
         int radius = (int) Math.ceil(Math.min(MAX_DAMAGE_RADIUS, maximum * event.getDamageRadiusMultiplier()));
         RegionBounds bounds = RegionBounds.around(center.getBlockX(), center.getBlockY(), center.getBlockZ(),
                 radius, radius, radius, center.getWorld().getMinHeight(), center.getWorld().getMaxHeight() - 1);
+        int damage = (int) ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "siege.damage_per_explosion", 1L, 1L, 1000000L);
         for (Region region : plugin.getRegionManager().intersecting(center.getWorld().getName(), bounds)) {
             if (!siege.isDamaging(region, event.getExplosionType())) continue;
             Location core = region.getCoreLocation();
             double allowed = Math.min(MAX_DAMAGE_RADIUS,
                     baseRadius(plugin.getRegionTypes().byId(region.getTypeId())) * event.getDamageRadiusMultiplier());
             if (core == null || core.distanceSquared(center) > allowed * allowed) continue;
-            if (plugin.getSchedulers().ownsLocation(core)) siege.damageRegion(region, 1, event.getExplosionType(), primer);
-            else siege.damageRegionAsync(region, 1, event.getExplosionType(), primer).exceptionally(error -> {
+            if (plugin.getSchedulers().ownsLocation(core)) siege.damageRegion(region, damage, event.getExplosionType(), primer);
+            else siege.damageRegionAsync(region, damage, event.getExplosionType(), primer).exceptionally(error -> {
                 plugin.getLogger().log(java.util.logging.Level.SEVERE, "Ошибка межрегиональной осады", error);
                 return false;
             });

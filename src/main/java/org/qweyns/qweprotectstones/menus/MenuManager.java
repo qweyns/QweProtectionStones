@@ -169,7 +169,7 @@ public class MenuManager implements Listener {
 
         int size = normalizeSize(menuCfg.getInt("size", 27), menuName);
         Component title = ColorUtil.formatComponent(
-                placeholders.apply(player, menuCfg.getString("menu_title", "Меню"), region, null));
+                placeholders.apply(player, menuCfg.getString("menu_title", plugin.getLanguageManager().rawTemplate("menu_default_title")), region, null));
 
         MenuHolder holder = new MenuHolder(menuName, region);
         Inventory inv = Bukkit.createInventory(holder, size, title);

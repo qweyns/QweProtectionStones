@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.storage.dao;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import com.zaxxer.hikari.HikariConfig;
 import org.qweyns.qweprotectstones.QweProtectStones;
 
@@ -42,7 +44,8 @@ public class SqliteRegionDao extends AbstractSqlRegionDao {
         config.setMaximumPoolSize(1);
         config.addDataSourceProperty("journal_mode", "WAL");
         config.addDataSourceProperty("synchronous", "NORMAL");
-        config.addDataSourceProperty("busy_timeout", "5000");
+        config.addDataSourceProperty("busy_timeout", String.valueOf(ConfigValues.boundedLong(
+                plugin.getConfigManager().getConfig(), "database.sqlite_busy_timeout_ms", 5000L, 0L, 60000L)));
         config.addDataSourceProperty("foreign_keys", "ON");
     }
 

@@ -37,6 +37,8 @@ public class MenuPlaceholders {
             }
         }
 
+        if (player != null && text.contains("%player%")) text = text.replace("%player%", player.getName());
+        if (text.contains("%command%")) text = text.replace("%command%", plugin.getPlayerCommandName());
         if (region != null) text = applyRegion(text, region);
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {

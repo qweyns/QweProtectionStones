@@ -226,7 +226,10 @@ public class ConfigManager {
 
     private String holoKey(String typeId, String key) {
         String modern = "hologram_settings." + key;
-        return regions().has(typeId, modern) ? modern : "fancyholograms_settings." + key;
+        String legacy = "fancyholograms_settings." + key;
+        if (regions().raw().isSet("region_types." + typeId + "." + modern)) return modern;
+        if (regions().raw().isSet("region_types." + typeId + "." + legacy)) return legacy;
+        return regions().has(typeId, modern) ? modern : legacy;
     }
 
     private boolean holo(String typeId, String key, boolean fallback) {

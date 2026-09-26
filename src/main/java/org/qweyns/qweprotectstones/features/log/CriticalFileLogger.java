@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.log;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.qweyns.qweprotectstones.QweProtectStones;
 import org.qweyns.qweprotectstones.scheduler.Schedulers;
 
@@ -18,7 +20,6 @@ public final class CriticalFileLogger {
 
     // потокобезопасный аналог SimpleDateFormat
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    private static final long FLUSH_PERIOD_TICKS = 100L;
 
     private final QweProtectStones plugin;
     private final Object lock = new Object();
@@ -41,7 +42,8 @@ public final class CriticalFileLogger {
             openWriter();
         }
         if (flushTask != null) flushTask.cancel();
-        flushTask = plugin.getSchedulers().runAsyncTimer(this::flush, FLUSH_PERIOD_TICKS, FLUSH_PERIOD_TICKS);
+        long period = ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "settings.critical_log.flush_ticks", 100L, 1L, 72000L);
+        flushTask = plugin.getSchedulers().runAsyncTimer(this::flush, period, period);
     }
 
     /** Сбрасывает буфер на диск, останавливает таймер и закрывает журнал; вызывается из onDisable. */

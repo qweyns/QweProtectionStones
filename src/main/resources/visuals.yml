@@ -17,7 +17,18 @@ visuals:
     color_open: "#C4B5FD"    # создание привата
     color_closed: "#FB7185"  # удаление привата
     color_info: "#F9A8D4"    # показ границ по /ps info
+    vertical_radius: 8             # высота каркаса вокруг ядра, 1..256 блоков
+    glow_color_first: "#00FF00"     # два цвета /ps glow
+    glow_color_second: "#008000"
     show_time_ticks: 40      # сколько тиков показывается подсветка
+
+  # Всплывающий урон. Выключатель — siege.damage_indicator в siege.yml.
+  damage_indicator:
+    offset_y: 1.2       # начальная высота, 0..16
+    rise: 1.2           # подъём, 0..16
+    spread: 0.2         # случайный разброс X/Z, 0..1; 0 — без разброса
+    animation_ticks: 30 # 0..59 (ограничение TextDisplay)
+    lifetime_ticks: 35  # 1..1200
 
 # --- ЗВУКИ -------------------------------------------------------------------
 # Формат: ЗВУК, ЗВУК:громкость или ЗВУК:громкость:высота.

@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.update;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,10 +26,9 @@ public class UpdateChecker implements Listener {
     private static final String LATEST_URL = "https://api.github.com/repos/qweyns/QweProtectionStones/releases/latest";
     private static final String RELEASES_PAGE = "https://github.com/qweyns/QweProtectionStones/releases";
     private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\s*:\s*\"([^\"]+)\"");
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private final QweProtectStones plugin;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
+    private final HttpClient http;
 
     // замеченная новая версия; null — обновлений нет или ещё не проверяли
     private volatile String newerVersion;
@@ -37,6 +38,12 @@ public class UpdateChecker implements Listener {
 
     public UpdateChecker(QweProtectStones plugin) {
         this.plugin = plugin;
+        http = HttpClient.newBuilder().connectTimeout(timeout()).build();
+    }
+
+    private Duration timeout() {
+        return Duration.ofSeconds(ConfigValues.boundedLong(plugin.getConfigManager().getConfig(),
+                "updates.http-timeout-seconds", 10L, 1L, 120L));
     }
 
     public void start() {
@@ -46,8 +53,9 @@ public class UpdateChecker implements Listener {
         }
         if (!plugin.getConfigManager().getConfig().getBoolean("updates.enabled", true)) return;
 
-        long hours = Math.max(1, plugin.getConfigManager().getConfig().getLong("updates.period-hours", 12L));
-        checkTask = plugin.getSchedulers().runTimer(this::check, 100L, hours * 3600L * 20L);
+        long hours = ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "updates.period-hours", 12L, 1L, 8760L);
+        long delay = ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "updates.initial-delay-ticks", 100L, 1L, 72000L);
+        checkTask = plugin.getSchedulers().runTimer(this::check, delay, hours * 3600L * 20L);
         if (!eventsRegistered) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
             eventsRegistered = true;
@@ -56,7 +64,8 @@ public class UpdateChecker implements Listener {
 
     /** При выключении плагина — иначе селектор-поток переживает /reload. */
     public void close() {
-        http.close();
+        if (checkTask != null) checkTask.cancel();
+        http.shutdownNow();
     }
 
     private void check() {
@@ -67,7 +76,7 @@ public class UpdateChecker implements Listener {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder(URI.create(LATEST_URL))
-                    .timeout(TIMEOUT)
+                    .timeout(timeout())
                     .header("Accept", "application/vnd.github+json")
                     .GET()
                     .build();

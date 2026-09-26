@@ -28,8 +28,7 @@ default_region:
   # --- Название и голограмма ---------------------------------------------
   # Название типа в ИНТЕРФЕЙСЕ плагина: /ps list, /ps info, /ps findspot,
   # меню и сообщение /qps give. Поддерживаются цвета MiniMessage.
-  # В голограмму оно НЕ подставляется — содержимое голограммы целиком
-  # задаётся строками ниже, включая заголовок, если он нужен.
+  # В голограмме используется через %type%; отдельный заголовок не добавляется.
   display_name: "<#C4B5FD>Приват"
 
   # Строки голограммы — целиком ваши, display_name сверху не добавляется.
@@ -206,7 +205,7 @@ default_region:
   # MODERN — FancyHolograms (текстовые дисплеи, богаче настройки);
   # DECENT — DecentHolograms;
   # NATIVE — встроенные голограммы на TextDisplay, плагины не нужны.
-  # Если выбранный плагин не установлен, работа молча продолжится на NATIVE.
+  # На Folia всегда NATIVE; на Paper NATIVE также используется при отсутствии провайдера.
   hologram_provider: MODERN
   hologram_offset: 1.1            # высота первой строки над ядром
   hologram_display_range: 16      # с какого расстояния видно
@@ -287,7 +286,7 @@ region_types:
     - SPEED
     - SLOW
     hologram_display_range: 20
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
     create:
       sound: BLOCK_BEACON_ACTIVATE
@@ -317,7 +316,7 @@ region_types:
     - EXP_BOOST
     - INCREASE_DAMAGE
     hologram_display_range: 20
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
     create:
       sound: BLOCK_BEACON_ACTIVATE
@@ -353,7 +352,7 @@ region_types:
       pvp: false
       monster_spawning: false
     hologram_display_range: 24
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
 
   RED_MUSHROOM_BLOCK:
@@ -405,7 +404,7 @@ region_types:
       monster_spawning: false
       teleport_in: false
     hologram_display_range: 24
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
 
   # --- Пример «покупного» привата -------------------------------------------

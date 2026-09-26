@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.visual;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -54,7 +56,7 @@ public class VisualManager {
                             + ":" + cfg.getDouble(path + ".pitch", 1.0),
                     SoundSetting.NONE);
             if (!sound.isEnabled()) {
-                plugin.getLogger().warning("Неизвестный звук в config.yml (" + path + ".sound): " + soundName);
+                plugin.getLogger().warning("Неизвестный звук в regions.yml (" + path + ".sound): " + soundName);
             }
             sound.playAt(loc);
         }
@@ -83,7 +85,10 @@ public class VisualManager {
                 return;
             }
 
-            Color color = blinkState[0] ? Color.LIME : Color.GREEN;
+            var config = plugin.getConfigManager().getConfig();
+            Color color = ColorUtil.parseParticleColor(config.getString(blinkState[0]
+                    ? "visuals.boundaries.glow_color_first" : "visuals.boundaries.glow_color_second",
+                    blinkState[0] ? "#00FF00" : "#008000"));
             blinkState[0] = !blinkState[0];
 
             plugin.getTunables().particles().spawnFor(player, points, color);
@@ -190,8 +195,9 @@ public class VisualManager {
 
         // по вертикали рисуем участок вокруг ядра, не всю высоту
 
-        double minY = Math.max(bounds.minY(), aroundY - 8);
-        double maxY = Math.min(bounds.maxY() + 1.0, aroundY + 9);
+        int height = (int) ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "visuals.boundaries.vertical_radius", 8L, 1L, 256L);
+        double minY = Math.max(bounds.minY(), aroundY - height);
+        double maxY = Math.min(bounds.maxY() + 1.0, aroundY + height + 1);
 
         double stepX = particles.step(maxX - minX);
         double stepY = particles.step(maxY - minY);
@@ -224,22 +230,29 @@ public class VisualManager {
         World world = loc.getWorld();
         if (world == null) return;
 
+        var cfg = plugin.getConfigManager().getConfig();
+        double offset = ConfigValues.boundedDouble(cfg, "visuals.damage_indicator.offset_y", 1.2, 0, 16);
+        double rise = ConfigValues.boundedDouble(cfg, "visuals.damage_indicator.rise", 1.2, 0, 16);
+        double spread = ConfigValues.boundedDouble(cfg, "visuals.damage_indicator.spread", 0.2, 0, 1);
+        int animation = (int) ConfigValues.boundedLong(cfg, "visuals.damage_indicator.animation_ticks", 30, 0, 59);
+        long lifetime = ConfigValues.boundedLong(cfg, "visuals.damage_indicator.lifetime_ticks", 35, 1, 1200);
         ThreadLocalRandom random = ThreadLocalRandom.current();
         Location spawnLoc = loc.clone().add(
-                0.5 + random.nextDouble(-0.2, 0.2),
-                1.2,
-                0.5 + random.nextDouble(-0.2, 0.2));
+                0.5 + (spread == 0 ? 0 : random.nextDouble(-spread, spread)),
+                offset,
+                0.5 + (spread == 0 ? 0 : random.nextDouble(-spread, spread)));
 
         TextDisplay display = world.spawn(spawnLoc, TextDisplay.class, td -> {
             td.text(plugin.getConfigManager().getDamageIndicator(damage));
             td.setBillboard(Display.Billboard.CENTER);
             td.setDefaultBackground(false);
-            td.setTeleportDuration(30);
+            td.setTeleportDuration(animation);
+            td.setPersistent(false);
         });
 
-        display.teleport(spawnLoc.clone().add(0, 1.2, 0));
+        display.teleport(spawnLoc.clone().add(0, rise, 0));
         // на Folia сущность живёт в потоке своего региона, глобальный таймер её не имеет права трогать
-        plugin.getSchedulers().runAtEntityLater(display, display::remove, 35L);
+        plugin.getSchedulers().runAtEntityLater(display, display::remove, lifetime);
     }
 
     public void shutdown() {

@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.notification;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
@@ -22,22 +24,26 @@ import java.util.logging.Level;
 
 public class NotificationManager {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     private final QweProtectStones plugin;
     private volatile boolean closed;
 
     private final Cache<String, Long> webhookRateLimiter = CacheBuilder.newBuilder()
-            .expireAfterWrite(15, TimeUnit.SECONDS)
+            .expireAfterAccess(1, TimeUnit.DAYS)
+            .maximumSize(100000)
             .build();
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(TIMEOUT)
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+    private final HttpClient httpClient;
 
     public NotificationManager(QweProtectStones plugin) {
         this.plugin = plugin;
+        httpClient = HttpClient.newBuilder().connectTimeout(timeout())
+                .followRedirects(HttpClient.Redirect.NORMAL).build();
+    }
+
+    private Duration timeout() {
+        return Duration.ofSeconds(ConfigValues.boundedLong(plugin.getConfigManager().getConfig(),
+                "notifications.http-timeout-seconds", 5L, 1L, 120L));
     }
 
     /** При выключении плагина — иначе селектор-поток переживает /reload. */
@@ -114,8 +120,14 @@ public class NotificationManager {
                 && plugin.getDiscordSrvHook() != null && plugin.getDiscordSrvHook().isActive();
         if (!discordEnabled && !telegramEnabled && !srvEnabled) return;
 
-        if (webhookRateLimiter.getIfPresent(rateLimitKey) != null) return;
-        webhookRateLimiter.put(rateLimitKey, System.currentTimeMillis());
+        long interval = ConfigValues.boundedLong(cfg, "notifications.rate-limit-seconds", 15L, 0L, 86400L) * 1000L;
+        long now = System.currentTimeMillis();
+        java.util.concurrent.atomic.AtomicBoolean accepted = new java.util.concurrent.atomic.AtomicBoolean();
+        webhookRateLimiter.asMap().compute(rateLimitKey, (key, last) -> {
+            if (last == null || now - last >= interval) { accepted.set(true); return now; }
+            return last;
+        });
+        if (!accepted.get()) return;
 
         // для discord/telegram чистый текст без §-кодов
 
@@ -167,12 +179,12 @@ public class NotificationManager {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(TIMEOUT)
+                    .timeout(timeout())
                     .header("Content-Type", "application/json; charset=utf-8")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
         } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning("Некорректный URL вебхука в config.yml");
+            plugin.getLogger().warning("Некорректный URL вебхука в features.yml");
             return;
         }
 
