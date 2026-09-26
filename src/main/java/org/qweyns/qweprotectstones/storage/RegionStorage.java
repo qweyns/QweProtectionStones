@@ -23,6 +23,8 @@ public class RegionStorage {
     private final QweProtectStones plugin;
     private RegionDao dao;
     private Schedulers.Task flushTask;
+    // Читается и меняется под монитором конвейера записи.
+    private boolean closed;
 
     private final Map<UUID, Region> pendingSaves = new ConcurrentHashMap<>();
     private final Set<UUID> pendingDeletes = ConcurrentHashMap.newKeySet();
@@ -163,7 +165,7 @@ public class RegionStorage {
     }
 
     private synchronized void flush() {
-        if (dao == null) return;
+        if (dao == null || closed) return;
         lastFlushMillis = System.currentTimeMillis();
 
         if (!pendingSaves.isEmpty()) {
@@ -212,7 +214,7 @@ public class RegionStorage {
     }
 
     public synchronized void saveAll(java.util.Collection<Region> regions) {
-        if (dao != null) dao.saveAll(regions);
+        if (dao != null && !closed) dao.saveAll(regions);
     }
 
     public Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> loadSales() {
@@ -251,6 +253,7 @@ public class RegionStorage {
     }
 
     public synchronized void close() {
+        if (closed) return;
         if (flushTask != null) {
             flushTask.cancel();
             flushTask = null;
@@ -258,7 +261,7 @@ public class RegionStorage {
         flush();
         if (dao != null) {
             dao.close();
-            dao = null;
+            closed = true;
         }
     }
 }
