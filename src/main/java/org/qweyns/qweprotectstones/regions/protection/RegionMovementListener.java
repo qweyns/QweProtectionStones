@@ -37,11 +37,14 @@ public class RegionMovementListener implements Listener {
 
         Player player = event.getPlayer();
         Region to = protection.regionAt(event.getTo());
+        if (to == null) return;
+        // Уже внутри (забанили, выключили флаг, приват создан вокруг) — не запираем:
+        // игрок может свободно выйти, запрещён только вход снаружи.
+        if (to.equals(protection.regionAt(event.getFrom()))) return;
 
-        if (to != null && !canEnter(player, to)) {
-
+        if (!canEnter(player, to)) {
             event.setCancelled(true);
-            player.sendMessage(plugin.getLanguageManager().getMessage("region_entry_denied"));
+            protection.sendThrottled(player, plugin.getLanguageManager().getMessage("region_entry_denied"));
             return;
         }
 
@@ -56,7 +59,7 @@ public class RegionMovementListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        boolean trusted = protection.can(to, player, Tunables.TrustAction.INTERACT);
+        boolean trusted = protection.can(to, player, Tunables.TrustAction.ENTRY);
 
         if (!trusted && (!protection.flag(to, RegionFlag.TELEPORT_IN) || !canEnter(player, to))) {
             event.setCancelled(true);
@@ -84,10 +87,10 @@ public class RegionMovementListener implements Listener {
         return id == null ? null : plugin.getRegionManager().getById(id);
     }
 
-    private boolean canEnter(Player player, Region region) {
+    public boolean canEnter(Player player, Region region) {
 
         if (protection.isBanned(region, player)) return false;
-        if (protection.can(region, player, Tunables.TrustAction.INTERACT)) return true;
+        if (protection.can(region, player, Tunables.TrustAction.ENTRY)) return true;
 
         return protection.flag(region, RegionFlag.ENTRY);
     }

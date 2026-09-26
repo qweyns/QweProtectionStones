@@ -29,6 +29,9 @@ public final class InteractRules {
     private final TrustAction defaultEntity;
     private final TrustAction containers;
     private final boolean keepItemUse;
+    private List<Rule<Material>> projectiles = List.of();
+    private TrustAction leash = TrustAction.ENTITY, shear = TrustAction.ENTITY, bucketEntity = TrustAction.ENTITY;
+    private TrustAction tntPrime = TrustAction.BUILD;
 
     private InteractRules(List<Rule<Material>> items, List<Rule<Material>> blocks, List<Rule<Material>> physical,
                           List<Rule<EntityType>> entities, TrustAction defaultBlock, TrustAction defaultPhysical,
@@ -57,6 +60,13 @@ public final class InteractRules {
         return action != null ? action : defaultEntity;
     }
 
+    /** Действие для попадания снаряда игрока в блок; null — попадание не проверяется. */
+    public TrustAction forProjectile(Material block) { return first(projectiles, block); }
+    public TrustAction leash() { return leash; }
+    public TrustAction shear() { return shear; }
+    public TrustAction bucketEntity() { return bucketEntity; }
+    public TrustAction tntPrime() { return tntPrime; }
+
     public TrustAction containers() { return containers; }
     public TrustAction defaultBlock() { return defaultBlock; }
 
@@ -70,7 +80,7 @@ public final class InteractRules {
 
     public static InteractRules load(FileConfiguration cfg, Logger logger) {
         String base = "protection.interact";
-        return new InteractRules(
+        InteractRules rules = new InteractRules(
                 materialRules(cfg.getConfigurationSection(base + ".items"), base + ".items", logger),
                 materialRules(cfg.getConfigurationSection(base + ".blocks"), base + ".blocks", logger),
                 materialRules(cfg.getConfigurationSection(base + ".physical"), base + ".physical", logger),
@@ -80,6 +90,13 @@ public final class InteractRules {
                 action(cfg, base + ".default-entity-action", TrustAction.CONTAINER, logger),
                 action(cfg, base + ".container-action", TrustAction.CONTAINER, logger),
                 cfg.getBoolean(base + ".keep-item-use", true));
+        rules.projectiles = materialRules(cfg.getConfigurationSection("protection.projectiles.blocks"),
+                "protection.projectiles.blocks", logger);
+        rules.leash = action(cfg, base + ".entity-actions.leash", TrustAction.ENTITY, logger);
+        rules.shear = action(cfg, base + ".entity-actions.shear", TrustAction.ENTITY, logger);
+        rules.bucketEntity = action(cfg, base + ".entity-actions.bucket", TrustAction.ENTITY, logger);
+        rules.tntPrime = action(cfg, base + ".tnt-prime-action", TrustAction.BUILD, logger);
+        return rules;
     }
 
     private static TrustAction action(FileConfiguration cfg, String path, TrustAction fallback, Logger logger) {

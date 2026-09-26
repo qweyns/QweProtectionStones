@@ -231,6 +231,7 @@ public final class QweProtectStones extends JavaPlugin {
 
         pm.registerEvents(new BlockProtectionListener(this), this);
         pm.registerEvents(new InteractProtectionListener(this), this);
+        pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.ExtraProtectionListener(this), this);
         pm.registerEvents(new EntityProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.BorderProtectionListener(this), this);

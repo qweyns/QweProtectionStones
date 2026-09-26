@@ -155,6 +155,20 @@ protection:
       interact: [VILLAGER, WANDERING_TRADER]
       container: ["*MINECART", "*CHEST_BOAT", "*CHEST_RAFT"]
     default-entity-action: container
+    # Действия с мобами, у которых свои события.
+    entity-actions:
+      leash: entity    # привязать поводком
+      shear: entity    # остричь овцу, грибную корову
+      bucket: entity   # забрать рыбу/аксолотля в ведро
+    # Поджечь TNT в чужом привате (огнивом, горящей стрелой).
+    tnt-prime-action: build
+
+  # Снаряды игроков (стрелы, трезубцы, снежки) при попадании в блок.
+  # Блоки не из списков снаряды задевать могут как обычно.
+  projectiles:
+    blocks:
+      interact: ["#buttons", "#pressure_plates", TARGET, BELL]
+      build: [CHORUS_FLOWER, DECORATED_POT, POINTED_DRIPSTONE, "*CANDLE", "*CANDLE_CAKE", "#campfires"]
 
 # --- ФЛАГИ -------------------------------------------------------------------
 flags:

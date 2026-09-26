@@ -113,6 +113,16 @@ public class ProtectionService {
                 "%what%", plugin.getLanguageManager().rawTemplate("deny_verb_" + verbKey)));
     }
 
+    /** Сообщение с тем же кулдауном, что и «нельзя»: без спама на каждый шаг. */
+    public void sendThrottled(Player player, net.kyori.adventure.text.Component message) {
+        if (player == null) return;
+        Long last = denyMessageCooldowns.getIfPresent(player.getUniqueId());
+        long now = System.currentTimeMillis();
+        if (last != null && now - last < plugin.getTunables().denyMessageCooldownMs()) return;
+        denyMessageCooldowns.put(player.getUniqueId(), now);
+        player.sendMessage(message);
+    }
+
     public void notifyDenied(Player player, Region region) {
         notifyDenied(player, region, "build");
     }
