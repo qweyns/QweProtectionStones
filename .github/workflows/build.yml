@@ -21,7 +21,20 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: mvn -B -ntp clean package
+        run: mvn -B -ntp clean package 2>&1 | tee "$RUNNER_TEMP/qps-build.log"
+
+      - name: Report build failure
+        if: failure()
+        # Аннотация доступна через Checks API даже если скачивание логов CI недоступно.
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/qps-build.log" ]; then
+            text=$(tail -80 "$RUNNER_TEMP/qps-build.log")
+            text="${text//'%'/'%25'}"
+            text="${text//$'\n'/'%0A'}"
+            text="${text//$'\r'/'%0D'}"
+            echo "::error title=Build diagnostics::$text"
+          fi
 
       - name: Check shaded jar contents
         # классы зависимостей должны попасть в jar после релокации:

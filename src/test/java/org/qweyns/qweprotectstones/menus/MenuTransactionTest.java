@@ -62,7 +62,8 @@ class MenuTransactionTest {
             assertFalse(region.hasEffect("ALERTS"));
             verify(plugin.getVaultHook()).giveMoney(player,10);
             reset(events);
-            doThrow(new IllegalStateException("display failed")).when(plugin.getRegionStorage()).saveNow(region);
+            var storage = plugin.getRegionStorage();
+            doThrow(new IllegalStateException("display failed")).when(storage).saveNow(region);
             actions.execute(player,chain,region);
             assertTrue(region.hasEffect("ALERTS"));
             verify(plugin.getVaultHook(),times(1)).giveMoney(player,10);
