@@ -158,7 +158,7 @@ default_region:
   # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере;
   # WIND_CHARGE — заряд ветра (игрок и бриз), по умолчанию безвреден.
   # Аддоны кастомной взрывчатки регистрируют СВОИ типы теми же ключами
-  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/explosions-api.md и docs/DYNAMITE_ADDON_API.md (план QweTnts).
+  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/explosions-api.md.
   explosions:
     TNT: true
     WITHER: true
