@@ -36,4 +36,19 @@ class StorageRecoveryTest {
         StorageRecovery.replay(journal,dao);
         verify(dao).deleteAll(List.of(id)); assertFalse(Files.exists(journal));
     }
+    @Test void disableAfterFailedStartupMustNotEraseRecoveryJournal() throws Exception {
+        Path journal = folder.resolve("storage-recovery.yml");
+        StorageRecovery.write(journal,List.of(StorageRecovery.command("deleteRegion",UUID.randomUUID())));
+        String before = Files.readString(journal);
+        var plugin = mock(org.qweyns.qweprotectstones.QweProtectStones.class);
+        when(plugin.getDataFolder()).thenReturn(folder.toFile());
+        RegionStorage storage = new RegionStorage(plugin);
+        RegionDao dao = mock(RegionDao.class);
+        var daoField = RegionStorage.class.getDeclaredField("dao"); daoField.setAccessible(true); daoField.set(storage,dao);
+        var blocked = RegionStorage.class.getDeclaredField("recoveryBlocked"); blocked.setAccessible(true); blocked.set(storage,true);
+        storage.close();
+        assertEquals(before,Files.readString(journal));
+        verify(dao).close();
+        verify(dao,never()).deleteAll(anyCollection());
+    }
 }

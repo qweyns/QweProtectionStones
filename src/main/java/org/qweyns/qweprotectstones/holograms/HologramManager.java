@@ -47,7 +47,9 @@ public class HologramManager implements Listener {
         // встроенный провайдер не требует ничего и всегда доступен
         nativeProvider = new NativeHologramProvider(plugin);
         if (dhProvider == null && fhProvider == null) {
-            plugin.getLogger().info("DecentHolograms/FancyHolograms не найдены — использую встроенные голограммы (TextDisplay).");
+            plugin.getLogger().info(plugin.getSchedulers().isFolia()
+                    ? "Folia: использую NATIVE-голограммы; мосты DH/FH доступны на Paper."
+                    : "DecentHolograms/FancyHolograms не найдены — использую встроенные голограммы (TextDisplay).");
         }
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }

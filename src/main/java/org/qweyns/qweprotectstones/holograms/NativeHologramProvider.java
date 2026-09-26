@@ -60,9 +60,14 @@ public class NativeHologramProvider implements IHologramProvider {
         Entry previous = active.get(region.getId());
         if (previous != null && previous.location().equals(loc)) {
             plugin.getSchedulers().runAtEntity(previous.display(), () -> {
-                if (requests.get(region.getId()) == request && previous.display().isValid())
-                    previous.display().text(buildText(region, typeId));
-            });
+                if (requests.get(region.getId()) != request) return;
+                if (!previous.display().isValid() || !previous.display().getLocation().equals(loc)) {
+                    active.remove(region.getId(),previous);
+                    previous.display().remove();
+                    return;
+                }
+                previous.display().text(buildText(region, typeId));
+            }, () -> active.remove(region.getId(), previous));
             return;
         }
         TextDisplay display = world.spawn(loc, TextDisplay.class, spawned -> configure(spawned, typeId, config));

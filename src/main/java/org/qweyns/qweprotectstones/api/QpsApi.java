@@ -143,7 +143,8 @@ public final class QpsApi {
 
     /**
      * Снять прочность привата — как это делает сам плагин при взрыве.
-     * Звать в потоке сервера.
+     * На Paper звать в основном потоке, на Folia — в потоке ядра.
+     * Из других потоков использовать {@link #damageRegionAsync(Region, int, String, String)}.
      *
      * @param damage        единиц прочности (Разрывная волна сносит сразу 2)
      * @param explosionType тип взрыва для правил explosions у типа привата

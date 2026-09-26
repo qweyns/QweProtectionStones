@@ -93,7 +93,7 @@
 | `/qps stats` | Приваты, типы, владельцы, рынок (продажи/аренда/штрафы), очередь записи в БД |
 | `/qps export` | Выгрузка всех приватов в `exports/regions_<дата>.json` |
 | `/qps restore <файл>` | Восстановление из выгрузки |
-| `/qps backup` | Внеплановый бэкап |
+| `/qps backup` | Внеплановый бэкап в `backups/`; `/qps restore` видит файлы из `exports/` и `backups/` |
 | `/qps cleanup` | Удалить заброшенные приваты сейчас |
 | `/qps import <wg\|ps\|gp>` | Импорт из WorldGuard / ProtectionStones / GriefPrevention; типы PS — по материалу блока, флаги — по `flag-mapping` |
 | `/qps give <игрок> <тип> [кол-во]` | Выдать блоки-ядра (с тегом типа и оформлением) |

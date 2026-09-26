@@ -25,6 +25,7 @@ public class RegionStorage {
     private Schedulers.Task flushTask;
     // Читается и меняется под монитором конвейера записи.
     private boolean closed;
+    private boolean recoveryBlocked;
 
     private final RegionWriteQueue regions = new RegionWriteQueue();
     private final RetryQueue<UUID> sales = new RetryQueue<>();
@@ -39,6 +40,7 @@ public class RegionStorage {
     }
 
     public List<Region> init() {
+        recoveryBlocked = true;
         String dbType = plugin.getConfigManager().getConfig()
                 .getString("database.type", "SQLITE").toUpperCase(Locale.ROOT);
 
@@ -57,6 +59,7 @@ public class RegionStorage {
         try { StorageRecovery.replay(recoveryPath(), dao); }
         catch (java.io.IOException e) { throw new IllegalStateException("Журнал восстановления не применён; запуск запрещён", e); }
         List<Region> loaded = dao.loadAll();
+        recoveryBlocked = false;
 
         plugin.getLogger().info("Загружено приватов: " + loaded.size() + " (база " + dbType + ").");
         restartFlushTask();
@@ -130,7 +133,7 @@ public class RegionStorage {
         plugin.getSchedulers().runAsync(() -> {
             synchronized (this) {
                 if (closed || dao == null) return;
-                autoadd.flush(this::writeFailed);
+                flush();
                 if (autoadd.size() != 0) { failed.run(); return; }
                 try { dao.loadAutoAdd(uuid, callback); }
                 catch (RuntimeException e) { writeFailed(e); failed.run(); }
@@ -187,7 +190,7 @@ public class RegionStorage {
     }
 
     private synchronized void flush() {
-        if (dao == null || closed) return;
+        if (dao == null || closed || recoveryBlocked) return;
         lastFlushMillis = System.currentTimeMillis();
 
         // Если остался аварийный журнал, сначала обновляем его: старое сохранение

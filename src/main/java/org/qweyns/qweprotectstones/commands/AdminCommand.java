@@ -193,8 +193,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && action.equals("restore")) {
             List<String> names = new ArrayList<>();
-            File folder = new File(plugin.getDataFolder(), "exports");
-            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            File[] files = plugin.getRegionExporter().listExports().toArray(File[]::new);
             if (files != null) for (File file : files) names.add(file.getName());
             return support.filter(names, args[1]);
         }

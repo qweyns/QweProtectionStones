@@ -39,12 +39,6 @@ public class EntityProtectionListener implements Listener {
         Region region = protection.regionAt(victim.getLocation());
         if (region == null) return;
 
-        if (!(victim instanceof Player) && (event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
-                || event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.BLOCK_EXPLOSION)
-                && !protection.flag(region, RegionFlag.EXPLOSION_DAMAGE)) {
-            event.setCancelled(true);
-            return;
-        }
         Player attacker = resolveAttacker(event.getDamager());
         if (attacker == null) {
 

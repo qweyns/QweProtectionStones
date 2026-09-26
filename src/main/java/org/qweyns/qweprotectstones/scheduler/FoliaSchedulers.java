@@ -186,11 +186,14 @@ final class FoliaSchedulers implements Schedulers {
 
     @Override
     public void runAtEntity(Entity entity, Runnable action) {
-        Object entityScheduler = invoke(entityGetScheduler, entity);
-        if (entityScheduler == null) return;
+        runAtEntity(entity, action, () -> { });
+    }
 
-        // Третий аргумент — что делать, если сущность исчезла до запуска.
-        invoke(entityRun, entityScheduler, plugin, ignoreTask(action), (Runnable) () -> { });
+    @Override
+    public void runAtEntity(Entity entity, Runnable action, Runnable retired) {
+        Object scheduler = invoke(entityGetScheduler, entity);
+        if (scheduler == null) { retired.run(); return; }
+        if (invoke(entityRun, scheduler, plugin, ignoreTask(action), retired) == null) retired.run();
     }
 
     @Override

@@ -155,8 +155,7 @@ public class SystemAdminCommands {
     public void restore(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_usage"));
-            File folder = new File(plugin.getDataFolder(), "exports");
-            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            File[] files = plugin.getRegionExporter().listExports().toArray(File[]::new);
             if (files != null && files.length > 0) {
                 StringBuilder list = new StringBuilder();
                 for (int i = 0; i < files.length && i < 10; i++) {
@@ -170,8 +169,8 @@ public class SystemAdminCommands {
 
         // только имя файла, чтобы ../ не вышел за пределы exports
         String fileName = args[1].replace("..", "").replace('/', '_').replace('\\', '_');
-        File file = new File(new File(plugin.getDataFolder(), "exports"), fileName);
-        if (!file.isFile()) {
+        File file = plugin.getRegionExporter().findExport(fileName);
+        if (file == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_not_found", "%file%", fileName));
             return;
         }

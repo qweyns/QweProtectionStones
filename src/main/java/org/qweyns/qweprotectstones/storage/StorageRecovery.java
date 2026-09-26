@@ -65,7 +65,11 @@ final class StorageRecovery {
     static void replay(Path path, RegionDao dao) throws IOException {
         if (!Files.exists(path)) return;
         try {
-            Object parsed = new Yaml(new SafeConstructor(new LoaderOptions())).load(Files.readString(path));
+            LoaderOptions options = new LoaderOptions();
+            options.setCodePointLimit(128 * 1024 * 1024);
+            // Собственный dumper может использовать общие пустые коллекции как YAML-alias.
+            options.setMaxAliasesForCollections(1_000_000);
+            Object parsed = new Yaml(new SafeConstructor(options)).load(Files.readString(path));
             if (!(parsed instanceof Map<?,?> root) || !Objects.equals(root.get("version"),1)
                     || !(root.get("operations") instanceof List<?> operations)) throw new IOException("Неизвестный формат журнала восстановления");
             for (Object raw : operations) apply((Map<?,?>)raw, dao);

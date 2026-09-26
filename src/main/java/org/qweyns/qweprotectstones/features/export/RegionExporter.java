@@ -21,6 +21,27 @@ public class RegionExporter {
         this.plugin = plugin;
     }
 
+    /** Ручные выгрузки и автобэкапы доступны одной команде restore. */
+    public java.util.List<File> listExports() {
+        java.util.List<File> files = new java.util.ArrayList<>();
+        for (String directory : java.util.List.of("exports", "backups")) {
+            File[] found = new File(plugin.getDataFolder(),directory)
+                    .listFiles((dir,name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            if (found != null) files.addAll(java.util.List.of(found));
+        }
+        files.sort(java.util.Comparator.comparingLong(File::lastModified).reversed());
+        return files;
+    }
+
+    public File findExport(String name) {
+        if (name == null || name.contains("..") || name.contains("/") || name.contains("\\")) return null;
+        for (String directory : java.util.List.of("exports", "backups")) {
+            File file = new File(new File(plugin.getDataFolder(),directory),name);
+            if (file.isFile()) return file;
+        }
+        return null;
+    }
+
     public File export() throws IOException { return exportTo("exports"); }
 
     public File backup() throws IOException { return exportTo("backups"); }

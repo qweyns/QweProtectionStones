@@ -24,7 +24,13 @@ public interface Schedulers {
 
     void runAtLocationLater(Location location, Runnable action, long delayTicks);
 
+    /** Выполнение на следующем тике владельца сущности (не внутри InventoryClickEvent). */
     void runAtEntity(Entity entity, Runnable action);
+
+    /** retired выполняет только очистку памяти, без доступа к Bukkit-сущностям/блокам. */
+    default void runAtEntity(Entity entity, Runnable action, Runnable retired) {
+        runAtEntity(entity, action);
+    }
 
     void runAtEntityLater(Entity entity, Runnable action, long delayTicks);
 
