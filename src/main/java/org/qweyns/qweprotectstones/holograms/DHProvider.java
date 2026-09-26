@@ -40,6 +40,7 @@ public class DHProvider implements IHologramProvider {
 
         // DHAPI создаёт и двигает сущности в мире — на Folia это можно только из потока региона
         plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
+            if (!plugin.isEnabled() || plugin.getRegionManager().getById(region.getId()) != region) return;
             Hologram holo = DHAPI.getHologram(name);
             if (holo == null) {
                 holo = DHAPI.createHologram(name, hologramLoc);

@@ -34,6 +34,10 @@ public interface Schedulers {
 
     boolean isFolia();
 
+    default boolean ownsEntity(Entity entity) {
+        return !isFolia() ? org.bukkit.Bukkit.isPrimaryThread() : org.bukkit.Bukkit.isOwnedByCurrentRegion(entity);
+    }
+
     /** Проверка владения локацией, без обращения к блокам. */
     default boolean ownsLocation(Location location) {
         return !isFolia() ? org.bukkit.Bukkit.isPrimaryThread() : org.bukkit.Bukkit.isOwnedByCurrentRegion(location);

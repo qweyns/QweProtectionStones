@@ -26,25 +26,30 @@ public class HopperProtectionListener implements Listener {
         if (initiator == null) return;
 
         if (plugin.getTunables().hoppersBlockOutflow()) {
-            Region sourceRegion = regionOf(event.getSource());
-            if (sourceRegion != null && !inside(initiator, sourceRegion)) {
-                event.setCancelled(true);
-                return;
+            for (Region sourceRegion : regionsOf(event.getSource())) {
+                if (!inside(initiator, sourceRegion)) { event.setCancelled(true); return; }
             }
         }
 
         if (plugin.getTunables().hoppersBlockInflow()) {
-            Region destRegion = regionOf(event.getDestination());
-            if (destRegion != null && !inside(initiator, destRegion)) {
-                event.setCancelled(true);
+            for (Region destRegion : regionsOf(event.getDestination())) {
+                if (!inside(initiator, destRegion)) { event.setCancelled(true); return; }
             }
         }
     }
 
-    private Region regionOf(Inventory inventory) {
-        if (inventory == null) return null;
-        Location location = inventory.getLocation();
-        return location == null ? null : plugin.getRegionManager().getRegionAt(location);
+    private java.util.Set<Region> regionsOf(Inventory inventory) {
+        java.util.Set<Region> result = new java.util.HashSet<>();
+        if (inventory == null) return result;
+        if (inventory instanceof org.bukkit.inventory.DoubleChestInventory chest) {
+            result.addAll(regionsOf(chest.getLeftSide()));
+            result.addAll(regionsOf(chest.getRightSide()));
+        } else {
+            Location at = inventory.getLocation();
+            Region region = at == null ? null : plugin.getRegionManager().getRegionAt(at);
+            if (region != null) result.add(region);
+        }
+        return result;
     }
 
     private boolean inside(Inventory inventory, Region region) {

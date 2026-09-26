@@ -49,16 +49,16 @@ public class BorderProtectionListener implements Listener {
         if (!plugin.getTunables().borderBonemeal()) return;
 
         Player player = event.getPlayer();
-        if (player == null) return;
-
         Region origin = protection.regionAt(event.getBlock().getLocation());
         for (BlockState state : event.getBlocks()) {
             Region region = protection.regionAt(state.getLocation());
 
-            if (region == null || region.equals(origin)) continue;
-
-            if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
-                protection.notifyDenied(player, region);
+            if (region == null) continue;
+            boolean denied = region.isCore(state.getLocation()) || !protection.flag(region, RegionFlag.BLOCK_GROWTH)
+                    || (player == null ? !region.equals(origin)
+                    : !protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD)));
+            if (denied) {
+                if (player != null) protection.notifyDenied(player, region);
                 event.setCancelled(true);
                 return;
             }

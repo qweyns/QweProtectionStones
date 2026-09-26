@@ -277,6 +277,8 @@ public final class QweProtectStones extends JavaPlugin {
 
         // меню первыми, close снимет задачи анимации
         for (Player player : Bukkit.getOnlinePlayers()) {
+            // После disable новые задачи Folia не принимаются; чужие потоки не трогаем.
+            if (schedulers != null && !schedulers.ownsEntity(player)) continue;
             Inventory topInv = player.getOpenInventory().getTopInventory();
             if (topInv.getHolder() instanceof MenuHolder) player.closeInventory();
         }

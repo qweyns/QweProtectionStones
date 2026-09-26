@@ -52,6 +52,7 @@ public class FHProvider implements IHologramProvider {
 
         // FH-менеджер спавнит сущности в мире — на Folia это можно только из потока региона
         plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
+            if (!plugin.isEnabled() || plugin.getRegionManager().getById(region.getId()) != region) return;
             Hologram holo = fhManager.getHologram(name).orElse(null);
             if (holo == null) {
                 holo = fhManager.create(new TextHologramData(name, hologramLoc));

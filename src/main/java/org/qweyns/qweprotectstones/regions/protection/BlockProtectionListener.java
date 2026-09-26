@@ -54,6 +54,14 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        if (event instanceof org.bukkit.event.block.BlockMultiPlaceEvent multi) {
+            for (var state : multi.getReplacedBlockStates()) {
+                if (protection.denyBuild(event.getPlayer(), state.getLocation())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
         if (protection.denyBuild(event.getPlayer(), event.getBlockPlaced().getLocation())) {
             event.setCancelled(true);
         }
@@ -148,7 +156,8 @@ public class BlockProtectionListener implements Listener {
         Region origin = protection.regionAt(event.getLocation());
         event.getBlocks().removeIf(state -> {
             Region region = protection.regionAt(state.getLocation());
-            return region != null && !region.equals(origin);
+            return region != null && (!region.equals(origin) || region.isCore(state.getLocation())
+                    || !protection.flag(region, RegionFlag.BLOCK_GROWTH));
         });
     }
 
@@ -209,16 +218,15 @@ public class BlockProtectionListener implements Listener {
         if (!plugin.getTunables().pistonsCanMoveCore()) return;
 
         BlockFace movement = extend ? direction : direction.getOppositeFace();
+        java.util.Map<Region, Location> moves = new java.util.LinkedHashMap<>();
         for (Block block : blocks) {
             Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
             if (region == null || !region.isCore(block.getLocation())) continue;
 
-            plugin.getRegionManager().updateCore(region,
-                    block.getX() + movement.getModX(),
-                    block.getY() + movement.getModY(),
-                    block.getZ() + movement.getModZ());
-            return;
+            moves.put(region, block.getRelative(movement).getLocation());
         }
+        // Сначала собрать исходные ядра: обновление первого не должно менять поиск следующих.
+        moves.forEach((region, at) -> plugin.getRegionManager().updateCore(region, at.getBlockX(), at.getBlockY(), at.getBlockZ()));
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

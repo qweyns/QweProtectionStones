@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NativeHologramProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
-    private final Map<UUID, TextDisplay> active = new ConcurrentHashMap<>();
+    private record Entry(TextDisplay display, Location location) { }
+    private final Map<UUID, Entry> active = new ConcurrentHashMap<>();
+    private final Map<UUID, Object> requests = new ConcurrentHashMap<>();
     private final Set<String> warned = ConcurrentHashMap.newKeySet();
 
     public NativeHologramProvider(QweProtectStones plugin) {
@@ -45,21 +47,45 @@ public class NativeHologramProvider implements IHologramProvider {
         Location loc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
         // спавн и правки сущности — из потока-хозяина региона (Folia)
-        plugin.getSchedulers().runAtLocation(loc, () -> spawnOrUpdate(region, typeId, world, loc, config));
+        Object request = new Object();
+        requests.put(region.getId(), request);
+        plugin.getSchedulers().runAtLocation(loc, () -> spawnOrUpdate(region, typeId, world, loc, config, request));
     }
 
-    private void spawnOrUpdate(Region region, String typeId, World world, Location loc, ConfigManager config) {
-        TextDisplay display = active.get(region.getId());
-        // после выгрузки чанка сущность недействительна, а перенос ядра проще
-        // пережить пересозданием, чем телепортом из чужого потока
-        if (display == null || !display.isValid() || !display.getWorld().equals(world)
-                || display.getLocation().distanceSquared(loc) > 0.01) {
-            remove(region.getId());
-            display = world.spawn(loc, TextDisplay.class, spawned -> configure(spawned, typeId, config));
-            active.put(region.getId(), display);
+    private void spawnOrUpdate(Region region, String typeId, World world, Location loc, ConfigManager config, Object request) {
+        if (!plugin.isEnabled() || requests.get(region.getId()) != request
+                || plugin.getRegionManager().getById(region.getId()) != region) return;
+        Location current = region.getCoreLocation();
+        if (current == null || !current.clone().add(0.5, config.getHologramOffset(typeId), 0.5).equals(loc)) return;
+        Entry previous = active.get(region.getId());
+        if (previous != null && previous.location().equals(loc)) {
+            plugin.getSchedulers().runAtEntity(previous.display(), () -> {
+                if (requests.get(region.getId()) == request && previous.display().isValid())
+                    previous.display().text(buildText(region, typeId));
+            });
+            return;
         }
-
+        TextDisplay display = world.spawn(loc, TextDisplay.class, spawned -> configure(spawned, typeId, config));
         display.text(buildText(region, typeId));
+        Entry replacement = new Entry(display, loc.clone());
+        java.util.concurrent.atomic.AtomicBoolean accepted = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.concurrent.atomic.AtomicReference<Entry> old = new java.util.concurrent.atomic.AtomicReference<>();
+        requests.computeIfPresent(region.getId(), (id, latest) -> {
+            if (latest == request && plugin.getRegionManager().getById(id) == region) {
+                old.set(active.put(id, replacement));
+                accepted.set(true);
+            }
+            return latest;
+        });
+        if (!accepted.get()) display.remove();
+        if (old.get() != null) removeDisplay(old.get().display());
+    }
+
+    private void removeDisplay(TextDisplay display) {
+        if (plugin.getSchedulers().ownsEntity(display)) display.remove();
+        else if (plugin.isEnabled()) plugin.getSchedulers().runAtEntity(display, display::remove);
+        // При остановке Folia чужие entity-потоки уже недоступны. Display непостоянный:
+        // его не сохраняет мир; прямое обращение из shutdown-потока запрещено.
     }
 
     private Component buildText(Region region, String typeId) {
@@ -127,18 +153,15 @@ public class NativeHologramProvider implements IHologramProvider {
 
     @Override
     public void remove(UUID regionId) {
-        TextDisplay display = active.remove(regionId);
-        if (display == null || !display.isValid()) return;
-
-        plugin.getSchedulers().runAtEntity(display, display::remove);
+        requests.remove(regionId);
+        Entry entry = active.remove(regionId);
+        if (entry != null) removeDisplay(entry.display());
     }
 
     @Override
     public void deleteAll() {
-        for (TextDisplay display : active.values()) {
-            // как в remove(): сущности удаляются в их собственных потоках
-            plugin.getSchedulers().runAtEntity(display, display::remove);
-        }
+        requests.clear();
+        for (Entry entry : active.values()) removeDisplay(entry.display());
         active.clear();
     }
 }

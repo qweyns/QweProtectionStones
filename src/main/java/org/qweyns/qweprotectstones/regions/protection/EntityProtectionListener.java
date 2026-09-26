@@ -39,6 +39,12 @@ public class EntityProtectionListener implements Listener {
         Region region = protection.regionAt(victim.getLocation());
         if (region == null) return;
 
+        if (!(victim instanceof Player) && (event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
+                || event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.BLOCK_EXPLOSION)
+                && !protection.flag(region, RegionFlag.EXPLOSION_DAMAGE)) {
+            event.setCancelled(true);
+            return;
+        }
         Player attacker = resolveAttacker(event.getDamager());
         if (attacker == null) {
 
@@ -67,6 +73,7 @@ public class EntityProtectionListener implements Listener {
 
     private Player resolveAttacker(Entity damager) {
         if (damager instanceof Player player) return player;
+        if (damager instanceof org.bukkit.entity.TNTPrimed tnt && tnt.getSource() instanceof Player player) return player;
 
         if (damager instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
@@ -96,6 +103,14 @@ public class EntityProtectionListener implements Listener {
                 event.setIntensity(target, 0.0);
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onCloudApply(org.bukkit.event.entity.AreaEffectCloudApplyEvent event) {
+        if (!(event.getEntity().getSource() instanceof Player thrower)) return;
+        // В отличие от splash, этот список по контракту события изменяемый.
+        event.getAffectedEntities().removeIf(target -> target instanceof Player && !target.equals(thrower)
+                && !protection.flagAt(target.getLocation(), RegionFlag.PVP));
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

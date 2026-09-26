@@ -57,7 +57,12 @@ public class InteractProtectionListener implements Listener {
         if (region == null) return;
 
         // клик по ядру разбирает InteractListener
-        if (region.isCore(block.getLocation()) && event.getAction() == Action.RIGHT_CLICK_BLOCK) return;
+        if (region.isCore(block.getLocation()) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            // Основная рука обработана меню; offhand не должен открывать контейнер-ядро.
+            if (!protection.has(region, event.getPlayer(), event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND
+                    ? TrustLevel.ACCESS : protection.requiredFor(Tunables.TrustAction.CONTAINER))) event.setCancelled(true);
+            return;
+        }
 
         TrustLevel required = protection.requiredFor(requiredActionFor(block, event));
         if (protection.has(region, event.getPlayer(), required)) return;
@@ -82,6 +87,21 @@ public class InteractProtectionListener implements Listener {
 
         // незнакомое = нужен доступ, безопасный дефолт
         return Tunables.TrustAction.CONTAINER;
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onDoubleChestOpen(org.bukkit.event.inventory.InventoryOpenEvent event) {
+        if (!(event.getPlayer() instanceof org.bukkit.entity.Player player)
+                || !(event.getInventory() instanceof org.bukkit.inventory.DoubleChestInventory chest)) return;
+        for (var side : java.util.List.of(chest.getLeftSide(), chest.getRightSide())) {
+            var location = side.getLocation();
+            if (location != null) {
+                if (protection.denyInteract(player, location, protection.requiredFor(Tunables.TrustAction.CONTAINER))) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
     }
 
     private boolean isContainer(Block block) {
