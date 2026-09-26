@@ -25,6 +25,23 @@ public class BorderProtectionListener implements Listener {
         this.protection = plugin.getProtectionService();
     }
 
+    /** Раздатчик за границей не должен лить лаву/воду, поджигать и ставить блоки в чужом привате. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onDispense(org.bukkit.event.block.BlockDispenseEvent event) {
+        if (!plugin.getTunables().borderDispensers()) return;
+        org.bukkit.block.Block source = event.getBlock();
+        if (source.getType() != org.bukkit.Material.DISPENSER
+                || !(source.getBlockData() instanceof org.bukkit.block.data.Directional directional)) return;
+        if (!plugin.getTunables().dispenserItemBlocked(event.getItem().getType())) return;
+
+        Region target = protection.regionAt(source.getRelative(directional.getFacing()).getLocation());
+        if (target == null) return;
+        Region origin = protection.regionAt(source.getLocation());
+        if (target.equals(origin)) return;
+        if (origin != null && origin.getOwnerId() != null && target.isOwner(origin.getOwnerId())) return;
+        event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityBlockForm(EntityBlockFormEvent event) {
         Region region = protection.regionAt(event.getBlock().getLocation());
@@ -33,7 +50,7 @@ public class BorderProtectionListener implements Listener {
         if (event.getEntity() instanceof Player player) {
             if (!plugin.getTunables().borderFrostWalker()) return;
 
-            if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
+            if (!protection.can(region, player, Tunables.TrustAction.BUILD)) {
                 protection.notifyDenied(player, region);
                 event.setCancelled(true);
             }
@@ -49,16 +66,16 @@ public class BorderProtectionListener implements Listener {
         if (!plugin.getTunables().borderBonemeal()) return;
 
         Player player = event.getPlayer();
-        if (player == null) return;
-
         Region origin = protection.regionAt(event.getBlock().getLocation());
         for (BlockState state : event.getBlocks()) {
             Region region = protection.regionAt(state.getLocation());
 
-            if (region == null || region.equals(origin)) continue;
-
-            if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
-                protection.notifyDenied(player, region);
+            if (region == null) continue;
+            boolean denied = region.isCore(state.getLocation()) || !protection.flag(region, RegionFlag.BLOCK_GROWTH)
+                    || (player == null ? !region.equals(origin)
+                    : !protection.can(region, player, Tunables.TrustAction.BUILD));
+            if (denied) {
+                if (player != null) protection.notifyDenied(player, region);
                 event.setCancelled(true);
                 return;
             }
@@ -79,10 +96,10 @@ public class BorderProtectionListener implements Listener {
         Player fisher = event.getPlayer();
 
         if (caught instanceof Item) {
-            if (protection.has(region, fisher, protection.requiredFor(Tunables.TrustAction.INTERACT))) return;
+            if (protection.can(region, fisher, Tunables.TrustAction.INTERACT)) return;
             if (protection.flag(region, RegionFlag.ITEM_PICKUP)) return;
         } else {
-            if (protection.has(region, fisher, protection.requiredFor(Tunables.TrustAction.ENTITY))) return;
+            if (protection.can(region, fisher, Tunables.TrustAction.ENTITY)) return;
         }
 
         protection.notifyDenied(fisher, region, "interact");

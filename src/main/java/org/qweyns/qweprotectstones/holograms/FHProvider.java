@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FHProvider implements IHologramProvider {
 
     private final QweProtectStones plugin;
+    private final java.util.Map<UUID, Object> requests = new ConcurrentHashMap<>();
     // мутируется из потоков разных регионов на Folia
     private final Set<String> activeHolograms = ConcurrentHashMap.newKeySet();
 
@@ -51,7 +52,10 @@ public class FHProvider implements IHologramProvider {
         Location hologramLoc = coreLocation.clone().add(0.5, config.getHologramOffset(typeId), 0.5);
 
         // FH-менеджер спавнит сущности в мире — на Folia это можно только из потока региона
+        Object request = new Object();
+        requests.put(region.getId(), request);
         plugin.getSchedulers().runAtLocation(hologramLoc, () -> {
+            if (requests.get(region.getId()) != request || !plugin.isEnabled() || plugin.getRegionManager().getById(region.getId()) != region) return;
             Hologram holo = fhManager.getHologram(name).orElse(null);
             if (holo == null) {
                 holo = fhManager.create(new TextHologramData(name, hologramLoc));
@@ -159,6 +163,7 @@ public class FHProvider implements IHologramProvider {
 
     @Override
     public void remove(UUID regionId) {
+        requests.remove(regionId);
         String name = hologramName(regionId);
         manager().ifPresent(fhManager -> fhManager.getHologram(name).ifPresent(fhManager::removeHologram));
         activeHolograms.remove(name);
@@ -166,6 +171,7 @@ public class FHProvider implements IHologramProvider {
 
     @Override
     public void deleteAll() {
+        requests.clear();
         manager().ifPresent(fhManager -> {
             for (String name : activeHolograms) {
                 fhManager.getHologram(name).ifPresent(fhManager::removeHologram);

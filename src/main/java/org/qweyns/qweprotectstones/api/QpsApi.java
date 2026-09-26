@@ -143,7 +143,8 @@ public final class QpsApi {
 
     /**
      * Снять прочность привата — как это делает сам плагин при взрыве.
-     * Звать в потоке сервера.
+     * На Paper звать в основном потоке, на Folia — в потоке ядра.
+     * Из других потоков использовать {@link #damageRegionAsync(Region, int, String, String)}.
      *
      * @param damage        единиц прочности (Разрывная волна сносит сразу 2)
      * @param explosionType тип взрыва для правил explosions у типа привата
@@ -152,6 +153,12 @@ public final class QpsApi {
      */
     public boolean damageRegion(Region region, int damage, String explosionType, String attackerName) {
         return plugin.getSiegeService().damageRegion(region, damage, explosionType, attackerName);
+    }
+
+    /** Безопасный межрегиональный урон; не блокируйте поток сервера ожиданием результата. */
+    public java.util.concurrent.CompletableFuture<Boolean> damageRegionAsync(Region region, int damage,
+                                                                           String type, String attacker) {
+        return plugin.getSiegeService().damageRegionAsync(region, damage, type, attacker);
     }
 
     /** Вредит ли взрыв данного типа прочности этого привата (правила explosions + raid_immune). */

@@ -13,38 +13,52 @@ public class HopperProtectionListener implements Listener {
 
     private final QweProtectStones plugin;
 
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onInventoryMoveItem;
+
     public HopperProtectionListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onInventoryMoveItem = perf.timer("hopper");
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
+        long started = perf.start();
+        try {
+            onInventoryMoveItemTimed(event);
+        } finally {
+            perf.stop(perf_onInventoryMoveItem, started);
+        }
+    }
+
+    private void onInventoryMoveItemTimed(InventoryMoveItemEvent event) {
 
         if (!plugin.getTunables().hoppersEnabled()) return;
 
         Inventory initiator = event.getInitiator();
         if (initiator == null) return;
 
-        if (plugin.getTunables().hoppersBlockOutflow()) {
-            Region sourceRegion = regionOf(event.getSource());
-            if (sourceRegion != null && !inside(initiator, sourceRegion)) {
-                event.setCancelled(true);
-                return;
-            }
+        // Горячий путь (сотни раз в секунду): без коллекций, один lookup на сторону.
+        if (plugin.getTunables().hoppersBlockOutflow() && foreign(event.getSource(), initiator)) {
+            event.setCancelled(true);
+            return;
         }
-
-        if (plugin.getTunables().hoppersBlockInflow()) {
-            Region destRegion = regionOf(event.getDestination());
-            if (destRegion != null && !inside(initiator, destRegion)) {
-                event.setCancelled(true);
-            }
+        if (plugin.getTunables().hoppersBlockInflow() && foreign(event.getDestination(), initiator)) {
+            event.setCancelled(true);
         }
     }
 
-    private Region regionOf(Inventory inventory) {
-        if (inventory == null) return null;
-        Location location = inventory.getLocation();
-        return location == null ? null : plugin.getRegionManager().getRegionAt(location);
+    /** Контейнер (обе половины двойного сундука) в привате, которому инициатор не принадлежит. */
+    private boolean foreign(Inventory inventory, Inventory initiator) {
+        if (inventory == null) return false;
+        if (inventory instanceof org.bukkit.inventory.DoubleChestInventory chest) {
+            return foreign(chest.getLeftSide(), initiator) || foreign(chest.getRightSide(), initiator);
+        }
+        Location at = inventory.getLocation();
+        if (at == null) return false;
+        Region region = plugin.getRegionManager().getRegionAt(at);
+        return region != null && !inside(initiator, region);
     }
 
     private boolean inside(Inventory inventory, Region region) {

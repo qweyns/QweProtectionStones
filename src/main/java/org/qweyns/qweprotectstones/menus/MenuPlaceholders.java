@@ -37,6 +37,8 @@ public class MenuPlaceholders {
             }
         }
 
+        if (player != null && text.contains("%player%")) text = text.replace("%player%", player.getName());
+        if (text.contains("%command%")) text = text.replace("%command%", plugin.getPlayerCommandName());
         if (region != null) text = applyRegion(text, region);
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
@@ -75,6 +77,21 @@ public class MenuPlaceholders {
             boolean penalised = plugin.getPenaltyManager().hasPenalty(region);
             text = text.replace("%penalty%", penalised
                     ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())
+                    : plugin.getLanguageManager().rawTemplate("no_penalty"));
+        }
+
+        if (text.contains("%penalty_info%")) {
+            var penalties = plugin.getPenaltyManager();
+            text = text.replace("%penalty_info%", penalties.hasPenalty(region)
+                    ? plugin.getLanguageManager().rawTemplate("penalty_info",
+                            "%multiplier%", String.valueOf(penalties.getPenaltyMultiplier()),
+                            "%time%", penalties.remainingText(region))
+                    : plugin.getLanguageManager().rawTemplate("no_penalty"));
+        }
+
+        if (text.contains("%penalty_time%")) {
+            text = text.replace("%penalty_time%", plugin.getPenaltyManager().hasPenalty(region)
+                    ? plugin.getPenaltyManager().remainingText(region)
                     : plugin.getLanguageManager().rawTemplate("no_penalty"));
         }
 

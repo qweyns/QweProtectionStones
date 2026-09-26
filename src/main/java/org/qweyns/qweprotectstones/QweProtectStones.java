@@ -68,6 +68,7 @@ public final class QweProtectStones extends JavaPlugin {
     private RegionStorage regionStorage;
     private RegionManager regionManager;
     private ProtectionService protectionService;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perfStats = new org.qweyns.qweprotectstones.diagnostics.PerfStats();
     private BypassManager bypassManager;
 
     private HologramManager hologramManager;
@@ -105,11 +106,27 @@ public final class QweProtectStones extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        var configReport = org.qweyns.qweprotectstones.diagnostics.ConfigReport.capture(getLogger());
+        try {
+            enable();
+            org.qweyns.qweprotectstones.diagnostics.ConfigValidator.validate(configManager.getConfig(), configReport::warn);
+        } finally {
+            configReport.close();
+            configIssues = configReport.issues();
+        }
+        if (!configIssues.isEmpty()) {
+            getLogger().warning("Конфигурация загружена с предупреждениями: " + configIssues.size()
+                    + ". Полный список — выше или в /qps reload.");
+        }
+    }
+
+    private void enable() {
         // планировщик первым, на нём вся асинхронность
         this.schedulers = Schedulers.create(this);
         this.configManager = new ConfigManager(this);
         this.regionConfig = new RegionConfig(this);
         this.tunables = new Tunables(this);
+        perfStats.setEnabled(configManager.getConfig().getBoolean("debug.perf-stats", true));
 
         this.languageManager = new LanguageManager(this);
         this.languageManager.init();
@@ -224,12 +241,16 @@ public final class QweProtectStones extends JavaPlugin {
         pm.registerEvents(bypassManager, this);
         pm.registerEvents(regionLifecycleListener, this);
         pm.registerEvents(regionMovementListener, this);
-        pm.registerEvents(new RegionExplosionListener(this, siegeService), this);
+        creationRules = new org.qweyns.qweprotectstones.regions.CreationRules(this);
+        pm.registerEvents(creationRules, this);
+        explosionListener = new RegionExplosionListener(this, siegeService);
+        pm.registerEvents(explosionListener, this);
         pm.registerEvents(new RegionInteractListener(this), this);
         pm.registerEvents(new ExpBoostListener(this), this);
 
         pm.registerEvents(new BlockProtectionListener(this), this);
         pm.registerEvents(new InteractProtectionListener(this), this);
+        pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.ExtraProtectionListener(this), this);
         pm.registerEvents(new EntityProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.HopperProtectionListener(this), this);
         pm.registerEvents(new org.qweyns.qweprotectstones.regions.protection.BorderProtectionListener(this), this);
@@ -270,6 +291,7 @@ public final class QweProtectStones extends JavaPlugin {
     public void onDisable() {
         // API закрываем первым, чтобы чужие плагины не ловили NPE
         QpsApi.shutdown();
+        if (siegeService != null) siegeService.close();
         if (blueMapIntegration != null) blueMapIntegration.disable();
         if (dynmapIntegration != null) dynmapIntegration.disable();
         // иначе PlaceholderAPI держит мёртвый classloader после reload
@@ -277,6 +299,8 @@ public final class QweProtectStones extends JavaPlugin {
 
         // меню первыми, close снимет задачи анимации
         for (Player player : Bukkit.getOnlinePlayers()) {
+            // После disable новые задачи Folia не принимаются; чужие потоки не трогаем.
+            if (schedulers != null && !schedulers.ownsEntity(player)) continue;
             Inventory topInv = player.getOpenInventory().getTopInventory();
             if (topInv.getHolder() instanceof MenuHolder) player.closeInventory();
         }
@@ -296,16 +320,46 @@ public final class QweProtectStones extends JavaPlugin {
         if (hologramManager != null) hologramManager.deleteAll();
 
         if (regionStorage != null) {
-            // очередь могла не успеть, сохраняем всё синхронно
-            if (regionManager != null) regionStorage.saveAll(regionManager.getAllRegions());
+            // Очередь знает все изменённые приваты: close() синхронно дописывает только их,
+            // а не перезаписывает всю базу (на больших серверах это минуты при остановке).
+            if (regionManager != null) {
+                int dirty = regionStorage.saveDirty(regionManager.getAllRegions());
+                if (dirty > 0) getLogger().info("Дописываю изменённые приваты при остановке: " + dirty);
+            }
             regionStorage.close();
         }
     }
 
-    public void reloadEverything() {
+    /** Реальное зарегистрированное имя: смена settings.command требует рестарта. */
+    public String getPlayerCommandName() {
+        return regionCommand == null ? configManager.getCommandName() : regionCommand.getName();
+    }
+
+    private RegionExplosionListener explosionListener;
+    private org.qweyns.qweprotectstones.regions.CreationRules creationRules;
+
+    public org.qweyns.qweprotectstones.regions.CreationRules getCreationRules() { return creationRules; }
+
+    /** Предупреждения последней загрузки конфигов — для /qps reload. */
+    private volatile java.util.List<String> configIssues = java.util.List.of();
+
+    public java.util.List<String> getConfigIssues() { return configIssues; }
+
+    /** Перезагрузка всех конфигов; возвращает предупреждения, найденные при разборе. */
+    public java.util.List<String> reloadEverything() {
+        try (var report = org.qweyns.qweprotectstones.diagnostics.ConfigReport.capture(getLogger())) {
+            reloadEverythingInner();
+            org.qweyns.qweprotectstones.diagnostics.ConfigValidator.validate(configManager.getConfig(), report::warn);
+            configIssues = report.issues();
+        }
+        return configIssues;
+    }
+
+    private void reloadEverythingInner() {
         configManager.reload();
         regionConfig.reload();
         tunables.reload();
+        perfStats.setEnabled(configManager.getConfig().getBoolean("debug.perf-stats", true));
         languageManager.init();
         regionTypes.load();
         regionManager.refreshTypeData();
@@ -322,6 +376,8 @@ public final class QweProtectStones extends JavaPlugin {
         updateChecker.start();
         rateLimiter.reload();
         siegeService.reload();
+        if (explosionListener != null) explosionListener.reload();
+        if (creationRules != null) creationRules.reload();
         inviteManager.reload();
         criticalFileLogger.start();
         // перезапуск, а не только onEnable: enable/keep_days могли измениться в конфиге
@@ -347,7 +403,11 @@ public final class QweProtectStones extends JavaPlugin {
     public RegionTypeRegistry getRegionTypes() { return regionTypes; }
     public RegionStorage getRegionStorage() { return regionStorage; }
     public RegionManager getRegionManager() { return regionManager; }
+    /** Id плагина на bstats.org — свойство самого плагина, а не настройка сервера. */
+    private static final int BSTATS_PLUGIN_ID = 33994;
+
     public ProtectionService getProtectionService() { return protectionService; }
+    public org.qweyns.qweprotectstones.diagnostics.PerfStats getPerfStats() { return perfStats; }
 
     public org.qweyns.qweprotectstones.api.SiegeService getSiegeService() { return siegeService; }
     public BypassManager getBypassManager() { return bypassManager; }
@@ -378,7 +438,7 @@ public final class QweProtectStones extends JavaPlugin {
 
     private void initMetrics() {
         if (!getConfigManager().getConfig().getBoolean("metrics.enable", true)) return;
-        int pluginId = getConfigManager().getConfig().getInt("metrics.plugin-id", 0);
+        int pluginId = BSTATS_PLUGIN_ID;
         if (pluginId <= 0) return;
 
         org.bstats.bukkit.Metrics metrics = new org.bstats.bukkit.Metrics(this, pluginId);

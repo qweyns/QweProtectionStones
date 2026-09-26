@@ -34,24 +34,32 @@ public class RegionManager {
 
         WORLD_DISABLED,
 
+        /** Ограничение из секции creation (пауза, осада рядом, спавн, портал). */
+        RULE_DENIED,
+
         CANCELLED
     }
 
-    public record CreateResult(CreateStatus status, Region region, Region blockingRegion, int limit) {
+    public record CreateResult(CreateStatus status, Region region, Region blockingRegion, int limit,
+                               CreationRules.Result rule) {
         public static CreateResult success(Region region) {
-            return new CreateResult(CreateStatus.SUCCESS, region, null, 0);
+            return new CreateResult(CreateStatus.SUCCESS, region, null, 0, null);
         }
 
         public static CreateResult failure(CreateStatus status) {
-            return new CreateResult(status, null, null, 0);
+            return new CreateResult(status, null, null, 0, null);
         }
 
         public static CreateResult blocked(CreateStatus status, Region blockingRegion) {
-            return new CreateResult(status, null, blockingRegion, 0);
+            return new CreateResult(status, null, blockingRegion, 0, null);
         }
 
         public static CreateResult limited(int limit) {
-            return new CreateResult(CreateStatus.LIMIT_REACHED, null, null, limit);
+            return new CreateResult(CreateStatus.LIMIT_REACHED, null, null, limit, null);
+        }
+
+        public static CreateResult denied(CreationRules.Result rule) {
+            return new CreateResult(CreateStatus.RULE_DENIED, null, null, 0, rule);
         }
 
         public boolean successful() {
@@ -61,9 +69,13 @@ public class RegionManager {
 
     private final QweProtectStones plugin;
     private final RegionIndex<Region> index = new RegionIndex<>();
+    private final RegionIndex<Region> reservations = new RegionIndex<>();
+    private final Map<UUID, Region> pendingCreates = new ConcurrentHashMap<>();
 
     private final Map<UUID, Region> regions = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> regionsByOwner = new ConcurrentHashMap<>();
+    /** Игрок → приваты, где он участник (не владелец). Обновляется по уведомлениям Region. */
+    private final Map<UUID, Set<UUID>> regionsByMember = new ConcurrentHashMap<>();
     // префикс короткого id -> кто им владеет; skip-листа умеет искать по префиксу
     private final ConcurrentSkipListMap<String, List<UUID>> byShortId = new ConcurrentSkipListMap<>();
 
@@ -74,6 +86,8 @@ public class RegionManager {
     public void loadAll(Collection<Region> loaded) {
         regions.clear();
         regionsByOwner.clear();
+        regionsByMember.clear();
+        indexVersion.incrementAndGet();
         byShortId.clear();
         index.clear();
 
@@ -92,17 +106,45 @@ public class RegionManager {
         }
     }
 
+    /** Растёт при любом изменении индекса — по нему кэши поиска понимают, что устарели. */
+    private final java.util.concurrent.atomic.AtomicLong indexVersion = new java.util.concurrent.atomic.AtomicLong();
+
+    public long indexVersion() { return indexVersion.get(); }
+
     private void register(Region region) {
+        indexVersion.incrementAndGet();
         regions.put(region.getId(), region);
         index.add(region);
         byShortId.computeIfAbsent(region.getShortId(), k -> new CopyOnWriteArrayList<>()).add(region.getId());
         if (region.getOwnerId() != null) {
             regionsByOwner.computeIfAbsent(region.getOwnerId(), k -> ConcurrentHashMap.newKeySet()).add(region.getId());
         }
+        region.setMembershipListener(this::onMembershipChanged);
+        for (RegionMember member : region.getMembers()) indexMember(member.uuid(), region.getId(), true);
+    }
+
+    private void onMembershipChanged(Region region, UUID player) {
+        boolean member = regions.get(region.getId()) == region
+                && !region.isOwner(player) && region.getMember(player).isPresent();
+        indexMember(player, region.getId(), member);
+    }
+
+    private void indexMember(UUID player, UUID regionId, boolean add) {
+        if (add) {
+            regionsByMember.computeIfAbsent(player, k -> ConcurrentHashMap.newKeySet()).add(regionId);
+            return;
+        }
+        regionsByMember.computeIfPresent(player, (k, set) -> {
+            set.remove(regionId);
+            return set.isEmpty() ? null : set;
+        });
     }
 
     private void unregister(Region region) {
+        indexVersion.incrementAndGet();
         regions.remove(region.getId());
+        region.setMembershipListener(null);
+        for (RegionMember member : region.getMembers()) indexMember(member.uuid(), region.getId(), false);
         index.remove(region);
 
         List<UUID> ids = byShortId.get(region.getShortId());
@@ -123,30 +165,51 @@ public class RegionManager {
         return world == null ? null : index.at(world.getName(), x, y, z);
     }
 
+    public List<Region> intersecting(String world, RegionBounds bounds) {
+        return index.intersecting(world, bounds);
+    }
+
     public Region getById(UUID id) {
         return id == null ? null : regions.get(id);
     }
 
+    /** Минимальная длина префикса id в командах: короткий префикс совпадает со многими приватами. */
+    public int minIdPrefix() {
+        int configured = plugin.getConfigManager() == null ? 4
+                : plugin.getConfigManager().getConfig().getInt("settings.min-id-prefix", 4);
+        return Math.max(1, Math.min(8, configured));
+    }
+
+    /**
+     * Приват по префиксу id — только если совпадение единственное и префикс не короче
+     * {@link #minIdPrefix()}. Иначе null: команда не должна действовать на «первый попавшийся».
+     */
     public Region getByShortId(String shortId) {
         if (shortId == null || shortId.isBlank()) return null;
-        String needle = shortId.toLowerCase(java.util.Locale.ROOT);
+        String needle = shortId.trim().toLowerCase(java.util.Locale.ROOT);
+        if (needle.length() < minIdPrefix()) return null;
+        List<Region> matches = findByIdPrefix(needle, 2);
+        return matches.size() == 1 ? matches.get(0) : null;
+    }
 
-        // префикс длиннее индексного (полный UUID) — редкий путь, точный проход
-        if (needle.length() > 8) {
-            for (Region region : regions.values()) {
-                if (region.getId().toString().startsWith(needle)) return region;
-            }
-            return null;
-        }
+    /** До limit приватов, чей id начинается с префикса (без проверки минимальной длины). */
+    public List<Region> findByIdPrefix(String prefix, int limit) {
+        if (prefix == null || prefix.isBlank() || limit <= 0) return List.of();
+        String needle = prefix.trim().toLowerCase(java.util.Locale.ROOT);
+        List<Region> result = new ArrayList<>();
 
-        for (Map.Entry<String, List<UUID>> entry : byShortId.tailMap(needle).entrySet()) {
-            if (!entry.getKey().startsWith(needle)) break;
+        // префикс длиннее индексного (полный UUID) — редкий путь, точный проход по кандидатам
+        String indexKey = needle.length() > 8 ? needle.substring(0, 8) : needle;
+        for (Map.Entry<String, List<UUID>> entry : byShortId.tailMap(indexKey).entrySet()) {
+            if (!entry.getKey().startsWith(indexKey)) break;
             for (UUID id : entry.getValue()) {
                 Region region = regions.get(id);
-                if (region != null) return region;
+                if (region == null || !region.getId().toString().startsWith(needle)) continue;
+                result.add(region);
+                if (result.size() >= limit) return result;
             }
         }
-        return null;
+        return result;
     }
 
     public List<Region> getRegionsOf(UUID ownerId) {
@@ -163,8 +226,12 @@ public class RegionManager {
 
     public List<Region> getAccessibleRegions(UUID playerId) {
         List<Region> result = new ArrayList<>(getRegionsOf(playerId));
-        for (Region region : regions.values()) {
-            if (!region.isOwner(playerId) && region.getMember(playerId).isPresent()) result.add(region);
+        Set<UUID> ids = regionsByMember.get(playerId);
+        if (ids == null) return result;
+        for (UUID id : ids) {
+            Region region = regions.get(id);
+            // перепроверка: индекс мог отстать на мгновение при параллельной правке
+            if (region != null && !region.isOwner(playerId) && region.getMember(playerId).isPresent()) result.add(region);
         }
         return result;
     }
@@ -178,7 +245,7 @@ public class RegionManager {
     }
 
     public Collection<Region> getAllRegions() {
-        return Collections.unmodifiableCollection(regions.values());
+        return List.copyOf(regions.values());
     }
 
     public int ownersCount() {
@@ -194,6 +261,13 @@ public class RegionManager {
     }
 
     public CreateResult createRegion(Player owner, RegionType type, Location coreLocation) {
+        CreateResult prepared = prepareCreation(owner, type, coreLocation);
+        if (prepared.successful()) commitCreation(prepared.region());
+        return prepared;
+    }
+
+    /** Резервация до конца BlockPlaceEvent: ещё не живой приват и не запись БД. */
+    public CreateResult prepareCreation(Player owner, RegionType type, Location coreLocation) {
         World world = coreLocation.getWorld();
         if (world == null) return CreateResult.failure(CreateStatus.WORLD_DISABLED);
 
@@ -224,6 +298,10 @@ public class RegionManager {
         Region overlapping = index.firstIntersecting(world.getName(), bounds);
         if (overlapping != null) return CreateResult.blocked(CreateStatus.OVERLAP, overlapping);
 
+        CreationRules rules = plugin.getCreationRules();
+        CreationRules.Result denied = rules == null ? null : rules.check(owner, coreLocation, bounds);
+        if (denied != null) return CreateResult.denied(denied);
+
         if (type.minDistanceToOthers() > 0) {
             RegionBounds padded = bounds.expand(type.minDistanceToOthers());
             for (Region near : index.intersecting(world.getName(), padded)) {
@@ -238,60 +316,176 @@ public class RegionManager {
                 type.id(), owner.getUniqueId(), owner.getName(),
                 type.startDurability(), type.maxDurability(), System.currentTimeMillis());
 
-        RegionCreateEvent event = new RegionCreateEvent(region, owner);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) return CreateResult.failure(CreateStatus.CANCELLED);
+        synchronized (index) {
+            int pending = (int) pendingCreates.values().stream().filter(r -> r.isOwner(owner.getUniqueId())
+                    && r.getTypeId().equals(type.id())).count();
+            if (limit > 0 && countRegionsOfType(owner.getUniqueId(), type.id()) + pending >= limit)
+                return CreateResult.limited(limit);
+            Region conflict = index.firstIntersecting(world.getName(), bounds);
+            if (conflict == null) conflict = reservations.firstIntersecting(world.getName(), bounds);
+            if (conflict != null) return CreateResult.blocked(CreateStatus.OVERLAP, conflict);
+            if (type.minDistanceToOthers() > 0) {
+                List<Region> near = new ArrayList<>(index.intersecting(world.getName(), bounds.expand(type.minDistanceToOthers())));
+                near.addAll(reservations.intersecting(world.getName(), bounds.expand(type.minDistanceToOthers())));
+                for (Region candidate : near) if (!candidate.isOwner(owner.getUniqueId()))
+                    return CreateResult.blocked(CreateStatus.TOO_CLOSE, candidate);
+            }
+            pendingCreates.put(region.getId(), region);
+            reservations.add(region);
+        }
+        try {
+            RegionCreateEvent event = new RegionCreateEvent(region, owner);
+            Bukkit.getPluginManager().callEvent(event);
+            // Геометрия резервации неизменна: слушатель может отменить создание, но не
+            // подменить границы/тип в обход проверок пересечения.
+            if (event.isCancelled() || !bounds.equals(region.getBounds()) || !type.id().equals(region.getTypeId())
+                    || !region.isCore(coreLocation) || !region.isOwner(owner.getUniqueId())) {
+                abortCreation(region);
+                return CreateResult.failure(CreateStatus.CANCELLED);
+            }
+            return CreateResult.success(region);
+        } catch (RuntimeException | Error e) {
+            abortCreation(region);
+            throw e;
+        }
+    }
 
-        register(region);
+    public void abortCreation(Region region) {
+        synchronized (index) {
+            if (pendingCreates.remove(region.getId()) != null) {
+                // Обработчик мог поменять bounds: очистка по всему индексу резерваций.
+                reservations.clear();
+                pendingCreates.values().forEach(reservations::add);
+            }
+        }
+    }
+
+    public void commitCreation(Region region) {
+        synchronized (index) {
+            if (!pendingCreates.containsKey(region.getId())) return;
+            abortCreation(region);
+            register(region);
+        }
         plugin.getRegionStorage().save(region);
-        return CreateResult.success(region);
+    }
+
+    public final class PreparedDeletion implements AutoCloseable {
+        private final Region region;
+        private final Region.Operation operation;
+        private final RegionDeleteEvent.Reason reason;
+        private final Player actor;
+        private PreparedDeletion(Region region, Region.Operation operation, RegionDeleteEvent.Reason reason, Player actor) {
+            this.region = region; this.operation = operation; this.reason = reason; this.actor = actor;
+        }
+        public boolean commit() { return commitDeletion(region, operation, reason, actor); }
+        @Override public void close() { operation.close(); }
+    }
+
+    public PreparedDeletion prepareDeletion(Region region, RegionDeleteEvent.Reason reason, Player actor) {
+        if (region == null) return null;
+        Region.Operation operation = region.tryOperation();
+        if (operation == null) return null;
+        try {
+            if (!allowDeletion(region, reason, actor)) { operation.close(); return null; }
+            return new PreparedDeletion(region, operation, reason, actor);
+        } catch (RuntimeException | Error e) { operation.close(); throw e; }
+    }
+
+    private boolean allowDeletion(Region region, RegionDeleteEvent.Reason reason, Player actor) {
+        if (regions.get(region.getId()) != region) return false;
+        RegionDeleteEvent event = new RegionDeleteEvent(region, actor, reason);
+        Bukkit.getPluginManager().callEvent(event);
+        return !event.isCancelled() && regions.get(region.getId()) == region;
     }
 
     public boolean deleteRegion(Region region, RegionDeleteEvent.Reason reason, Player actor) {
-        if (region == null || !regions.containsKey(region.getId())) return false;
-
-        RegionDeleteEvent event = new RegionDeleteEvent(region, actor, reason);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) return false;
-
-        // сначала снимаем сделки под локом рынка: покупка либо завершилась до удаления,
-        // либо уже не увидит объявление и не заплатит
-        if (plugin.getMarketManager() != null) {
-            plugin.getMarketManager().cancelSale(region);
-            plugin.getMarketManager().cancelRental(region);
+        try (PreparedDeletion deletion = prepareDeletion(region, reason, actor)) {
+            return deletion != null && deletion.commit();
         }
+    }
 
-        unregister(region);
+    /** Внутренняя часть осады: операция уже зарезервирована вызывающим. */
+    public boolean deleteWithin(Region region, RegionDeleteEvent.Reason reason, Player actor, Region.Operation operation) {
+        return operation != null && operation.owns(region) && allowDeletion(region, reason, actor)
+                && commitDeletion(region, operation, reason, actor);
+    }
 
-        Set<UUID> owned = regionsByOwner.get(region.getOwnerId());
-        if (owned != null) {
-            owned.remove(region.getId());
-            if (owned.isEmpty()) regionsByOwner.remove(region.getOwnerId(), owned);
+    private boolean commitDeletion(Region region, Region.Operation operation,
+                                   RegionDeleteEvent.Reason reason, Player actor) {
+        if (!operation.owns(region)) return false;
+        synchronized (index) {
+            if (regions.get(region.getId()) != region) return false;
+            unregister(region);
+            Set<UUID> owned = regionsByOwner.get(region.getOwnerId());
+            if (owned != null) owned.remove(region.getId());
         }
-
+        if (plugin.getMarketManager() != null) plugin.getMarketManager().clearWithin(region, operation);
         plugin.getRegionStorage().delete(region.getId());
+        Bukkit.getPluginManager().callEvent(new org.qweyns.qweprotectstones.regions.event.RegionDeletedEvent(region, actor, reason));
         return true;
     }
 
     public boolean importRegion(Region region) {
         if (region == null) return false;
-        if (findOverlapping(region.getWorld(), region.getBounds()) != null) return false;
-
-        register(region);
+        synchronized (index) {
+            if (regions.containsKey(region.getId()) || index.firstIntersecting(region.getWorldName(), region.getBounds()) != null
+                    || reservations.firstIntersecting(region.getWorldName(), region.getBounds()) != null) return false;
+            register(region);
+        }
         plugin.getRegionStorage().save(region);
         return true;
     }
 
     public void transferRegion(Region region, UUID newOwnerId, String newOwnerName) {
-        UUID previousOwner = region.getOwnerId();
+        transferRegion(region, newOwnerId, newOwnerName, null);
+    }
 
-        region.transferOwnership(newOwnerId, newOwnerName);
+    public boolean transferRegion(Region region, UUID newOwnerId, String newOwnerName, Player actor) {
+        return transferRegion(region, newOwnerId, newOwnerName, actor, configuredRole("transfer.previous-owner-role", "manager"));
+    }
 
-        Set<UUID> previous = regionsByOwner.get(previousOwner);
-        if (previous != null) previous.remove(region.getId());
-        regionsByOwner.computeIfAbsent(newOwnerId, k -> ConcurrentHashMap.newKeySet()).add(region.getId());
+    /** @param previousOwnerRole роль бывшего владельца; null — он не остаётся участником */
+    public boolean transferRegion(Region region, UUID newOwnerId, String newOwnerName, Player actor, TrustLevel previousOwnerRole) {
+        if (region == null || newOwnerId == null) return false;
+        try (Region.Operation operation = region.tryOperation()) {
+            if (operation == null || regions.get(region.getId()) != region) return false;
+            if (org.qweyns.qweprotectstones.regions.event.RegionEvents.fireTransfer(region, actor, newOwnerId, newOwnerName)) return false;
+            return transferWithin(region, newOwnerId, newOwnerName, operation, previousOwnerRole);
+        }
+    }
 
+    /** Роль из конфига по id; пусто или неизвестная роль — null (без доступа). */
+    public TrustLevel configuredRole(String path, String fallback) {
+        String raw = plugin.getConfigManager().getConfig().getString(path, fallback);
+        if (raw == null || raw.isBlank()) return null;
+        TrustLevel role = TrustLevel.parse(raw).orElse(null);
+        if (role == null) plugin.getLogger().warning(path + ": роль '" + raw + "' не найдена в roles.yml — доступ не выдаётся.");
+        return role == null || role.isOwner() ? null : role;
+    }
+
+    public boolean transferWithin(Region region, UUID newOwnerId, String newOwnerName, Region.Operation operation) {
+        return transferWithin(region, newOwnerId, newOwnerName, operation, null);
+    }
+
+    /** Фиксация после проверки события и (для покупки) успешной оплаты. Участники и баны сохраняются. */
+    public boolean transferWithin(Region region, UUID newOwnerId, String newOwnerName, Region.Operation operation,
+                                  TrustLevel previousOwnerRole) {
+        if (operation == null || !operation.owns(region) || newOwnerId == null) return false;
+        synchronized (index) {
+            if (regions.get(region.getId()) != region) return false;
+            UUID previousOwner = region.getOwnerId();
+            region.transferOwnership(newOwnerId, newOwnerName, previousOwnerRole);
+            Set<UUID> previous = previousOwner == null ? null : regionsByOwner.get(previousOwner);
+            if (previous != null) {
+                previous.remove(region.getId());
+                if (previous.isEmpty()) regionsByOwner.remove(previousOwner, previous);
+            }
+            regionsByOwner.computeIfAbsent(newOwnerId, k -> ConcurrentHashMap.newKeySet()).add(region.getId());
+        }
+        if (plugin.getMarketManager() != null)
+            plugin.getMarketManager().ownershipWithin(region, newOwnerId, newOwnerName, operation);
         plugin.getRegionStorage().save(region);
+        return true;
     }
 
     public int resolveLimit(Player player, RegionType type) {
@@ -317,6 +511,18 @@ public class RegionManager {
         return best >= 0 ? best : type.maxPerPlayer();
     }
 
+    /**
+     * Лимит игрока по типу уже исчерпан: получить ещё один такой приват (покупкой, передачей)
+     * он не может. Возвращает лимит или -1, если место есть.
+     */
+    public int limitReachedFor(Player player, Region region) {
+        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
+        if (type == null) return -1;
+        int limit = resolveLimit(player, type);
+        if (limit <= 0) return -1;
+        return countRegionsOfType(player.getUniqueId(), type.id()) >= limit ? limit : -1;
+    }
+
     public boolean isAreaFree(World world, RegionBounds bounds) {
         return world != null && index.firstIntersecting(world.getName(), bounds) == null;
     }
@@ -326,23 +532,34 @@ public class RegionManager {
     }
 
     public Region updateBounds(Region region, RegionBounds newBounds) {
-        if (region == null || newBounds == null) return null;
-
-        for (Region other : index.intersecting(region.getWorldName(), newBounds)) {
-            if (!other.getId().equals(region.getId())) return other;
+        if (region == null || newBounds == null) return region;
+        try (Region.Operation operation = region.tryOperation()) {
+            if (operation == null || regions.get(region.getId()) != region) return region;
+            synchronized (index) {
+                for (Region other : index.intersecting(region.getWorldName(), newBounds)) {
+                    if (!other.getId().equals(region.getId())) return other;
+                }
+                Region reserved = reservations.firstIntersecting(region.getWorldName(), newBounds);
+                if (reserved != null) return reserved;
+                index.remove(region);
+                region.setBounds(newBounds);
+                index.add(region);
+                indexVersion.incrementAndGet();
+            }
+            plugin.getRegionStorage().save(region);
+            return null;
         }
-
-        // сначала убрать по старым границам, потом добавить по новым
-        index.remove(region);
-        region.setBounds(newBounds);
-        index.add(region);
-
-        plugin.getRegionStorage().save(region);
-        return null;
     }
 
     /** Ядро переехало (поршень при protection.pistons.move-core). Границы привата не меняются. */
     public void updateCore(Region region, int x, int y, int z) {
+        try (Region.Operation op = region.tryOperation()) {
+            if (op != null) updateCoreWithin(region, x, y, z, op);
+        }
+    }
+
+    public void updateCoreWithin(Region region, int x, int y, int z, Region.Operation operation) {
+        if (!operation.owns(region) || regions.get(region.getId()) != region) return;
         region.setCore(x, y, z);
         region.touch();
         plugin.getRegionStorage().save(region);
@@ -367,7 +584,11 @@ public class RegionManager {
     public void refreshTypeData() {
         for (Region region : regions.values()) {
             RegionType type = plugin.getRegionTypes().resolveOrFallback(region.getTypeId());
-            if (type != null) region.setMaxDurability(type.maxDurability());
+            // без touch() на каждом привате: иначе /reload помечал бы изменённой всю базу
+            if (type != null && region.getMaxDurability() != Math.max(1, type.maxDurability())) {
+                region.setMaxDurability(type.maxDurability());
+                plugin.getRegionStorage().save(region);
+            }
         }
     }
 }

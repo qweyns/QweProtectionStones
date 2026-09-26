@@ -48,6 +48,18 @@ public final class Region implements Bounded {
 
     private final AtomicLong version = new AtomicLong();
 
+    /** Уведомление менеджера о смене состава участников (для индекса «игрок → приваты»). Не копируется. */
+    private transient volatile java.util.function.BiConsumer<Region, UUID> membershipListener;
+
+    public void setMembershipListener(java.util.function.BiConsumer<Region, UUID> listener) {
+        this.membershipListener = listener;
+    }
+
+    private void membershipChanged(UUID uuid) {
+        java.util.function.BiConsumer<Region, UUID> listener = membershipListener;
+        if (listener != null && uuid != null) listener.accept(this, uuid);
+    }
+
     public Region(UUID id, String world, RegionBounds bounds, int coreX, int coreY, int coreZ,
                  String typeId, UUID ownerId, String ownerName,
                  int durability, int maxDurability, long createdAt) {
@@ -65,6 +77,46 @@ public final class Region implements Bounded {
         this.createdAt = createdAt;
     }
 
+    // Неблокирующая резервация сложной операции. Вложенные callbacks не могут
+    // повторно купить/удалить/повредить тот же приват; чужой поток не ждёт Bukkit-событие.
+    private final java.util.concurrent.atomic.AtomicReference<Operation> operation =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
+    public final class Operation implements AutoCloseable {
+        private Operation() { }
+        public boolean owns(Region region) { return region == Region.this && operation.get() == this; }
+        @Override public void close() { operation.compareAndSet(this, null); }
+    }
+
+    public Operation tryOperation() {
+        Operation token = new Operation();
+        return operation.compareAndSet(null, token) ? token : null;
+    }
+
+    /** Копия данных без Bukkit; сериализуется независимо от последующих изменений. */
+    public synchronized Region snapshot() {
+        Region copy = new Region(id, world, bounds, coreX, coreY, coreZ, typeId,
+                ownerId, ownerName, durability, maxDurability, createdAt);
+        copy.members.putAll(members);
+        copy.flagOverrides.putAll(flagOverrides);
+        copy.effects.addAll(effects);
+        copy.bannedPlayers.putAll(bannedPlayers);
+        copy.displayName = displayName;
+        copy.attackCount = attackCount;
+        copy.lastAttackAt = lastAttackAt;
+        copy.lastAttackerName = lastAttackerName;
+        copy.penaltyUntil = penaltyUntil;
+        return copy;
+    }
+
+    public synchronized void replaceEffect(String name, int level) {
+        String normalized = name.toUpperCase(java.util.Locale.ROOT);
+        effects.removeIf(e -> e.equalsIgnoreCase(normalized)
+                || e.toUpperCase(java.util.Locale.ROOT).startsWith(normalized + ":"));
+        effects.add(normalized + ":" + level);
+        touch();
+    }
+
     public UUID getId() { return id; }
 
     public String getShortId() { return id.toString().substring(0, 8); }
@@ -75,16 +127,17 @@ public final class Region implements Bounded {
 
     public RegionBounds getBounds() { return bounds; }
 
-    public void setBounds(RegionBounds bounds) { this.bounds = Objects.requireNonNull(bounds, "bounds"); }
+    public synchronized void setBounds(RegionBounds bounds) { this.bounds = Objects.requireNonNull(bounds, "bounds"); touch(); }
 
     public String getTypeId() { return typeId; }
 
-    public void setTypeId(String typeId) { this.typeId = Objects.requireNonNull(typeId, "typeId"); }
+    public synchronized void setTypeId(String typeId) { this.typeId = Objects.requireNonNull(typeId, "typeId"); touch(); }
 
-    public void setCore(int coreX, int coreY, int coreZ) {
+    public synchronized void setCore(int coreX, int coreY, int coreZ) {
         this.coreX = coreX;
         this.coreY = coreY;
         this.coreZ = coreZ;
+        touch();
     }
 
     public long getCreatedAt() { return createdAt; }
@@ -124,16 +177,29 @@ public final class Region implements Bounded {
     public String getOwnerName() { return ownerName != null ? ownerName : ""; }
 
     public void transferOwnership(UUID newOwnerId, String newOwnerName) {
+        transferOwnership(newOwnerId, newOwnerName, null);
+    }
+
+    /**
+     * Смена владельца. Участники и баны сохраняются — новый владелец сам решит, кого оставить.
+     * @param previousOwnerRole роль бывшего владельца в привате; null — он не остаётся участником
+     */
+    public synchronized void transferOwnership(UUID newOwnerId, String newOwnerName, TrustLevel previousOwnerRole) {
         UUID previousOwner = this.ownerId;
         String previousName = this.ownerName;
 
         this.ownerId = newOwnerId;
         this.ownerName = newOwnerName;
         members.remove(newOwnerId);
+        bannedPlayers.remove(newOwnerId);
+        touch();
 
-        if (previousOwner != null && !previousOwner.equals(newOwnerId)) {
-            members.put(previousOwner, new RegionMember(previousOwner, previousName, TrustLevel.MANAGER, System.currentTimeMillis()));
+        if (previousOwner != null && !previousOwner.equals(newOwnerId) && previousOwnerRole != null
+                && !previousOwnerRole.isOwner()) {
+            members.put(previousOwner, new RegionMember(previousOwner, previousName, previousOwnerRole, System.currentTimeMillis()));
         }
+        membershipChanged(newOwnerId);
+        if (previousOwner != null) membershipChanged(previousOwner);
     }
 
     public boolean isOwner(UUID uuid) {
@@ -152,27 +218,34 @@ public final class Region implements Bounded {
         return members.size();
     }
 
-    public void setMember(UUID uuid, String name, TrustLevel trust) {
+    public synchronized void setMember(UUID uuid, String name, TrustLevel trust) {
         if (isOwner(uuid)) return;
         touch();
         members.compute(uuid, (key, existing) -> existing == null
                 ? new RegionMember(uuid, name, trust, System.currentTimeMillis())
                 : new RegionMember(uuid, name != null ? name : existing.name(), trust, existing.addedAt()));
+        membershipChanged(uuid);
     }
 
-    public void restoreMember(RegionMember member) {
-        if (member != null && !isOwner(member.uuid())) members.put(member.uuid(), member);
+    public synchronized void restoreMember(RegionMember member) {
+        if (member != null && !isOwner(member.uuid())) {
+            members.put(member.uuid(), member);
+            membershipChanged(member.uuid());
+        }
     }
 
-    public boolean removeMember(UUID uuid) {
+    public synchronized boolean removeMember(UUID uuid) {
         boolean removed = members.remove(uuid) != null;
-        if (removed) touch();
+        if (removed) {
+            touch();
+            membershipChanged(uuid);
+        }
         return removed;
     }
 
     public TrustLevel getTrust(UUID uuid) {
         if (uuid == null) return null;
-        if (isOwner(uuid)) return TrustLevel.OWNER;
+        if (isOwner(uuid)) return TrustLevel.owner();
 
         RegionMember member = members.get(uuid);
         return member != null ? member.trust() : null;
@@ -187,36 +260,38 @@ public final class Region implements Bounded {
         return player != null && hasTrust(player.getUniqueId(), required);
     }
 
+    /** Только чтение: изменения — через setFlag/resetFlag, иначе они не попадут в базу. */
     public Map<RegionFlag, Boolean> getFlagOverrides() {
-        return flagOverrides;
+        return java.util.Collections.unmodifiableMap(flagOverrides);
     }
 
     public Optional<Boolean> getFlagOverride(RegionFlag flag) {
         return Optional.ofNullable(flagOverrides.get(flag));
     }
 
-    public void setFlag(RegionFlag flag, boolean value) {
+    public synchronized void setFlag(RegionFlag flag, boolean value) {
         flagOverrides.put(flag, value);
         touch();
     }
 
-    public void resetFlag(RegionFlag flag) {
+    public synchronized void resetFlag(RegionFlag flag) {
         flagOverrides.remove(flag);
         touch();
     }
 
     public int getDurability() { return durability; }
 
-    public void setDurability(int durability) {
+    public synchronized void setDurability(int durability) {
         this.durability = clampDurability(durability);
         touch();
     }
 
     public int getMaxDurability() { return maxDurability; }
 
-    public void setMaxDurability(int maxDurability) {
+    public synchronized void setMaxDurability(int maxDurability) {
         this.maxDurability = Math.max(1, maxDurability);
         this.durability = clampDurability(this.durability);
+        touch();
     }
 
     private int clampDurability(int value) {
@@ -242,21 +317,22 @@ public final class Region implements Bounded {
         return bannedPlayers;
     }
 
-    public void ban(UUID uuid, String name) {
+    public synchronized void ban(UUID uuid, String name) {
         if (uuid == null || isOwner(uuid)) return;
 
         bannedPlayers.put(uuid, name == null ? "" : name);
         members.remove(uuid);
         touch();
+        membershipChanged(uuid);
     }
 
-    public boolean unban(UUID uuid) {
+    public synchronized boolean unban(UUID uuid) {
         boolean removed = bannedPlayers.remove(uuid) != null;
         if (removed) touch();
         return removed;
     }
 
-    public void restoreBan(UUID uuid, String name) {
+    public synchronized void restoreBan(UUID uuid, String name) {
         if (uuid != null && !isOwner(uuid)) bannedPlayers.put(uuid, name == null ? "" : name);
     }
 
@@ -268,12 +344,12 @@ public final class Region implements Bounded {
         return RegionText.label(displayName, getOwnerName(), getShortId());
     }
 
-    public void setDisplayName(String value) {
+    public synchronized void setDisplayName(String value) {
         this.displayName = RegionText.normalize(value);
         touch();
     }
 
-    public void restoreDecoration(String displayName) {
+    public synchronized void restoreDecoration(String displayName) {
         this.displayName = RegionText.normalize(displayName);
     }
 
@@ -281,20 +357,20 @@ public final class Region implements Bounded {
 
     public long getPenaltyUntil() { return penaltyUntil; }
 
-    public void setPenaltyUntil(long penaltyUntil) { this.penaltyUntil = penaltyUntil; }
+    public synchronized void setPenaltyUntil(long penaltyUntil) { this.penaltyUntil = penaltyUntil; touch(); }
 
     public long getLastAttackAt() { return lastAttackAt; }
 
     public String getLastAttackerName() { return lastAttackerName == null ? "" : lastAttackerName; }
 
-    public void recordAttack(String attackerName) {
+    public synchronized void recordAttack(String attackerName) {
         attackCount++;
         lastAttackAt = System.currentTimeMillis();
         if (attackerName != null && !attackerName.isBlank()) lastAttackerName = attackerName;
         touch();
     }
 
-    public void restoreStats(int attackCount, long lastAttackAt, String lastAttackerName) {
+    public synchronized void restoreStats(int attackCount, long lastAttackAt, String lastAttackerName) {
         this.attackCount = Math.max(0, attackCount);
         this.lastAttackAt = lastAttackAt;
         this.lastAttackerName = lastAttackerName == null ? "" : lastAttackerName;

@@ -34,7 +34,7 @@ public class FlagSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getTunables().flagEditLevel());
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.FLAGS);
         if (region == null) return;
 
         if (args.length == 0) {

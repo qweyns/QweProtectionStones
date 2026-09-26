@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.autoadd;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -25,46 +27,70 @@ public class AutoAddManager implements Listener {
     private final QweProtectStones plugin;
 
     private final Map<UUID, Set<String>> autoAddLists = new ConcurrentHashMap<>();
+    private final Map<UUID, UUID> sessions = new ConcurrentHashMap<>();
+    private final Set<UUID> loaded = ConcurrentHashMap.newKeySet();
     private final Set<UUID> toggledOff = ConcurrentHashMap.newKeySet();
 
     public AutoAddManager(QweProtectStones plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
 
-        Bukkit.getOnlinePlayers().forEach(player -> loadPlayer(player.getUniqueId()));
+        Bukkit.getOnlinePlayers().forEach(player -> loadPlayer(player));
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        loadPlayer(event.getPlayer().getUniqueId());
+        loadPlayer(event.getPlayer());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         saveAsync(uuid);
+        sessions.remove(uuid);
+        loaded.remove(uuid);
         autoAddLists.remove(uuid);
         toggledOff.remove(uuid);
     }
 
-    private void loadPlayer(UUID uuid) {
-        plugin.getRegionStorage().loadAutoAddAsync(uuid, (friends, isToggledOff) -> {
-            // колбэк приходит на главном потоке, не перетираем, а дополняем
+    private void loadPlayer(Player player) {
+        UUID uuid = player.getUniqueId();
+        UUID session = UUID.randomUUID();
+        sessions.put(uuid, session);
+        loaded.remove(uuid);
+        loadSession(player, uuid, session);
+    }
 
-            if (Bukkit.getPlayer(uuid) == null) return;
+    private void loadSession(Player player, UUID uuid, UUID session) {
+        plugin.getRegionStorage().loadAutoAddAsync(uuid, (friends, isToggledOff) ->
+                plugin.getSchedulers().runAtEntity(player, () -> {
+                    if (!session.equals(sessions.get(uuid)) || !player.isOnline()) return;
+                    Set<String> copy = ConcurrentHashMap.newKeySet();
+                    copy.addAll(friends);
+                    autoAddLists.put(uuid, copy);
+                    if (isToggledOff) toggledOff.add(uuid); else toggledOff.remove(uuid);
+                    loaded.add(uuid);
+                }), () -> {
+                    if (!plugin.isEnabled()) return;
+                    plugin.getSchedulers().runAtEntityLater(player, () -> {
+                        if (player.isOnline() && session.equals(sessions.get(uuid))) loadSession(player, uuid, session);
+                    }, ConfigValues.boundedLong(plugin.getConfigManager().getConfig(), "timings.autoadd_retry_ticks", 100L, 1L, 72000L));
+                });
+    }
 
-            if (!friends.isEmpty()) {
-                autoAddLists.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).addAll(friends);
-            }
-            if (isToggledOff) toggledOff.add(uuid);
-        });
+    private boolean ready(Player player) {
+        if (loaded.contains(player.getUniqueId())) return true;
+        player.sendMessage(plugin.getLanguageManager().getMessage("autoadd_loading"));
+        return false;
     }
 
     private void saveAsync(UUID uuid) {
+        if (!loaded.contains(uuid)) return;
         plugin.getRegionStorage().saveAutoAddAsync(uuid, autoAddLists.getOrDefault(uuid, Set.of()), toggledOff.contains(uuid));
     }
 
     public void toggle(Player player) {
+        if (!ready(player)) return;
         UUID uuid = player.getUniqueId();
 
         if (toggledOff.remove(uuid)) {
@@ -77,6 +103,7 @@ public class AutoAddManager implements Listener {
     }
 
     public void addPlayer(Player owner, String target) {
+        if (!ready(owner)) return;
         if (target == null || target.isBlank()) return;
 
         UUID uuid = owner.getUniqueId();
@@ -96,6 +123,7 @@ public class AutoAddManager implements Listener {
     }
 
     public void removePlayer(Player owner, String target) {
+        if (!ready(owner)) return;
         UUID uuid = owner.getUniqueId();
         Set<String> list = autoAddLists.get(uuid);
 
@@ -108,6 +136,7 @@ public class AutoAddManager implements Listener {
     }
 
     public void showList(Player owner) {
+        if (!ready(owner)) return;
         Set<String> list = autoAddLists.getOrDefault(owner.getUniqueId(), Set.of());
         owner.sendMessage(plugin.getLanguageManager().getMessage("autoadd_list_header"));
 
@@ -124,7 +153,7 @@ public class AutoAddManager implements Listener {
     }
 
     public void applyToRegion(Player owner, Region region) {
-        if (toggledOff.contains(owner.getUniqueId())) return;
+        if (!loaded.contains(owner.getUniqueId()) || toggledOff.contains(owner.getUniqueId())) return;
 
         Set<String> list = autoAddLists.get(owner.getUniqueId());
         if (list == null || list.isEmpty()) return;
@@ -137,10 +166,10 @@ public class AutoAddManager implements Listener {
 
             if (RegionEvents.fireMemberChange(region, null, target.getUniqueId(),
                     target.getName() != null ? target.getName() : name,
-                    org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.BUILD)) {
+                    org.qweyns.qweprotectstones.regions.event.RegionMemberChangeEvent.Action.TRUST, TrustLevel.defaultRole())) {
                 continue;
             }
-            region.setMember(target.getUniqueId(), target.getName() != null ? target.getName() : name, TrustLevel.BUILD);
+            region.setMember(target.getUniqueId(), target.getName() != null ? target.getName() : name, TrustLevel.defaultRole());
             added++;
         }
 
@@ -154,11 +183,12 @@ public class AutoAddManager implements Listener {
         Set<UUID> saved = ConcurrentHashMap.newKeySet();
 
         autoAddLists.forEach((uuid, friends) -> {
+            if (!loaded.contains(uuid)) return;
             plugin.getRegionStorage().saveAutoAddSync(uuid, friends, toggledOff.contains(uuid));
             saved.add(uuid);
         });
         toggledOff.stream()
-                .filter(uuid -> !saved.contains(uuid))
+                .filter(uuid -> loaded.contains(uuid) && !saved.contains(uuid))
                 .forEach(uuid -> plugin.getRegionStorage().saveAutoAddSync(uuid, Set.of(), true));
     }
 }

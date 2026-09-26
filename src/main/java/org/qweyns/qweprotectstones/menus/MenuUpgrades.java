@@ -53,10 +53,11 @@ class MenuUpgrades {
             Map<String, String> extra = menus.dynamicPlaceholders("upgrade", region);
             extra.put("%level%", String.valueOf(targetLevel));
             extra.put("%cost%", String.valueOf(upgradeCost(region, currentDurability, targetLevel)));
+            extra.put("%cost_note%", penaltyNote(region, "upgrade_cost_penalty_note"));
             extra.put("%item%", "<translate:" + upgradeMaterial.translationKey() + ">");
 
             String signature = "upgrade|" + targetLevel + "|" + currentDurability + "/" + maxDurability
-                    + "|" + upgradeMaterial.name();
+                    + "|" + upgradeMaterial.name() + "|" + upgradeCost(region, currentDurability, targetLevel);
             if (signature.equals(holder.slotSignatureAt(slot))) {
                 contents[slot] = holder.slotStackAt(slot);
                 continue;
@@ -84,9 +85,24 @@ class MenuUpgrades {
         Region region = holder.region;
         if (region == null) return true;
 
-        if (!plugin.getProtectionService().canManage(player, region)) {
+        try (Region.Operation operation = region.tryOperation()) {
+            if (operation == null || plugin.getRegionManager().getById(region.getId()) != region) return true;
+            return upgrade(player, holder, region, slotIndex, menuCfg);
+        }
+    }
+
+    /** Звук из секции sounds файла меню; не задан или с опечаткой — значение по умолчанию. */
+    private static org.qweyns.qweprotectstones.config.SoundSetting menuSound(FileConfiguration menuCfg, String key,
+                                                                            org.qweyns.qweprotectstones.config.SoundSetting fallback) {
+        return org.qweyns.qweprotectstones.config.SoundSetting.parse(menuCfg.getString("sounds." + key), fallback);
+    }
+
+    private boolean upgrade(Player player, MenuHolder holder, Region region, int slotIndex, FileConfiguration menuCfg) {
+        var denied = menuSound(menuCfg, "denied", plugin.getTunables().menuDenied());
+        var success = menuSound(menuCfg, "success", plugin.getTunables().menuSuccess());
+        if (!plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_manager")));
+                    "%level%", org.qweyns.qweprotectstones.regions.TrustLevel.lowestWith(org.qweyns.qweprotectstones.config.Tunables.TrustAction.UPGRADE).displayName()));
             return true;
         }
 
@@ -95,7 +111,7 @@ class MenuUpgrades {
         int maxDurability = region.getMaxDurability();
 
         if (targetLevel > maxDurability) {
-            plugin.getTunables().menuDenied().playTo(player);
+            denied.playTo(player);
             return true;
         }
 
@@ -106,7 +122,7 @@ class MenuUpgrades {
         if (countItems(player, upgradeMaterial) < totalCost) {
             player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_not_enough_items",
                     "%amount%", String.valueOf(totalCost), "%item%", itemName));
-            plugin.getTunables().menuDenied().playTo(player);
+            denied.playTo(player);
             return true;
         }
 
@@ -116,19 +132,28 @@ class MenuUpgrades {
             return true;
         }
 
-        if (plugin.getPenaltyManager().hasPenalty(region)) {
-            player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_penalty",
-                    "%multiplier%", String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())));
-        }
+        // Штраф упоминается в том же сообщении об улучшении, а не отдельным предупреждением.
+        String note = penaltyNote(region, "upgrade_penalty_note");
 
         region.setDurability(targetLevel);
         plugin.getRegionStorage().saveNow(region);
         plugin.getHologramManager().createOrUpdateHologram(region);
 
-        plugin.getTunables().menuSuccess().playTo(player);
-        player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_success", "%durability%", String.valueOf(targetLevel)));
+        success.playTo(player);
+        player.sendMessage(plugin.getLanguageManager().getMessage("upgrade_success",
+                "%durability%", String.valueOf(targetLevel),
+                "%cost%", String.valueOf(totalCost), "%item%", itemName, "%penalty_note%", note));
         menus.render(player, holder, true);
         return true;
+    }
+
+    /** Пометка о штрафе за атаку из lang-шаблона; пустая строка, если штрафа нет. */
+    private String penaltyNote(Region region, String key) {
+        var penalties = plugin.getPenaltyManager();
+        if (!penalties.hasPenalty(region)) return "";
+        return plugin.getLanguageManager().rawTemplate(key,
+                "%multiplier%", String.valueOf(penalties.getPenaltyMultiplier()),
+                "%time%", penalties.remainingText(region));
     }
 
     private long upgradeCost(Region region, int current, int target) {

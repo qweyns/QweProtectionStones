@@ -1,4 +1,20 @@
-# Интеграции
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![ECOSYSTEM](https://img.shields.io/badge/QPS-ECOSYSTEM-a78bfa?style=flat-square&labelColor=181825)
+
+# 🔌 Интеграции
+
+> [!TIP]
+> Подключайте только нужные интеграции. Для базовой защиты территорий сторонние плагины не обязательны.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[Карты](#карты) · [PlaceholderAPI](#placeholderapi) · [Экономика](#экономика) · [Уведомления](#уведомления) · [Импорт](#импорт) · [Бэкапы и выгрузки](#бэкапы-и-выгрузки)
+
+</details>
+
+---
 
 Все зависимости опциональны — плагин работает и без них.
 
@@ -59,13 +75,13 @@ map:
 
 **Vault** (деньги) и **PlayerPoints** (очки) используются для оплаты эффектов
 (`effects.purchase.cost-type`), действий в меню (`[takemoney]`,
-`[takepoints]`) и рынка (features.yml → `market`).
+`[takepoints]`) и рынка (features.yml → `market`). Рынок использует только Vault, не PlayerPoints.
 
 ## Уведомления
 
 features.yml → `notifications`. Сообщение уходит, когда у привата
 с эффектом `ALERTS` снимают прочность. Одинаковые уведомления шлются
-не чаще раза в 15 секунд.
+с интервалом `notifications.rate-limit-seconds` (по умолчанию 15 секунд).
 
 ```yaml
 notifications:
@@ -119,7 +135,10 @@ WorldGuard (`pvp`, `entry`, `tnt`…) переносятся согласно `f
 - `/qps export` — выгрузить все приваты в `exports/regions_<дата>.json`;
 - `/qps restore <файл>` — восстановить из выгрузки;
 - плановые бэкапы (features.yml → `backup`): `enable`, `interval-minutes`
-  (минимум 10), `keep-count` — сколько последних файлов держать в `exports/`.
+  (минимум 10), `keep-count` — сколько последних файлов держать в `backups/`.
+  Ручные `exports/` не ротируются. `/qps backup` тоже пишет в `backups/`, а
+  `/qps restore` и дополнение команды ищут файлы в обеих папках. Имена содержат
+  дату и уникальный суффикс; файл публикуется атомарно после завершения записи.
 
 ```yaml
 backup:
@@ -127,3 +146,16 @@ backup:
   interval-minutes: 720
   keep-count: 10
 ```
+
+Импорт по умолчанию использует `DIAMOND_BLOCK` (`features.yml → import.type-id`);
+если этот тип удалён, выберите существующий материал из `region_types`.
+Для вебхуков настраиваются `notifications.rate-limit-seconds`,
+`http-timeout-seconds`, `webhook-retries` и `webhook-retry-delay-seconds`.
+Интервал ограничивает внешние уведомления одного вида для одного региона,
+а не все сообщения в игровой чат. Токены/URL храните только в конфиге сервера.
+При отключённых metrics сеть всё ещё может использоваться обновлениями/вебхуками:
+это независимые настройки.
+
+---
+
+[← Меню и интерфейс](menus.md) · [Все разделы](README.md) · [API для разработчиков →](api.md)

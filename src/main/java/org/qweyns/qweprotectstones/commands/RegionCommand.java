@@ -95,7 +95,10 @@ public class RegionCommand extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String label, String[] args) {
         if (args.length == 0) {
-            openDefault(sender);
+            // help.no-args: help — справка (по умолчанию), menu — меню привата, где стоит игрок
+            String mode = plugin.getConfigManager().getConfig().getString("help.no-args", "help");
+            if ("menu".equalsIgnoreCase(mode)) openDefault(sender);
+            else sendHelp(sender, label, 1);
             return true;
         }
 

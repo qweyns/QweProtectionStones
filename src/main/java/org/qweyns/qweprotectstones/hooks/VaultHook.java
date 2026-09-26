@@ -28,11 +28,15 @@ public class VaultHook {
     public boolean isEnabled() { return economy() != null; }
 
     public boolean hasMoney(Player player, double amount) {
+        // NaN округляется в ноль, бесконечность переполняет цену — не передаём их в Vault.
+        if (!Double.isFinite(amount) || amount < 0) return false;
         Economy e = economy();
         return e != null && (amount <= 0 || e.has(player, round(amount)));
     }
 
     public boolean takeMoney(Player player, double amount) {
+        // NaN округляется в ноль, бесконечность переполняет цену — не передаём их в Vault.
+        if (!Double.isFinite(amount) || amount < 0) return false;
         Economy e = economy();
         if (e == null) return false;
         if (amount <= 0) return true; // платить нечего — считаем успехом
@@ -42,6 +46,8 @@ public class VaultHook {
     }
 
     public boolean giveMoney(OfflinePlayer player, double amount) {
+        // NaN округляется в ноль, бесконечность переполняет цену — не передаём их в Vault.
+        if (!Double.isFinite(amount) || amount < 0) return false;
         if (player == null) return false;
         Economy e = economy();
         if (e == null) return false;
@@ -53,6 +59,6 @@ public class VaultHook {
 
     // копейки от подстановок не должны расходиться с отображаемой ценой
     private static double round(double amount) {
-        return Math.round(amount * 100.0) / 100.0;
+        return java.math.BigDecimal.valueOf(amount).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
     }
 }

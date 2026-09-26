@@ -171,6 +171,6 @@ public class LanguageManager {
             if (replacements[i] == null) continue;
             full = full.replace(replacements[i], String.valueOf(replacements[i + 1]));
         }
-        return full;
+        return full.contains("%command%") ? full.replace("%command%", plugin.getPlayerCommandName()) : full;
     }
 }

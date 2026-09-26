@@ -38,7 +38,7 @@ public class RegionInteractListener implements Listener {
         if (region == null || !region.isCore(block.getLocation())) return;
 
         Player player = event.getPlayer();
-        boolean trusted = plugin.getProtectionService().has(region, player, TrustLevel.ACCESS);
+        boolean trusted = plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.MENU);
 
         // яйцо призыва: либо ваниль, либо меню, не оба сразу
 
@@ -62,7 +62,7 @@ public class RegionInteractListener implements Listener {
 
         if (player.isSneaking()) return;
 
-        String action = plugin.getConfigManager().getConfig().getString("settings.custom_menus.main.action", "MENU");
+        String action = plugin.getConfigManager().getConfig().getString("menus.custom.main.action", "MENU");
         if (action.equalsIgnoreCase("COMMAND")) {
             runCustomCommands(player, region);
             return;
@@ -73,7 +73,7 @@ public class RegionInteractListener implements Listener {
 
     private void runCustomCommands(Player player, Region region) {
         List<String> commands = plugin.getConfigManager().getConfig()
-                .getStringList("settings.custom_menus.main.commands");
+                .getStringList("menus.custom.main.commands");
 
         for (String raw : commands) {
             String parsed = raw.replace("%player%", player.getName())

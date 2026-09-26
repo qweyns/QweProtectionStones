@@ -34,14 +34,36 @@ public class BlockProtectionListener implements Listener {
 
     private final QweProtectStones plugin;
     private final ProtectionService protection;
+    private record CoreMove(Region region, Location target, Region.Operation operation) { }
+    private final java.util.Map<org.bukkit.event.block.BlockPistonEvent, List<CoreMove>> coreMoves = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats perf;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onBlockBreak;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onBlockPlace;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onLiquidFlow;
+    private final org.qweyns.qweprotectstones.diagnostics.PerfStats.Timer perf_onEntityChangeBlock;
 
     public BlockProtectionListener(QweProtectStones plugin) {
+        this.perf = plugin.getPerfStats() != null ? plugin.getPerfStats() : new org.qweyns.qweprotectstones.diagnostics.PerfStats();
+        this.perf_onBlockBreak = perf.timer("block-break");
+        this.perf_onBlockPlace = perf.timer("block-place");
+        this.perf_onLiquidFlow = perf.timer("liquid-flow");
+        this.perf_onEntityChangeBlock = perf.timer("entity-change-block");
         this.plugin = plugin;
         this.protection = plugin.getProtectionService();
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        long started = perf.start();
+        try {
+            onBlockBreakTimed(event);
+        } finally {
+            perf.stop(perf_onBlockBreak, started);
+        }
+    }
+
+    private void onBlockBreakTimed(BlockBreakEvent event) {
         // ядро не трогаем, это LifecycleListener
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && region.isCore(event.getBlock().getLocation())) return;
@@ -54,6 +76,23 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        long started = perf.start();
+        try {
+            onBlockPlaceTimed(event);
+        } finally {
+            perf.stop(perf_onBlockPlace, started);
+        }
+    }
+
+    private void onBlockPlaceTimed(BlockPlaceEvent event) {
+        if (event instanceof org.bukkit.event.block.BlockMultiPlaceEvent multi) {
+            for (var state : multi.getReplacedBlockStates()) {
+                if (protection.denyBuild(event.getPlayer(), state.getLocation())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
         if (protection.denyBuild(event.getPlayer(), event.getBlockPlaced().getLocation())) {
             event.setCancelled(true);
         }
@@ -73,15 +112,17 @@ public class BlockProtectionListener implements Listener {
         Player igniter = event.getPlayer();
         if (igniter != null) {
 
-            if (!protection.has(region, igniter, protection.requiredFor(Tunables.TrustAction.BUILD))) {
+            if (!protection.can(region, igniter, Tunables.TrustAction.BUILD)) {
                 protection.notifyDenied(igniter, region);
                 event.setCancelled(true);
             }
             return;
         }
 
-        if (event.getCause() != BlockIgniteEvent.IgniteCause.LIGHTNING
-                && !protection.flag(region, RegionFlag.FIRE_SPREAD)) {
+        // Молния (в т.ч. от трезубца с «Громовержцем») подчиняется fire_spread, если не разрешено иное.
+        boolean lightningExempt = event.getCause() == BlockIgniteEvent.IgniteCause.LIGHTNING
+                && !plugin.getConfigManager().getConfig().getBoolean("protection.fire.lightning-respects-flag", true);
+        if (!lightningExempt && !protection.flag(region, RegionFlag.FIRE_SPREAD)) {
             event.setCancelled(true);
         }
     }
@@ -100,6 +141,15 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onLiquidFlow(BlockFromToEvent event) {
+        long started = perf.start();
+        try {
+            onLiquidFlowTimed(event);
+        } finally {
+            perf.stop(perf_onLiquidFlow, started);
+        }
+    }
+
+    private void onLiquidFlowTimed(BlockFromToEvent event) {
         Region target = protection.regionAt(event.getToBlock().getLocation());
         if (target == null) return;
 
@@ -112,14 +162,22 @@ public class BlockProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockForm(BlockFormEvent event) {
+        if (!isIceOrSnow(event.getNewState().getType())) return;
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && !protection.flag(region, RegionFlag.ICE_AND_SNOW)) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockFade(BlockFadeEvent event) {
+        if (!isIceOrSnow(event.getBlock().getType())) return;
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region != null && !protection.flag(region, RegionFlag.ICE_AND_SNOW)) event.setCancelled(true);
+    }
+
+    // Лёд/снег не должны отключать генераторы камня, гашение огня и другие fade/form.
+    static boolean isIceOrSnow(Material material) {
+        return material == Material.ICE || material == Material.FROSTED_ICE
+                || material == Material.SNOW || material == Material.SNOW_BLOCK;
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -140,36 +198,39 @@ public class BlockProtectionListener implements Listener {
         Region origin = protection.regionAt(event.getLocation());
         event.getBlocks().removeIf(state -> {
             Region region = protection.regionAt(state.getLocation());
-            return region != null && !region.equals(origin);
+            return region != null && (!region.equals(origin) || region.isCore(state.getLocation())
+                    || !protection.flag(region, RegionFlag.BLOCK_GROWTH));
         });
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
-        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), true)) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), true)
+                || !reserveCores(event, event.getBlocks(), event.getDirection())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)) event.setCancelled(true);
+        if (pistonBlocked(event.getBlock(), event.getBlocks(), event.getDirection(), false)
+                || !reserveCores(event, event.getBlocks(), event.getDirection())) event.setCancelled(true);
     }
 
     // переносим ядро в данных привата. MONITOR осознанно: updateCore — побочный эффект,
     // запись в регион легитимна только когда ход поршня уже никто не отменит.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonExtendApplied(BlockPistonExtendEvent event) {
-        relocateCore(event.getBlocks(), event.getDirection(), true);
+        applyCoreMoves(event);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPistonRetractApplied(BlockPistonRetractEvent event) {
-        relocateCore(event.getBlocks(), event.getDirection(), false);
+        applyCoreMoves(event);
     }
 
     private boolean pistonBlocked(Block piston, List<Block> blocks, BlockFace direction, boolean extend) {
         Region pistonRegion = protection.regionAt(piston.getLocation());
-        // при втягивании блоки едут к поршню, то есть против его направления
-        BlockFace movement = extend ? direction : direction.getOppositeFace();
+        // Paper 1.21.4 передаёт направление движения и для retract (уже opposite facing).
+        BlockFace movement = direction;
 
         // голова поршня занимает блок перед собой
         if (extend && violates(pistonRegion, piston.getRelative(direction).getLocation())) return true;
@@ -182,7 +243,8 @@ public class BlockProtectionListener implements Listener {
             // ядро двигать можно, но только внутри его же привата
             Region region = protection.regionAt(block.getLocation());
             if (region != null && region.isCore(block.getLocation())
-                    && !region.contains(block.getRelative(movement).getLocation())) return true;
+                    && (block.getPistonMoveReaction() == org.bukkit.block.PistonMoveReaction.BREAK
+                    || !region.contains(block.getRelative(movement).getLocation()))) return true;
         }
         return false;
     }
@@ -197,24 +259,47 @@ public class BlockProtectionListener implements Listener {
         return !protection.flag(region, RegionFlag.PISTONS_FROM_OUTSIDE);
     }
 
-    private void relocateCore(List<Block> blocks, BlockFace direction, boolean extend) {
-        if (!plugin.getTunables().pistonsCanMoveCore()) return;
-
-        BlockFace movement = extend ? direction : direction.getOppositeFace();
+    private boolean reserveCores(org.bukkit.event.block.BlockPistonEvent event, List<Block> blocks, BlockFace movement) {
+        if (!plugin.getTunables().pistonsCanMoveCore()) return true;
+        List<CoreMove> moves = new java.util.ArrayList<>();
         for (Block block : blocks) {
             Region region = plugin.getRegionManager().getRegionAt(block.getLocation());
             if (region == null || !region.isCore(block.getLocation())) continue;
+            Region.Operation op = region.tryOperation();
+            if (op == null) {
+                moves.forEach(move -> move.operation().close());
+                return false;
+            }
+            moves.add(new CoreMove(region, block.getRelative(movement).getLocation(), op));
+        }
+        coreMoves.put(event, moves);
+        return true;
+    }
 
-            plugin.getRegionManager().updateCore(region,
-                    block.getX() + movement.getModX(),
-                    block.getY() + movement.getModY(),
-                    block.getZ() + movement.getModZ());
-            return;
+    private void applyCoreMoves(org.bukkit.event.block.BlockPistonEvent event) {
+        List<CoreMove> moves = coreMoves.remove(event);
+        if (moves == null) return;
+        try {
+            if (!event.isCancelled()) for (CoreMove move : moves) {
+                Location at = move.target();
+                plugin.getRegionManager().updateCoreWithin(move.region(), at.getBlockX(), at.getBlockY(), at.getBlockZ(), move.operation());
+            }
+        } finally {
+            moves.forEach(move -> move.operation().close());
         }
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        long started = perf.start();
+        try {
+            onEntityChangeBlockTimed(event);
+        } finally {
+            perf.stop(perf_onEntityChangeBlock, started);
+        }
+    }
+
+    private void onEntityChangeBlockTimed(EntityChangeBlockEvent event) {
         Region region = protection.regionAt(event.getBlock().getLocation());
         if (region == null) return;
 
@@ -225,7 +310,7 @@ public class BlockProtectionListener implements Listener {
         }
 
         if (event.getEntity() instanceof Player player) {
-            if (!protection.has(region, player, protection.requiredFor(Tunables.TrustAction.BUILD))) {
+            if (!protection.can(region, player, Tunables.TrustAction.BUILD)) {
                 protection.notifyDenied(player, region);
                 event.setCancelled(true);
             }

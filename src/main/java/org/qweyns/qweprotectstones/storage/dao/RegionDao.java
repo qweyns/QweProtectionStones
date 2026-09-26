@@ -35,6 +35,9 @@ public interface RegionDao {
 
     int pruneLog(long olderThan);
 
+    /** Id приватов (в т.ч. удалённых), у которых есть записи журнала и id начинается с префикса. */
+    default List<UUID> findLoggedRegions(String idPrefix, int limit) { return List.of(); }
+
     Map<UUID, RegionSale> loadSales();
 
     void saveSale(RegionSale sale);

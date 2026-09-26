@@ -36,18 +36,20 @@ public class HologramManager implements Listener {
     }
 
     public void init() {
-        if (plugin.getServer().getPluginManager().isPluginEnabled("DecentHolograms")) {
+        if (!plugin.getSchedulers().isFolia() && plugin.getServer().getPluginManager().isPluginEnabled("DecentHolograms")) {
             dhProvider = new DHProvider(plugin);
             plugin.getLogger().info("Мост для DecentHolograms загружен.");
         }
-        if (plugin.getServer().getPluginManager().isPluginEnabled("FancyHolograms")) {
+        if (!plugin.getSchedulers().isFolia() && plugin.getServer().getPluginManager().isPluginEnabled("FancyHolograms")) {
             fhProvider = new FHProvider(plugin);
             plugin.getLogger().info("Мост для FancyHolograms загружен.");
         }
         // встроенный провайдер не требует ничего и всегда доступен
         nativeProvider = new NativeHologramProvider(plugin);
         if (dhProvider == null && fhProvider == null) {
-            plugin.getLogger().info("DecentHolograms/FancyHolograms не найдены — использую встроенные голограммы (TextDisplay).");
+            plugin.getLogger().info(plugin.getSchedulers().isFolia()
+                    ? "Folia: использую NATIVE-голограммы; мосты DH/FH доступны на Paper."
+                    : "DecentHolograms/FancyHolograms не найдены — использую встроенные голограммы (TextDisplay).");
         }
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
@@ -57,7 +59,7 @@ public class HologramManager implements Listener {
     }
 
     public void createOrUpdateHologram(Region region) {
-        if (region == null) return;
+        if (region == null || plugin.getRegionManager().getById(region.getId()) != region) return;
 
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (type != null && !type.hologramEnabled()) {

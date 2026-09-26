@@ -56,10 +56,10 @@ public class TrustAllSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        TrustLevel level = TrustLevel.BUILD;
+        TrustLevel level = TrustLevel.defaultRole();
         if (granting && args.length > 1) {
             var parsed = TrustLevel.parse(args[1]);
-            if (parsed.isEmpty() || parsed.get() == TrustLevel.OWNER) {
+            if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().isGrantable())) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level", "%levels%", levelNames()));
                 return;
             }
@@ -89,7 +89,7 @@ public class TrustAllSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
-        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
+        String levelName = level.displayName();
         player.sendMessage(plugin.getLanguageManager().getMessage(granting ? "trustall_done" : "untrustall_done",
                 "%player%", targetName, "%count%", String.valueOf(changed), "%level%", levelName));
 

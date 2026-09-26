@@ -21,7 +21,45 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: mvn -B -ntp clean package
+        shell: bash
+        run: mvn -B -ntp clean package 2>&1 | tee "$RUNNER_TEMP/qps-build.log"
+
+      - name: Report build failure
+        if: failure()
+        # Аннотация доступна через Checks API даже если скачивание логов CI недоступно.
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/qps-build.log" ]; then
+            text=$(tail -80 "$RUNNER_TEMP/qps-build.log")
+            text="${text//'%'/'%25'}"
+            text="${text//$'\n'/'%0A'}"
+            text="${text//$'\r'/'%0D'}"
+            echo "::error title=Build diagnostics::$text"
+          fi
+
+      - name: Summarize tests
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PYTEST'
+          import glob, os, xml.etree.ElementTree as ET
+          files = glob.glob('target/surefire-reports/TEST-*.xml')
+          if files:
+              totals = {key: 0 for key in ('tests', 'failures', 'errors', 'skipped')}
+              for file in files:
+                  root = ET.parse(file).getroot()
+                  for case in root.findall('testcase'):
+                      for failure in list(case.findall('failure')) + list(case.findall('error')):
+                          detail = (failure.get('message') or failure.text or '')[:3000]
+                          detail = detail.encode('unicode_escape').decode().replace('%', '%25')
+                          print(f"::error title=JUnit failure::{case.get('classname')}#{case.get('name')}: {detail}")
+                  for key in totals:
+                      totals[key] += int(root.get(key, '0'))
+              message = ', '.join(f'{key}={value}' for key, value in totals.items())
+              print(f'::notice title=JUnit::{message}; suites={len(files)}')
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write('## JUnit\n' + message + f'; suites={len(files)}\n')
+          PYTEST
 
       - name: Check shaded jar contents
         # классы зависимостей должны попасть в jar после релокации:

@@ -59,6 +59,8 @@ public class EffectManager implements Listener {
         refreshTask = plugin.getSchedulers().runTimer(this::refreshAll, period, period);
     }
 
+    public void refreshPlayers() { refreshAll(); }
+
     private void refreshAll() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             plugin.getSchedulers().runAtEntity(player, () -> {
@@ -116,7 +118,7 @@ public class EffectManager implements Listener {
         List<String> effects = region.getEffects();
         if (effects.isEmpty()) return;
 
-        boolean trusted = plugin.getProtectionService().has(region, player, TrustLevel.ACCESS);
+        boolean trusted = plugin.getProtectionService().can(region, player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.EFFECTS);
         if (changed && !trusted) notifyOwnerAboutIntruder(region, player);
 
         for (String raw : effects) {
@@ -205,10 +207,7 @@ public class EffectManager implements Listener {
         String normalized = effectName.toUpperCase(Locale.ROOT);
         int level = Math.max(0, Math.min(255, amplifier));
 
-        region.getEffects().removeIf(effect -> effect.toUpperCase(Locale.ROOT).startsWith(normalized + ":"));
-        region.getEffects().add(normalized + ":" + level);
-        // без этого версия не меняется и открытые меню не узнают о покупке
-        region.touch();
+        region.replaceEffect(normalized, level);
         plugin.getRegionStorage().saveNow(region);
 
         refreshAll();

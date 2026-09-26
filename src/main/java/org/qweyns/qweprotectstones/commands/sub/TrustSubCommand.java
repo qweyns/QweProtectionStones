@@ -41,7 +41,7 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getTunables().memberEditLevel());
+        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.config.Tunables.TrustAction.MEMBERS);
         if (region == null) return;
 
         if (args.length == 0) {
@@ -68,10 +68,10 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
     }
 
     private void grant(Player player, Region region, OfflinePlayer target, String[] args) {
-        TrustLevel level = TrustLevel.BUILD;
+        TrustLevel level = TrustLevel.defaultRole();
         if (args.length > 1) {
             var parsed = TrustLevel.parse(args[1]);
-            if (parsed.isEmpty() || parsed.get() == TrustLevel.OWNER) {
+            if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().isGrantable())) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level",
                         "%levels%", levelNames()));
                 return;
@@ -94,7 +94,7 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         region.setMember(target.getUniqueId(), targetName, level);
         plugin.getRegionStorage().save(region);
 
-        String levelName = plugin.getLanguageManager().rawTemplate("trust_" + level.key());
+        String levelName = level.displayName();
         player.sendMessage(plugin.getLanguageManager().getMessage("trust_granted",
                 "%player%", targetName, "%level%", levelName));
 
@@ -117,7 +117,7 @@ public class TrustSubCommand extends AbstractRegionSubCommand {
         // ровню и того, кто выше по уровню, из участников не выкинешь
         TrustLevel actorTrust = plugin.getProtectionService().trustOf(region, player);
         if (actorTrust == null
-                || (actorTrust != TrustLevel.OWNER && member.get().trust().atLeast(actorTrust))) {
+                || (!actorTrust.isOwner() && member.get().trust().atLeast(actorTrust))) {
             player.sendMessage(plugin.getLanguageManager().getMessage("trust_cant_revoke"));
             return;
         }

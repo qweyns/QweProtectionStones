@@ -169,7 +169,7 @@ public class MenuManager implements Listener {
 
         int size = normalizeSize(menuCfg.getInt("size", 27), menuName);
         Component title = ColorUtil.formatComponent(
-                placeholders.apply(player, menuCfg.getString("menu_title", "Меню"), region, null));
+                placeholders.apply(player, menuCfg.getString("menu_title", plugin.getLanguageManager().rawTemplate("menu_default_title")), region, null));
 
         MenuHolder holder = new MenuHolder(menuName, region);
         Inventory inv = Bukkit.createInventory(holder, size, title);
@@ -240,7 +240,7 @@ public class MenuManager implements Listener {
 
         // статичные предметы не пересобираем дважды в секунду
 
-        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(holder.menuName)) return;
+        if (!force && holder.renderedVersion == version && !hasLivePlaceholders(holder.menuName) && !holder.menuName.equals("upgrade")) return;
         holder.renderedVersion = version;
 
         Inventory inv = holder.inventory;
@@ -357,16 +357,17 @@ public class MenuManager implements Listener {
     }
 
     // приват уничтожен — никто не должен остаться в его меню.
-    // MONITOR осознанно: closeInventory — побочный эффект, допустимый только когда
-    // событие доработало всех слушателей и отменить удаление уже нельзя.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onRegionDelete(RegionDeleteEvent event) {
+    // Событие после удаления: отменить его уже нельзя, закрывать меню безопасно.
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRegionDelete(org.qweyns.qweprotectstones.regions.event.RegionDeletedEvent event) {
         UUID regionId = event.getRegion().getId();
         for (Player viewer : Bukkit.getOnlinePlayers()) {
-            if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) continue;
-            if (holder.getRegion() == null || !holder.getRegion().getId().equals(regionId)) continue;
-
             plugin.getSchedulers().runAtEntity(viewer, () -> {
+                if (plugin.getRegionManager().getById(regionId) != null) return;
+                // Инвентарь читаем в потоке игрока и перепроверяем именно в момент закрытия:
+                // за тик он мог открыть сундук или меню другого привата.
+                if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) return;
+                if (holder.getRegion() == null || !holder.getRegion().getId().equals(regionId)) return;
                 viewer.closeInventory();
                 viewer.sendMessage(plugin.getLanguageManager().getMessage("menu_region_gone"));
             });
@@ -419,7 +420,7 @@ public class MenuManager implements Listener {
 
         if (region != null && !isStillTrusted(player, region)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_container")));
+                    "%level%", org.qweyns.qweprotectstones.regions.TrustLevel.lowestWith(Tunables.TrustAction.MENU).displayName()));
             plugin.getSchedulers().runAtEntity(player, player::closeInventory);
             return;
         }
@@ -447,7 +448,7 @@ public class MenuManager implements Listener {
 
     private boolean isStillTrusted(Player player, Region region) {
         if (plugin.getRegionManager().getById(region.getId()) == null) return false;
-        return plugin.getProtectionService().has(region, player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.CONTAINER));
+        return plugin.getProtectionService().can(region, player, Tunables.TrustAction.MENU);
     }
 
     private List<String> clickCommands(ConfigurationSection itemCfg, boolean rightClick) {

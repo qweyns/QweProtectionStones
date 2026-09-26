@@ -22,8 +22,18 @@ public class SystemAdminCommands {
     }
 
     public void reload(CommandSender sender) {
-        plugin.reloadEverything();
+        java.util.List<String> issues = plugin.reloadEverything();
         sender.sendMessage(plugin.getLanguageManager().getMessage("reload_success"));
+        if (issues.isEmpty()) return;
+        var lm = plugin.getLanguageManager();
+        sender.sendMessage(lm.getMessage("reload_issues", "%count%", String.valueOf(issues.size())));
+        int shown = Math.min(issues.size(), 15);
+        for (int i = 0; i < shown; i++) {
+            sender.sendMessage(lm.getMessage("reload_issue_line", "%issue%", issues.get(i).replace("<", "‹")));
+        }
+        if (issues.size() > shown) {
+            sender.sendMessage(lm.getMessage("reload_issues_more", "%count%", String.valueOf(issues.size() - shown)));
+        }
     }
 
     public void bypass(CommandSender sender, Player player) {
@@ -155,8 +165,7 @@ public class SystemAdminCommands {
     public void restore(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_usage"));
-            File folder = new File(plugin.getDataFolder(), "exports");
-            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            File[] files = plugin.getRegionExporter().listExports().toArray(File[]::new);
             if (files != null && files.length > 0) {
                 StringBuilder list = new StringBuilder();
                 for (int i = 0; i < files.length && i < 10; i++) {
@@ -170,8 +179,8 @@ public class SystemAdminCommands {
 
         // только имя файла, чтобы ../ не вышел за пределы exports
         String fileName = args[1].replace("..", "").replace('/', '_').replace('\\', '_');
-        File file = new File(new File(plugin.getDataFolder(), "exports"), fileName);
-        if (!file.isFile()) {
+        File file = plugin.getRegionExporter().findExport(fileName);
+        if (file == null) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("admin_restore_not_found", "%file%", fileName));
             return;
         }
@@ -217,6 +226,122 @@ public class SystemAdminCommands {
     public void backup(CommandSender sender) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_backup_started"));
         plugin.getBackupTask().run();
+    }
+
+    /**
+     * /qps log [id] [кол-во] — журнал любого привата, в том числе уже удалённого
+     * (его записи остаются, если settings.action_log.keep_on_delete).
+     */
+    public void log(CommandSender sender, Player player, String[] args) {
+        var lm = plugin.getLanguageManager();
+        if (!plugin.getConfigManager().getConfig().getBoolean("settings.action_log.enable", true)) {
+            sender.sendMessage(lm.getMessage("log_disabled"));
+            return;
+        }
+        int limit = plugin.getTunables().logPageSize();
+        if (args.length > 2) {
+            try {
+                limit = Math.max(1, Math.min(plugin.getTunables().logMaxPageSize(), Integer.parseInt(args[2])));
+            } catch (NumberFormatException ignored) {
+                // оставляем размер страницы по умолчанию
+            }
+        }
+        final int pageSize = limit;
+
+        if (args.length < 2) {
+            Region here = player == null ? null : plugin.getRegionManager().getRegionAt(player.getLocation());
+            if (here == null) {
+                sender.sendMessage(lm.getMessage("admin_log_usage"));
+                return;
+            }
+            showLog(sender, here.getId(), here.getShortId(), false, pageSize);
+            return;
+        }
+
+        String prefix = args[1].toLowerCase(Locale.ROOT);
+        List<Region> alive = plugin.getRegionManager().findByIdPrefix(prefix, 2);
+        if (alive.size() == 1) {
+            showLog(sender, alive.get(0).getId(), alive.get(0).getShortId(), false, pageSize);
+            return;
+        }
+        int minLength = Math.max(4, plugin.getRegionManager().minIdPrefix());
+        if (prefix.length() < minLength) {
+            sender.sendMessage(lm.getMessage("admin_log_prefix_short", "%length%", String.valueOf(minLength)));
+            return;
+        }
+        plugin.getRegionStorage().findLoggedRegionsAsync(prefix, 10, ids -> {
+            if (ids.isEmpty()) {
+                sender.sendMessage(lm.getMessage("admin_log_not_found", "%id%", prefix));
+                return;
+            }
+            if (ids.size() > 1) {
+                List<String> names = new java.util.ArrayList<>();
+                for (java.util.UUID id : ids) names.add(id.toString());
+                sender.sendMessage(lm.getMessage("admin_log_ambiguous", "%ids%", String.join(", ", names)));
+                return;
+            }
+            java.util.UUID id = ids.get(0);
+            boolean deleted = plugin.getRegionManager().getById(id) == null;
+            showLog(sender, id, id.toString(), deleted, pageSize);
+        });
+    }
+
+    private void showLog(CommandSender sender, java.util.UUID regionId, String label, boolean deleted, int limit) {
+        var lm = plugin.getLanguageManager();
+        sender.sendMessage(lm.getMessage("log_header", "%region%", label));
+        if (deleted) sender.sendMessage(lm.getMessage("admin_log_deleted"));
+        plugin.getRegionStorage().readLogAsync(regionId, limit, entries -> {
+            if (entries.isEmpty()) {
+                sender.sendMessage(lm.getMessage("log_empty"));
+                return;
+            }
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("dd.MM.yy HH:mm");
+            for (var entry : entries) {
+                sender.sendMessage(lm.getMessage("log_line",
+                        "%time%", format.format(new java.util.Date(entry.at())),
+                        "%player%", entry.playerName() == null ? "?" : entry.playerName(),
+                        "%action%", lm.rawTemplate("log_action_" + entry.action()),
+                        "%detail%", entry.detail() == null ? "" : entry.detail()));
+            }
+        });
+    }
+
+    /** /qps perf [reset] — время обработчиков событий, очередь записи, приваты по мирам. */
+    public void perf(CommandSender sender, String[] args) {
+        var lm = plugin.getLanguageManager();
+        var stats = plugin.getPerfStats();
+        if (args.length > 1 && args[1].equalsIgnoreCase("reset")) {
+            stats.reset();
+            sender.sendMessage(lm.getMessage("admin_perf_reset"));
+            return;
+        }
+        long seconds = Math.max(1, (System.currentTimeMillis() - stats.sinceMillis()) / 1000);
+        sender.sendMessage(lm.getMessage("admin_perf_header", "%seconds%", String.valueOf(seconds)));
+
+        java.util.Map<String, Integer> perWorld = new java.util.TreeMap<>();
+        for (Region region : plugin.getRegionManager().getAllRegions()) perWorld.merge(region.getWorldName(), 1, Integer::sum);
+        StringBuilder worlds = new StringBuilder();
+        perWorld.forEach((world, count) -> worlds.append(worlds.length() == 0 ? "" : ", ").append(world).append(": ").append(count));
+        sender.sendMessage(lm.getMessage("admin_perf_state",
+                "%regions%", String.valueOf(plugin.getRegionManager().size()),
+                "%worlds%", worlds.length() == 0 ? "-" : worlds.toString(),
+                "%pending%", String.valueOf(plugin.getRegionStorage().pendingCount()),
+                "%players%", String.valueOf(Bukkit.getOnlinePlayers().size())));
+
+        var snapshot = stats.snapshot();
+        if (snapshot.isEmpty()) {
+            sender.sendMessage(lm.getMessage("admin_perf_empty"));
+            return;
+        }
+        for (var entry : snapshot) {
+            sender.sendMessage(lm.getMessage("admin_perf_line",
+                    "%name%", entry.name(),
+                    "%calls%", String.valueOf(entry.calls()),
+                    "%per_second%", String.format(Locale.ROOT, "%.1f", entry.calls() / (double) seconds),
+                    "%avg%", String.format(Locale.ROOT, "%.1f", entry.avgMicros()),
+                    "%max%", String.format(Locale.ROOT, "%.2f", entry.maxMillis()),
+                    "%total%", String.format(Locale.ROOT, "%.1f", entry.totalMillis())));
+        }
     }
 
     public void debug(CommandSender sender) {

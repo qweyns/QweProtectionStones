@@ -1,5 +1,5 @@
 # ============================================================
-#   QweProtectStones — как приваты выглядят и звучат (visuals.yml)
+#   QweProtectStones — как приваты выглядят (visuals.yml)
 # ============================================================
 
 # --- ВИЗУАЛЬНЫЕ НАСТРОЙКИ ------------------------------------------------------
@@ -17,41 +17,20 @@ visuals:
     color_open: "#C4B5FD"    # создание привата
     color_closed: "#FB7185"  # удаление привата
     color_info: "#F9A8D4"    # показ границ по /ps info
+    vertical_radius: 8             # высота каркаса вокруг ядра, 1..256 блоков
+    glow_color_first: "#00FF00"     # два цвета /ps glow
+    glow_color_second: "#008000"
     show_time_ticks: 40      # сколько тиков показывается подсветка
 
-# --- ЗВУКИ -------------------------------------------------------------------
-# Формат: ЗВУК, ЗВУК:громкость или ЗВУК:громкость:высота.
-# Можно указать только имя — громкость и высота будут 1.0.
-# none / off / false — выключить звук.
-# Имена — ключи реестра или старые имена констант (ENTITY_VILLAGER_NO).
-# Опечатка в имени не роняет плагин: в лог уйдёт предупреждение,
-# а звук возьмётся стандартный.
-sounds:
-  menu_denied: ENTITY_VILLAGER_NO:1.0:1.0        # действие в меню недоступно
-  menu_success: BLOCK_ANVIL_USE:1.0:1.0          # успешная покупка или прокачка
-  raid_attack: ENTITY_ENDER_DRAGON_GROWL:1.0:1.0 # по привату ударили
-  raid_destroyed: ENTITY_WITHER_DEATH:1.0:1.0    # приват уничтожен
-  raid_nearby: ENTITY_WITHER_SHOOT:0.4:0.7       # сигнал соседям о рейде
-  intruder_alert: BLOCK_NOTE_BLOCK_BELL:1.0:1.0  # чужак зашёл на территорию
-  invite_received: ENTITY_EXPERIENCE_ORB_PICKUP:1.0:1.2
+  # Подсказка в actionbar, когда блок-ядро в руке: влезет ли приват
+  # и не пересекается ли он с чужим. По умолчанию выключена.
+  preview-messages: false
 
-# --- КАРТА (Dynmap) --------------------------------------------------------------
-map:
-  dynmap:
-    # Рисовать границы приватов на Dynmap, если он установлен.
-    enable: true
-    layer_name: "Приваты"
-    line_color: "#A78BFA"
-    fill_color: "#C4B5FD"
-    fill_opacity: 0.25
-  bluemap:
-    # Рисовать границы приватов на BlueMap, если он установлен (API 2.x).
-    enable: true
-    marker_set_label: "Приваты"
-    line_color: "#A78BFA"
-    fill_color: "#C4B5FD"
-    fill_opacity: 0.25
-    line_width: 2
-    # Слой можно скрыть по умолчанию и включать кнопкой в интерфейсе карты.
-    default_hidden: false
-    toggleable: true
+  # Всплывающие цифры урона над ядром при взрыве.
+  damage_indicator:
+    enabled: true
+    offset_y: 1.2       # начальная высота, 0..16
+    rise: 1.2           # подъём, 0..16
+    spread: 0.2         # случайный разброс X/Z, 0..1; 0 — без разброса
+    animation_ticks: 30 # 0..59 (ограничение TextDisplay)
+    lifetime_ticks: 35  # 1..1200

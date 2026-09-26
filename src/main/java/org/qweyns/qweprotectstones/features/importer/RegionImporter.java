@@ -120,7 +120,7 @@ public class RegionImporter {
             for (Map.Entry<?, ?> member : players.entrySet()) {
                 UUID uuid = parseUuid(member.getKey());
                 if (uuid == null || uuid.equals(ownerId)) continue;
-                region.setMember(uuid, String.valueOf(member.getValue()), TrustLevel.BUILD);
+                region.setMember(uuid, String.valueOf(member.getValue()), importRole("build"));
             }
         }
         return region;
@@ -174,10 +174,10 @@ public class RegionImporter {
                     continue;
                 }
 
-                importGpList(region, data.get("Builders"), TrustLevel.BUILD, ownerId);
-                importGpList(region, data.get("Containers"), TrustLevel.CONTAINER, ownerId);
-                importGpList(region, data.get("Accessors"), TrustLevel.ACCESS, ownerId);
-                importGpList(region, data.get("Managers"), TrustLevel.MANAGER, ownerId);
+                importGpList(region, data.get("Builders"), importRole("build"), ownerId);
+                importGpList(region, data.get("Containers"), importRole("container"), ownerId);
+                importGpList(region, data.get("Accessors"), importRole("access"), ownerId);
+                importGpList(region, data.get("Managers"), importRole("manager"), ownerId);
 
                 parsed.add(region);
             } catch (IOException e) {
@@ -186,6 +186,12 @@ public class RegionImporter {
             }
         }
         return new Pending(parsed, skipped, errors);
+    }
+
+    /** Роль для импортируемых участников: import.roles.<тип> в features.yml, иначе роль с тем же id, иначе роль по умолчанию. */
+    private TrustLevel importRole(String kind) {
+        String configured = plugin.getConfigManager().getConfig().getString("import.roles." + kind, kind);
+        return TrustLevel.parse(configured).filter(level -> !level.isOwner()).orElse(TrustLevel.defaultRole());
     }
 
     private void importGpList(Region region, Object raw, TrustLevel level, UUID ownerId) {

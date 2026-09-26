@@ -52,7 +52,7 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
 
         String trustName = trust == null
                 ? plugin.getLanguageManager().rawTemplate("trust_none")
-                : plugin.getLanguageManager().rawTemplate("trust_" + trust.key());
+                : trust.displayName();
 
         player.sendMessage(plugin.getLanguageManager().getMessage("info_header"));
         player.sendMessage(plugin.getLanguageManager().getMessage("info_owner", "%owner%", region.getOwnerName()));
@@ -83,7 +83,7 @@ public class InfoSubCommand extends AbstractRegionSubCommand {
             for (var member : region.getMembers()) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("info_member_entry",
                         "%name%", member.displayName(),
-                        "%level%", plugin.getLanguageManager().rawTemplate("trust_" + member.trust().key())));
+                        "%level%", member.trust().displayName()));
             }
             if (region.getAttackCount() > 0) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("info_attacks",

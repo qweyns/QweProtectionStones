@@ -59,7 +59,13 @@ final class BukkitSchedulers implements Schedulers {
 
     @Override
     public void runAtEntity(Entity entity, Runnable action) {
-        runAtLocation(entity.getLocation(), action);
+        runAtEntity(entity, action, () -> { });
+    }
+
+    @Override
+    public void runAtEntity(Entity entity, Runnable action, Runnable retired) {
+        // Не читаем getLocation из потока вызывающего и не открываем меню внутри клика.
+        runNextTick(() -> { if (entity.isValid()) action.run(); else retired.run(); });
     }
 
     @Override

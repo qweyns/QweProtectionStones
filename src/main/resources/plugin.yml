@@ -2,7 +2,7 @@ name: QweProtectStones
 version: '${project.version}'
 main: org.qweyns.qweprotectstones.QweProtectStones
 api-version: '1.21'
-# Планировщик абстрагирован (scheduler/Schedulers), региональные задачи работают на Folia.
+# Планировщик абстрагирован; на Folia голограммы только NATIVE, обслуживание — полным restart.
 folia-supported: true
 author: qweyns
 description: Приваты на блоках-ядрах с прочностью, осадами, голограммами и эффектами
@@ -17,15 +17,19 @@ softdepend:
   - dynmap
   - BlueMap
   - DiscordSRV
+  - QweTnts
 
 # Игровая команда (по умолчанию /ps) задаётся в config.yml -> settings.command
 # и регистрируется при запуске. Здесь объявлена только административная.
 commands:
   qweprotectstones:
     description: Администрирование приватов
-    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|debug>
-    permission: qweprotectstones.admin
-    aliases: [qps, qpstones]
+    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|log|perf|debug|help>
+    # Права проверяет сам плагин: модератору с одним qweprotectstones.admin.tp
+    # команда тоже должна открываться (см. admin.require-per-action).
+    aliases:
+      - qps
+      - qpstones
 
 permissions:
   # --- Права игроков (по умолчанию разрешены; снимаются через LuckPerms) ---
@@ -96,6 +100,9 @@ permissions:
     default: op
     children:
       qweprotectstones.bypass: true
+  qweprotectstones.bypass.creation-rules:
+    description: Ставить приваты без ограничений секции creation (пауза, осада, спавн, порталы)
+    default: op
   qweprotectstones.bypass:
     description: Возможность включить режим обхода защиты (/qps bypass)
     default: op

@@ -20,6 +20,10 @@ import org.qweyns.qweprotectstones.regions.event.RegionDeleteEvent;
 public class RegionLifecycleListener implements Listener {
 
     private final QweProtectStones plugin;
+    private record Placement(Region region, RegionType type, ItemStack item) { }
+    private record Removal(Region region, RegionManager.PreparedDeletion deletion, boolean returnItem) { }
+    private final java.util.Map<BlockPlaceEvent, Placement> placements = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<BlockBreakEvent, Removal> removals = new java.util.concurrent.ConcurrentHashMap<>();
 
     // ключи PDC неизменяемы — создаём один раз, а не на каждое событие
     private final org.bukkit.NamespacedKey typeKey;
@@ -67,31 +71,46 @@ public class RegionLifecycleListener implements Listener {
             return;
         }
 
-        RegionManager.CreateResult result = plugin.getRegionManager().createRegion(player, type, block.getLocation());
+        RegionManager.CreateResult result = plugin.getRegionManager().prepareCreation(player, type, block.getLocation());
         if (!result.successful()) {
             event.setCancelled(true);
             sendCreationFailure(player, result, type);
             return;
         }
 
-        Region region = result.region();
+        placements.put(event, new Placement(result.region(), type, event.getItemInHand().clone()));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockPlaceApplied(BlockPlaceEvent event) {
+        Placement placement = placements.remove(event);
+        if (placement == null) return;
+        Region region = placement.region();
+        if (event.isCancelled() || !event.canBuild()) {
+            plugin.getRegionManager().abortCreation(region);
+            return;
+        }
+        plugin.getRegionManager().commitCreation(region);
+        Block block = event.getBlockPlaced();
+        Player player = event.getPlayer();
+        RegionType type = placement.type();
         Location coreLocation = block.getLocation();
         plugin.getRateLimiter().markCreated(player);
 
         // прочность из PDC предмета переносится, с потолком по типу
 
-        int carriedDurability = taggedDurability(event.getItemInHand());
+        int carriedDurability = taggedDurability(placement.item());
         if (carriedDurability > 0) {
             region.setDurability(Math.min(carriedDurability, region.getMaxDurability()));
         }
 
         // штраф и момент последней атаки едут с предметом: «сломал-поставил» осаду не обнуляет
 
-        long carriedAttack = taggedLong(event.getItemInHand(), lastAttackKey);
+        long carriedAttack = taggedLong(placement.item(), lastAttackKey);
         if (carriedAttack > 0) {
             region.restoreStats(region.getAttackCount(), carriedAttack, region.getLastAttackerName());
         }
-        long carriedPenalty = taggedLong(event.getItemInHand(), penaltyUntilKey);
+        long carriedPenalty = taggedLong(placement.item(), penaltyUntilKey);
         if (carriedPenalty > System.currentTimeMillis()) {
             region.setPenaltyUntil(carriedPenalty);
         }
@@ -121,6 +140,16 @@ public class RegionLifecycleListener implements Listener {
                     "%limit%", String.valueOf(result.limit())));
             case NO_PERMISSION -> player.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
             case WORLD_DISABLED -> player.sendMessage(plugin.getLanguageManager().getMessage("region_world_disabled"));
+            case RULE_DENIED -> {
+                var rule = result.rule();
+                String key = switch (rule.denial()) {
+                    case COOLDOWN -> "region_create_cooldown";
+                    case NEAR_SIEGE -> "region_create_near_siege";
+                    case NEAR_SPAWN -> "region_create_near_spawn";
+                    case FORBIDDEN_BLOCK -> "region_create_forbidden_block";
+                };
+                player.sendMessage(plugin.getLanguageManager().getMessage(key, "%value%", rule.detail()));
+            }
             case CANCELLED -> {  }
             default -> {  }
         }
@@ -163,23 +192,31 @@ public class RegionLifecycleListener implements Listener {
             return;
         }
 
-        if (!plugin.getRegionManager().deleteRegion(region, RegionDeleteEvent.Reason.BROKEN, player)) {
+        RegionManager.PreparedDeletion deletion = plugin.getRegionManager()
+                .prepareDeletion(region, RegionDeleteEvent.Reason.BROKEN, player);
+        if (deletion == null) {
             event.setCancelled(true);
             return;
         }
-
-        cleanupVisuals(region);
-
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
-        if (type != null && !type.returnBlockOnRemove()) {
-            event.setDropItems(false);
-        } else if (type != null && player.getGameMode() != GameMode.CREATIVE) {
+        boolean returnItem = type != null && type.returnBlockOnRemove() && event.isDropItems()
+                && player.getGameMode() != GameMode.CREATIVE;
+        if (type != null) event.setDropItems(false);
+        removals.put(event, new Removal(region, deletion, returnItem));
+    }
 
-            event.setDropItems(false);
-            dropCore(block.getLocation(), type, region);
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockBreakApplied(BlockBreakEvent event) {
+        Removal removal = removals.remove(event);
+        if (removal == null) return;
+        try (RegionManager.PreparedDeletion deletion = removal.deletion()) {
+            if (event.isCancelled() || !deletion.commit()) return;
+            Region region = removal.region();
+            cleanupVisuals(region);
+            RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
+            if (removal.returnItem() && type != null) dropCore(event.getBlock().getLocation(), type, region);
+            event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
         }
-
-        player.sendMessage(plugin.getLanguageManager().getMessage("region_removed"));
     }
 
     private void dropCore(Location location, RegionType type, Region region) {

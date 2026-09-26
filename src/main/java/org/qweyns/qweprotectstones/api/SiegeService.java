@@ -22,17 +22,22 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Используется самим плагином (листенер взрывов) и доступен аддонам
  * через {@link QpsApi#getSiegeService()}. Все методы звать в потоке сервера —
- * в том, в котором случился взрыв.</p>
+ * на Folia это поток ядра. Для чужого потока используйте damageRegionAsync.</p>
  */
 public class SiegeService {
 
     private final QweProtectStones plugin;
+    private volatile boolean closed;
+    private final Set<java.util.concurrent.CompletableFuture<Boolean>> pending = ConcurrentHashMap.newKeySet();
 
-    // повторные взрывы в приват, который уже удаляется, не проходят
-    private final Set<UUID> processingRemoval = ConcurrentHashMap.newKeySet();
+    public void close() {
+        closed = true;
+        pending.forEach(future -> future.complete(false));
+        pending.clear();
+    }
 
     // TTL не короче удвоенного кулдауна урона, иначе длинный кулдаун молча отключался
-    private Cache<UUID, Long> lastDamageTime;
+    private volatile Cache<UUID, Long> lastDamageTime;
 
     public SiegeService(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -77,8 +82,11 @@ public class SiegeService {
                 : plugin.getConfigManager().getDamageCooldownTicks();
         if (cooldownTicks <= 0) return 0;
 
-        Long last = lastDamageTime.getIfPresent(region.getId());
-        if (last == null) return 0;
+        // Время последнего урона сохраняется в базе вместе с приватом, поэтому
+        // рестарт сервера кулдаун не сбрасывает.
+        Long cached = lastDamageTime.getIfPresent(region.getId());
+        long last = Math.max(cached == null ? 0 : cached, region.getLastAttackAt());
+        if (last <= 0) return 0;
         return Math.max(0, last + cooldownTicks * 50L - System.currentTimeMillis());
     }
 
@@ -98,58 +106,72 @@ public class SiegeService {
      * @return true — урон прошёл; false — кулдаун, иммунитет или отмена события
      */
     public boolean damageRegion(Region region, int damage, String explosionType, String attackerName) {
-        if (region == null || damage <= 0) return false;
-        if (processingRemoval.contains(region.getId())) return false;
-
-        RegionType regionType = plugin.getRegionTypes().byId(region.getTypeId());
-        if (regionType != null && regionType.raidImmune()) return false;
-
-        long cooldownTicks = regionType != null && regionType.overridesDamageCooldown()
-                ? regionType.damageCooldownTicks()
-                : plugin.getConfigManager().getDamageCooldownTicks();
-        long cooldownMs = cooldownTicks * 50L;
-        long now = System.currentTimeMillis();
-        Long last = lastDamageTime.getIfPresent(region.getId());
-        if (last != null && now - last < cooldownMs) return false;
-
-        RegionDamageEvent event = new RegionDamageEvent(region, explosionType, damage, attackerName);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled() || event.getDamage() <= 0) return false;
-
-        lastDamageTime.put(region.getId(), now);
-
+        if (closed || region == null || damage <= 0) return false;
+        if (!plugin.getConfigManager().isSiegeEnabled() || !isDamaging(region, explosionType)) return false;
+        if (plugin.getRegionManager().getById(region.getId()) != region) return false;
         Location core = region.getCoreLocation();
         if (core == null) return false;
+        if (!plugin.getSchedulers().ownsLocation(core))
+            throw new IllegalStateException("Урон осаде должен выполняться в потоке ядра; используйте damageRegionAsync");
+        try (Region.Operation operation = region.tryOperation()) {
+            if (operation == null || cooldownRemainingMs(region) > 0) return false;
+            RegionDamageEvent event = new RegionDamageEvent(region, explosionType, damage, attackerName);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancelled() || event.getDamage() <= 0
+                    || plugin.getRegionManager().getById(region.getId()) != region
+                    || !plugin.getConfigManager().isSiegeEnabled() || !isDamaging(region, explosionType)) return false;
 
-        String owner = region.getOwnerName().isEmpty()
-                ? plugin.getLanguageManager().rawTemplate("unknown_owner")
-                : region.getOwnerName();
-
-        region.recordAttack(attackerNameNear(region, core, attackerName));
-
-        if (region.getDurability() > event.getDamage()) {
-            region.setDurability(region.getDurability() - event.getDamage());
-            plugin.getRegionStorage().save(region);
-
-            // алерт после списания, %durability% уже актуальный
-
-            plugin.getNotificationManager().sendAttackAlert(region, owner, core);
+            boolean lethal = region.getDurability() <= event.getDamage();
+            // Veto удаления означает отсутствие урона, штрафа, cooldown и алерта.
+            if (lethal && !plugin.getRegionManager().deleteWithin(region,
+                    RegionDeleteEvent.Reason.DESTROYED_BY_RAID, null, operation)) return false;
+            synchronized (region) {
+                region.setDurability(Math.max(0, region.getDurability() - event.getDamage()));
+                region.recordAttack(attackerNameNear(region, core, attackerName));
+            }
+            lastDamageTime.put(region.getId(), System.currentTimeMillis());
+            if (!lethal) {
+                // Штраф только за принятый урон; одинаково для API и Bukkit-взрыва.
+                plugin.getPenaltyManager().markAttacked(region);
+                plugin.getRegionStorage().save(region);
+                plugin.getNotificationManager().sendAttackAlert(region, region.getOwnerName(), core);
+                plugin.getVisualManager().playEffect(core, region.getTypeId(), "damage");
+                plugin.getHologramManager().createOrUpdateHologram(region);
+            } else {
+                plugin.getRegionLifecycleListener().cleanupVisuals(region);
+                plugin.getNotificationManager().sendDestroyedAlert(region, core);
+                org.qweyns.qweprotectstones.utils.CoreBlocks.clearLater(plugin, region, core);
+            }
             plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
-            plugin.getVisualManager().playEffect(core, region.getTypeId(), "damage");
-            plugin.getHologramManager().createOrUpdateHologram(region);
             alertNeighbours(region, core);
             return true;
         }
+    }
 
-        plugin.getVisualManager().spawnDamageIndicator(core, event.getDamage());
-        alertNeighbours(region, core);
-
-        destroyRegion(region, core);
-        return true;
+    /** Межрегиональный вызов: результат приходит после работы в потоке ядра. Не вызывать join() на тике. */
+    public java.util.concurrent.CompletableFuture<Boolean> damageRegionAsync(Region region, int damage,
+                                                                          String type, String attacker) {
+        var result = new java.util.concurrent.CompletableFuture<Boolean>();
+        Location core = region == null ? null : region.getCoreLocation();
+        if (core == null || !plugin.isEnabled()) { result.complete(false); return result; }
+        pending.add(result);
+        result.whenComplete((value, error) -> pending.remove(result));
+        if (closed) { result.complete(false); return result; }
+        try {
+            plugin.getSchedulers().runAtLocation(core, () -> {
+                try { result.complete(damageRegion(region, damage, type, attacker)); }
+                catch (Throwable e) { result.completeExceptionally(e); }
+            });
+        } catch (RuntimeException e) { result.completeExceptionally(e); }
+        return result;
     }
 
     private String attackerNameNear(Region region, Location core, String primerName) {
         if (primerName != null) return primerName;
+        // Угадывание по ближайшему игроку часто обвиняет прохожего — только по желанию.
+        if (!plugin.getConfigManager().getConfig().getBoolean("siege.guess_attacker", false)) return "";
+        // Не приписываем атаку случайному игроку из чужого Folia-региона.
+        if (plugin.getSchedulers().isFolia()) return "";
 
         // мир мог выгрузиться между поджигом и взрывом
 
@@ -172,45 +194,28 @@ public class SiegeService {
         return best;
     }
 
+    private final java.util.Map<UUID, Long> lastNeighbourAlert = new ConcurrentHashMap<>();
+
     private void alertNeighbours(Region region, Location core) {
         int radius = plugin.getConfigManager().getConfig().getInt("siege.neighbour_alert_radius", 0);
-        if (radius <= 0) return;
+        if (radius <= 0 || core.getWorld() == null) return;
 
+        // TNT-пушка даёт десятки взрывов в секунду: соседей оповещаем не чаще раза в N секунд на приват
+        long cooldownMs = Math.max(0, plugin.getConfigManager().getConfig()
+                .getLong("siege.neighbour_alert_cooldown_seconds", 10)) * 1000L;
+        long now = System.currentTimeMillis();
+        Long previous = lastNeighbourAlert.get(region.getId());
+        if (previous != null && now - previous < cooldownMs) return;
+        lastNeighbourAlert.put(region.getId(), now);
+        if (lastNeighbourAlert.size() > 4096) lastNeighbourAlert.values().removeIf(at -> now - at > cooldownMs);
+
+        // задачи — только игрокам того же мира, а не всему онлайну
         for (Player nearby : core.getWorld().getPlayers()) {
-            if (nearby.getLocation().distanceSquared(core) > (double) radius * radius) continue;
-
-            plugin.getTunables().raidNearby().playTo(nearby);
+            plugin.getSchedulers().runAtEntity(nearby, () -> {
+                Location at = nearby.getLocation();
+                if (at.getWorld() == core.getWorld() && at.distanceSquared(core) <= (double) radius * radius)
+                    plugin.getTunables().raidNearby().playTo(nearby);
+            });
         }
-    }
-
-    private void destroyRegion(Region region, Location core) {
-        processingRemoval.add(region.getId());
-
-        if (!plugin.getRegionManager().deleteRegion(region, RegionDeleteEvent.Reason.DESTROYED_BY_RAID, null)) {
-            processingRemoval.remove(region.getId());
-            return;
-        }
-
-        plugin.getRegionLifecycleListener().cleanupVisuals(region);
-        plugin.getNotificationManager().sendDestroyedAlert(region, core);
-
-        plugin.getSchedulers().runAtLocationLater(core, () -> {
-            try {
-                // за тик в этот блок мог встать новый приват: его ядро нельзя сносить
-                Region replacement = plugin.getRegionManager().getRegionAt(core);
-                boolean occupiedByNewCore = replacement != null && replacement.isCore(core);
-                if (core.getWorld() != null && !occupiedByNewCore
-                        && core.getBlock().getType() == materialOf(region)) {
-                    core.getBlock().setType(Material.AIR);
-                }
-            } finally {
-                processingRemoval.remove(region.getId());
-            }
-        }, 1L);
-    }
-
-    private Material materialOf(Region region) {
-        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
-        return type != null ? type.material() : Material.AIR;
     }
 }

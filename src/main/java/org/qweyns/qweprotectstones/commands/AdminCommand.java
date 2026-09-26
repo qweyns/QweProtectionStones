@@ -28,7 +28,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             "reload", "bypass", "info", "delete", "save", "stats", "export", "cleanup",
             "give", "setdurability", "setmax", "settype", "setbounds", "tp",
             "flag", "transfer", "setowner", "ban", "unban", "members", "trust", "untrust",
-            "import", "restore", "backup", "debug", "help");
+            "import", "restore", "backup", "log", "perf", "debug", "help");
 
     private static final Set<String> REGION_ACTIONS = Set.of(
             "info", "delete", "setdurability", "setmax", "settype", "setbounds", "tp",
@@ -50,13 +50,13 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        if (!sender.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix())) {
+        if (!anyAllowed(sender)) {
             sender.sendMessage(plugin.getLanguageManager().getMessage("no_permission"));
             return true;
         }
 
         if (args.length == 0) {
-            sendUsage(sender, label);
+            sendHelp(sender, label, 1);
             return true;
         }
 
@@ -96,6 +96,8 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
             case "restore" -> systemCommands.restore(sender, args);
             case "backup" -> systemCommands.backup(sender);
             case "debug" -> systemCommands.debug(sender);
+            case "log" -> systemCommands.log(sender, player, args);
+            case "perf" -> systemCommands.perf(sender, args);
             case "help" -> sendHelp(sender, label, parseHelpPage(args));
             default -> sendUsage(sender, label);
         }
@@ -112,9 +114,26 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
                 && !plugin.getConfigManager().isAdminRequirePerAction();
     }
 
+    /** Есть ли у отправителя право хоть на одно действие /qps (модератору можно выдать только часть). */
+    private boolean anyAllowed(CommandSender sender) {
+        for (String action : ACTIONS) {
+            if (!action.equals("help") && allowed(sender, action)) return true;
+        }
+        return false;
+    }
+
+    /** Действия, на которые у отправителя есть право, — для подсказок и справки. */
+    private List<String> allowedActions(CommandSender sender) {
+        List<String> result = new ArrayList<>();
+        for (String action : ACTIONS) {
+            if (action.equals("help") || allowed(sender, action)) result.add(action);
+        }
+        return result;
+    }
+
     private void sendUsage(CommandSender sender, String label) {
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_usage",
-                "%actions%", String.join(", ", ACTIONS)));
+                "%actions%", String.join(", ", allowedActions(sender))));
         sender.sendMessage(plugin.getLanguageManager().getMessage("admin_hint",
                 "%command%", label,
                 "%player_command%", plugin.getConfigManager().getCommandName()));
@@ -171,16 +190,37 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        if (!sender.hasPermission(plugin.getConfigManager().getAdminPermissionPrefix())) return List.of();
+        if (!anyAllowed(sender)) return List.of();
 
-        if (args.length == 1) return support.filter(ACTIONS, args[0]);
+        if (args.length == 1) return support.filter(allowedActions(sender), args[0]);
 
         String action = args[0].toLowerCase(Locale.ROOT);
+        // подсказки аргументов — только для действий, на которые есть право
+        if (!action.equals("help") && !allowed(sender, action)) return List.of();
 
         if (args.length == 2 && REGION_ACTIONS.contains(action)) {
+            // не отдаём клиенту тысячи id: только совпадающие с введённым, не больше 50
             List<String> ids = new ArrayList<>();
-            for (Region region : plugin.getRegionManager().getAllRegions()) ids.add(region.getShortId());
-            return support.filter(ids, args[1]);
+            String typed = args[1].toLowerCase(Locale.ROOT);
+            if (typed.isEmpty()) {
+                for (Region region : plugin.getRegionManager().getAllRegions()) {
+                    ids.add(region.getShortId());
+                    if (ids.size() >= 50) break;
+                }
+            } else {
+                for (Region region : plugin.getRegionManager().findByIdPrefix(typed, 50)) ids.add(region.getShortId());
+            }
+            return ids;
+        }
+
+        if (args.length == 2 && action.equals("perf")) return support.filter(List.of("reset"), args[1]);
+
+        if (args.length == 2 && action.equals("log")) {
+            List<String> ids = new ArrayList<>();
+            for (Region region : plugin.getRegionManager().findByIdPrefix(args[1].toLowerCase(Locale.ROOT), 50)) {
+                ids.add(region.getShortId());
+            }
+            return ids;
         }
 
         if (args.length == 2 && action.equals("give")) {
@@ -193,8 +233,7 @@ public class AdminCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && action.equals("restore")) {
             List<String> names = new ArrayList<>();
-            File folder = new File(plugin.getDataFolder(), "exports");
-            File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            File[] files = plugin.getRegionExporter().listExports().toArray(File[]::new);
             if (files != null) for (File file : files) names.add(file.getName());
             return support.filter(names, args[1]);
         }

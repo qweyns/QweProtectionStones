@@ -3,6 +3,10 @@ package org.qweyns.qweprotectstones.menus;
 /** Сколько списали в цепочке действий меню — для возврата при сбое дальше по списку. */
 public final class Payments {
 
+    private boolean committed;
+    public void commit() { committed = true; }
+    public boolean committed() { return committed; }
+
     private double money;
     private int points;
     private int exp;

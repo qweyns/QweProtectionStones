@@ -28,8 +28,7 @@ default_region:
   # --- Название и голограмма ---------------------------------------------
   # Название типа в ИНТЕРФЕЙСЕ плагина: /ps list, /ps info, /ps findspot,
   # меню и сообщение /qps give. Поддерживаются цвета MiniMessage.
-  # В голограмму оно НЕ подставляется — содержимое голограммы целиком
-  # задаётся строками ниже, включая заголовок, если он нужен.
+  # В голограмме используется через %type%; отдельный заголовок не добавляется.
   display_name: "<#C4B5FD>Приват"
 
   # Строки голограммы — целиком ваши, display_name сверху не добавляется.
@@ -64,14 +63,14 @@ default_region:
   full_height: false
 
   # --- Прочность и прокачка --------------------------------------------------
-  # Прочность — сколько взрывов рядом с ядром выдержит приват.
+  # Прочность ядра (HP); урон за Bukkit-взрыв — siege.damage_per_explosion.
   start_durability: 2
   max_durability: 10
   # Разрешить владельцу прокачивать прочность в меню «Улучшение».
   enable_durability_upgrade: true
 
   # Переопределение оплаты прокачки для этого типа.
-  # item: "" — общий предмет из config.yml (settings.upgrade_item).
+  # item: "" — общий предмет из config.yml (upgrade.item).
   # cost_multiplier / tax: -1 — общие значения из config.yml.
   upgrade:
     item: ""
@@ -128,8 +127,13 @@ default_region:
   # рецепт — легальный способ получить предмет, как в ProtectionStones.
   # Пример:
   # recipe:
-  #   pattern: ["AAA", "ABA", "AAA"]   # схема верстака, пробел — пусто
-  #   ingredients: { A: DIAMOND, B: NETHER_STAR }
+  #   pattern:                          # схема верстака, пробел — пусто
+  #     - "AAA"
+  #     - "ABA"
+  #     - "AAA"
+  #   ingredients:
+  #     A: DIAMOND
+  #     B: NETHER_STAR
   #   result_amount: 1                  # сколько ядер за один крафт
   # recipe:
 
@@ -154,7 +158,7 @@ default_region:
   # ENDER_CRYSTAL — кристалл Энда; BED — взрыв кровати в Незере;
   # WIND_CHARGE — заряд ветра (игрок и бриз), по умолчанию безвреден.
   # Аддоны кастомной взрывчатки регистрируют СВОИ типы теми же ключами
-  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/DYNAMITE_ADDON_API.md.
+  # (C4, DYNAMITE_A, SHOCKWAVE...) — см. docs/explosions-api.md.
   explosions:
     TNT: true
     WITHER: true
@@ -165,7 +169,7 @@ default_region:
 
   # --- Эффекты ------------------------------------------------------------------------
   # Эффекты, доступные для покупки в меню «Эффекты» для этого типа.
-  # Пусто — меню эффектов недоступно. Имена — как у зачарований зельй:
+  # Пусто — меню эффектов недоступно. Имена — имена эффектов зелий:
   # SPEED, SLOW, FAST_DIGGING, INCREASE_DAMAGE, INVISIBILITY,
   # HEALTH_BOOST, WITHER, ...
   # Псевдоэффекты: ALERTS (уведомления о рейдах), EXP_BOOST (бустер опыта).
@@ -175,20 +179,27 @@ default_region:
   # Начальные значения флагов привата этого типа.
   # Игрок может менять их через /ps flag, если флаг не закрыт в
   # flags.locked (protection.yml). Описание каждого — в /ps flag без аргументов.
+  #
+  # Значения подобраны под АНАРХИЮ: приват защищает постройки и сундуки от
+  # простого гриферства, но не делает из территории безопасную зону —
+  # PvP включено, внутрь можно войти, въехать и кинуть жемчуг, а взрывы в
+  # рейде ломают стены (прочность ядра снимается отдельно, см. explosions).
+  # pvp и explosion_damage закрыты для игроков в protection.yml → flags.locked.
   flags:
-    pvp: false                  # PvP между игроками на территории
+    pvp: true                   # PvP между игроками на территории
     entry: true                 # вход посторонних (false = не пускать)
     public_access: false        # «публичный доступ»: сундуки открыты всем
     monster_spawning: true      # спавн враждебных мобов
     animal_spawning: true       # спавн животных
-    animal_protection: true     # защита животных от урона
+    animal_protection: true     # защита животных от урона посторонних
     mob_griefing: false         # могут ли мобы ломать блоки (эндермены, крипера...)
     fire_spread: false          # распространение огня
     liquid_flow_in: false       # затекание жидкостей снаружи
     pistons_from_outside: false # поршни с внешней стороны
     crop_trample: false         # вытаптывание грядок
-    explosion_damage: false     # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри привата
+    explosion_damage: true      # ВЗРЫВЫ ЛОМАЮТ БЛОКИ внутри привата (рейды)
     teleport_in: true           # телепорты внутрь (эндер-жемчуг, /ps home чужие)
+    vehicle_entry: true         # въезд посторонних на лодке, вагонетке, лошади
     item_pickup: true           # подбор предметов посторонними
     greeting: true              # показывать приветствие при входе
     leaf_decay: true            # опадание листвы
@@ -206,7 +217,7 @@ default_region:
   # MODERN — FancyHolograms (текстовые дисплеи, богаче настройки);
   # DECENT — DecentHolograms;
   # NATIVE — встроенные голограммы на TextDisplay, плагины не нужны.
-  # Если выбранный плагин не установлен, работа молча продолжится на NATIVE.
+  # На Folia всегда NATIVE; на Paper NATIVE также используется при отсутствии провайдера.
   hologram_provider: MODERN
   hologram_offset: 1.1            # высота первой строки над ядром
   hologram_display_range: 16      # с какого расстояния видно
@@ -287,7 +298,7 @@ region_types:
     - SPEED
     - SLOW
     hologram_display_range: 20
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
     create:
       sound: BLOCK_BEACON_ACTIVATE
@@ -317,7 +328,7 @@ region_types:
     - EXP_BOOST
     - INCREASE_DAMAGE
     hologram_display_range: 20
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
     create:
       sound: BLOCK_BEACON_ACTIVATE
@@ -350,10 +361,9 @@ region_types:
     - INVISIBILITY
     - FAST_DIGGING
     flags:
-      pvp: false
       monster_spawning: false
     hologram_display_range: 24
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
 
   RED_MUSHROOM_BLOCK:
@@ -401,11 +411,9 @@ region_types:
     - WITHER
     - ALERTS
     flags:
-      pvp: false
       monster_spawning: false
-      teleport_in: false
     hologram_display_range: 24
-    fancyholograms_settings:
+    hologram_settings:
       scale: 1.1
 
   # --- Пример «покупного» привата -------------------------------------------
@@ -449,8 +457,11 @@ region_types:
   #     lore:
   #       - "<#F2EFFA>Поставьте, чтобы занять территорию 49×49"
   #   recipe:
-  #     pattern: ["EE", "EE"]
-  #     ingredients: { E: EMERALD }
+  #     pattern:
+  #       - "EE"
+  #       - "EE"
+  #     ingredients:
+  #       E: EMERALD
   #     result_amount: 1
   #   radius: 24
   #   radius_y: 64

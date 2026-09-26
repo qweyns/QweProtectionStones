@@ -1,5 +1,7 @@
 package org.qweyns.qweprotectstones.features.notification;
 
+import org.qweyns.qweprotectstones.config.ConfigValues;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
@@ -22,26 +24,32 @@ import java.util.logging.Level;
 
 public class NotificationManager {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     private final QweProtectStones plugin;
+    private volatile boolean closed;
 
     private final Cache<String, Long> webhookRateLimiter = CacheBuilder.newBuilder()
-            .expireAfterWrite(15, TimeUnit.SECONDS)
+            .expireAfterAccess(1, TimeUnit.DAYS)
+            .maximumSize(100000)
             .build();
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(TIMEOUT)
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+    private final HttpClient httpClient;
 
     public NotificationManager(QweProtectStones plugin) {
         this.plugin = plugin;
+        httpClient = HttpClient.newBuilder().connectTimeout(timeout())
+                .followRedirects(HttpClient.Redirect.NORMAL).build();
+    }
+
+    private Duration timeout() {
+        return Duration.ofSeconds(ConfigValues.boundedLong(plugin.getConfigManager().getConfig(),
+                "notifications.http-timeout-seconds", 5L, 1L, 120L));
     }
 
     /** При выключении плагина — иначе селектор-поток переживает /reload. */
     public void close() {
-        httpClient.close();
+        closed = true;
+        httpClient.shutdownNow();
     }
 
     public void sendAttackAlert(Region region, String ownerName, Location coreLocation) {
@@ -84,7 +92,7 @@ public class NotificationManager {
         notifyPlayer(region.getOwnerId(), messageKey, sound, placeholders);
 
         region.getMembers().stream()
-                .filter(member -> member.trust().atLeast(org.qweyns.qweprotectstones.regions.TrustLevel.MANAGER))
+                .filter(member -> member.trust().allows(org.qweyns.qweprotectstones.config.Tunables.TrustAction.ALERTS))
                 .forEach(member -> notifyPlayer(member.uuid(), messageKey, sound, placeholders));
     }
 
@@ -92,10 +100,12 @@ public class NotificationManager {
         if (playerId == null) return;
 
         Player player = Bukkit.getPlayer(playerId);
-        if (player == null || !player.isOnline()) return;
-
-        player.sendMessage(plugin.getLanguageManager().getMessage(messageKey, placeholders));
-        sound.playTo(player);
+        if (player == null) return;
+        plugin.getSchedulers().runAtEntity(player, () -> {
+            if (!player.isOnline() || closed) return;
+            player.sendMessage(plugin.getLanguageManager().getMessage(messageKey, placeholders));
+            sound.playTo(player);
+        });
     }
 
     private void dispatchWebhooks(String rateLimitKey, String messageKey, String... placeholders) {
@@ -110,8 +120,14 @@ public class NotificationManager {
                 && plugin.getDiscordSrvHook() != null && plugin.getDiscordSrvHook().isActive();
         if (!discordEnabled && !telegramEnabled && !srvEnabled) return;
 
-        if (webhookRateLimiter.getIfPresent(rateLimitKey) != null) return;
-        webhookRateLimiter.put(rateLimitKey, System.currentTimeMillis());
+        long interval = ConfigValues.boundedLong(cfg, "notifications.rate-limit-seconds", 15L, 0L, 86400L) * 1000L;
+        long now = System.currentTimeMillis();
+        java.util.concurrent.atomic.AtomicBoolean accepted = new java.util.concurrent.atomic.AtomicBoolean();
+        webhookRateLimiter.asMap().compute(rateLimitKey, (key, last) -> {
+            if (last == null || now - last >= interval) { accepted.set(true); return now; }
+            return last;
+        });
+        if (!accepted.get()) return;
 
         // для discord/telegram чистый текст без §-кодов
 
@@ -159,15 +175,16 @@ public class NotificationManager {
 
     // один вызов — одна попытка; повторы по таймеру без блокировки потоков
     private void post(String url, String jsonPayload, int attempt) {
+        if (closed) return;
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(TIMEOUT)
+                    .timeout(timeout())
                     .header("Content-Type", "application/json; charset=utf-8")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
         } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning("Некорректный URL вебхука в config.yml: " + url);
+            plugin.getLogger().warning("Некорректный URL вебхука в features.yml");
             return;
         }
 
@@ -177,6 +194,7 @@ public class NotificationManager {
 
     private void deliver(String url, String jsonPayload, int attempt,
                          HttpResponse<Void> response, Throwable throwable) {
+        if (closed) return;
         FileConfiguration cfg = plugin.getConfigManager().getConfig();
         int retries = Math.max(0, cfg.getInt("notifications.webhook-retries", 2));
         long delaySeconds = Math.max(1, cfg.getLong("notifications.webhook-retry-delay-seconds", 15));
@@ -192,15 +210,14 @@ public class NotificationManager {
         }
         if (attempt > retries) {
             plugin.getLogger().log(Level.WARNING,
-                    "Уведомление не доставлено после " + retries + " повтор(ов): " + url, throwable);
+                    "Уведомление не доставлено после " + retries + " повтор(ов)");
             return;
         }
 
         plugin.getLogger().log(Level.FINE, "Вебхук не прошёл ("
-                + (throwable != null ? throwable.getMessage() : response.statusCode())
+                + (throwable != null ? throwable.getClass().getSimpleName() : response.statusCode())
                 + "), повтор " + attempt + "/" + retries + " через " + delaySeconds + " с.");
-        java.util.concurrent.CompletableFuture
-                .delayedExecutor(delaySeconds, TimeUnit.SECONDS)
-                .execute(() -> post(url, jsonPayload, attempt + 1));
+        if (plugin.isEnabled()) plugin.getSchedulers().runLater(
+                () -> { if (!closed) post(url, jsonPayload, attempt + 1); }, Math.min(delaySeconds, 86400L) * 20L);
     }
 }

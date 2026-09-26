@@ -27,13 +27,25 @@ abstract class AbstractRegionSubCommand implements SubCommand {
         return region;
     }
 
-    protected Region regionWithTrust(Player player, TrustLevel required) {
+    protected Region regionWithTrust(Player player, org.qweyns.qweprotectstones.config.Tunables.TrustAction action) {
         Region region = regionUnderFeet(player);
         if (region == null) return null;
 
-        if (!plugin.getProtectionService().has(region, player, required)) {
+        if (!plugin.getProtectionService().can(region, player, action)) {
             player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
-                    "%level%", plugin.getLanguageManager().rawTemplate("trust_" + required.key())));
+                    "%level%", TrustLevel.lowestWith(action).displayName()));
+            return null;
+        }
+        return region;
+    }
+
+    /** Только владелец (или обход защиты): продажа и аренда — деньги получает владелец. */
+    protected Region regionAsOwner(Player player) {
+        Region region = regionUnderFeet(player);
+        if (region == null) return null;
+        if (!region.isOwner(player.getUniqueId()) && !plugin.getProtectionService().bypasses(player)) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("no_region_access",
+                    "%level%", TrustLevel.owner().displayName()));
             return null;
         }
         return region;

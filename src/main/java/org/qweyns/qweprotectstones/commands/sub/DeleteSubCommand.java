@@ -107,12 +107,8 @@ public class DeleteSubCommand extends AbstractRegionSubCommand implements org.bu
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
         if (core == null || type == null) return;
 
-        if (core.getBlock().getType() == type.material()) {
-            core.getBlock().setType(Material.AIR);
-        }
-        if (!type.returnBlockOnRemove()) return;
-
-        core.getWorld().dropItemNaturally(core,
-                org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region));
+        var item = type.returnBlockOnRemove()
+                ? org.qweyns.qweprotectstones.utils.RegionItems.returnCore(plugin, type, region) : null;
+        org.qweyns.qweprotectstones.utils.CoreBlocks.clearLater(plugin, region, core, item);
     }
 }

@@ -55,7 +55,7 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
             return;
         }
 
-        Region region = regionWithTrust(player, org.qweyns.qweprotectstones.regions.TrustLevel.OWNER);
+        Region region = regionAsOwner(player);
         if (region == null) return;
 
         if (!allowDuringSiege() && plugin.isUnderSiege(region)) {
@@ -84,12 +84,12 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         }
 
         double max = maxPrice();
-        if (price <= 0 || price > max) {
+        if (!Double.isFinite(price) || price <= 0 || price > max) {
             player.sendMessage(plugin.getLanguageManager().getMessage("sell_too_much", "%max%", money(max)));
             return;
         }
 
-        plugin.getMarketManager().listForSale(region, player, price);
+        if (!plugin.getMarketManager().listForSale(region, player, price)) return;
         plugin.getCriticalFileLogger().log("MARKET_SELL_LIST",
                 "by=" + player.getName() + " region=" + region.getShortId() + " price=" + price);
         player.sendMessage(plugin.getLanguageManager().getMessage("sell_listed",
@@ -116,6 +116,12 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         }
         if (!plugin.getVaultHook().isEnabled()) {
             player.sendMessage(plugin.getLanguageManager().getMessage("economy_required"));
+            return;
+        }
+        int limit = plugin.getConfigManager().getConfig().getBoolean("market.sell.respect-limits", true)
+                ? plugin.getRegionManager().limitReachedFor(player, region) : -1;
+        if (limit >= 0) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("region_limit_reached", "%limit%", String.valueOf(limit)));
             return;
         }
         if (!plugin.getVaultHook().hasMoney(player, sale.price())) {

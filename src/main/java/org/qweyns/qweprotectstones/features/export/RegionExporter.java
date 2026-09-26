@@ -21,19 +21,39 @@ public class RegionExporter {
         this.plugin = plugin;
     }
 
-    public File export() throws IOException {
-        File folder = new File(plugin.getDataFolder(), "exports");
+    /** Ручные выгрузки и автобэкапы доступны одной команде restore. */
+    public java.util.List<File> listExports() {
+        java.util.List<File> files = new java.util.ArrayList<>();
+        for (String directory : java.util.List.of("exports", "backups")) {
+            File[] found = new File(plugin.getDataFolder(),directory)
+                    .listFiles((dir,name) -> name.startsWith("regions_") && name.endsWith(".json"));
+            if (found != null) files.addAll(java.util.List.of(found));
+        }
+        files.sort(java.util.Comparator.comparingLong(File::lastModified).reversed());
+        return files;
+    }
+
+    public File findExport(String name) {
+        if (name == null || name.contains("..") || name.contains("/") || name.contains("\\")) return null;
+        for (String directory : java.util.List.of("exports", "backups")) {
+            File file = new File(new File(plugin.getDataFolder(),directory),name);
+            if (file.isFile()) return file;
+        }
+        return null;
+    }
+
+    public File export() throws IOException { return exportTo("exports"); }
+
+    public File backup() throws IOException { return exportTo("backups"); }
+
+    private synchronized File exportTo(String directory) throws IOException {
+        File folder = new File(plugin.getDataFolder(), directory);
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("не удалось создать папку exports/");
         }
 
         String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-        File target = new File(folder, "regions_" + stamp + ".json");
-        // два экспорта в одну секунду не должны молча перезаписывать друг друга
-        int serial = 2;
-        while (target.exists()) {
-            target = new File(folder, "regions_" + stamp + "_" + serial++ + ".json");
-        }
+        File target = new File(folder, "regions_" + stamp + "_" + java.util.UUID.randomUUID() + ".json");
 
         StringBuilder json = new StringBuilder(1024);
         json.append("{\n  \"exported_at\": \"").append(stamp).append("\",\n");
@@ -44,12 +64,19 @@ public class RegionExporter {
         for (Region region : plugin.getRegionManager().getAllRegions()) {
             if (!first) json.append(",\n");
             first = false;
-            appendRegion(json, region);
+            appendRegion(json, region.snapshot());
         }
 
         json.append("\n  ]\n}\n");
-        Files.writeString(target.toPath(), json.toString(), StandardCharsets.UTF_8);
-        return target;
+        java.nio.file.Path temporary = Files.createTempFile(folder.toPath(), ".qps-", ".tmp");
+        try {
+            Files.writeString(temporary, json.toString(), StandardCharsets.UTF_8);
+            // В пределах одной ФС: готовый файл публикуется целиком или не публикуется.
+            Files.move(temporary, target.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            return target;
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private void appendRegion(StringBuilder json, Region region) {
@@ -90,7 +117,7 @@ public class RegionExporter {
             first = false;
             json.append("{\"uuid\": \"").append(member.uuid())
                     .append("\", \"name\": \"").append(escape(member.displayName()))
-                    .append("\", \"trust\": \"").append(member.trust().key()).append("\"}");
+                    .append("\", \"trust\": \"").append(member.role()).append("\"}");
         }
         json.append("],\n");
     }
@@ -131,7 +158,16 @@ public class RegionExporter {
 
     private static String escape(String value) {
         if (value == null) return "";
-        return value.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        StringBuilder escaped = new StringBuilder(value.length());
+        final char backslash = 92;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"' || c == backslash) escaped.append(backslash).append(c);
+            // YAML тоже читает export: NEL/разделители строк нельзя отдавать сырыми.
+            else if (Character.isISOControl(c) || Character.isSurrogate(c) || c == 0x2028 || c == 0x2029)
+                escaped.append(backslash).append('u').append(String.format(java.util.Locale.ROOT, "%04x", (int)c));
+            else escaped.append(c);
+        }
+        return escaped.toString();
     }
 }

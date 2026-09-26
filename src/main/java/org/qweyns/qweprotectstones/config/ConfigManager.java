@@ -17,10 +17,10 @@ import java.util.Locale;
 public class ConfigManager {
 
     private static final List<String> FILES = List.of(
-            "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml");
+            "config.yml", "protection.yml", "siege.yml", "effects.yml", "visuals.yml", "features.yml", "roles.yml");
 
     private final QweProtectStones plugin;
-    private FileConfiguration config;
+    private volatile FileConfiguration config;
 
     public ConfigManager(QweProtectStones plugin) {
         this.plugin = plugin;
@@ -60,8 +60,34 @@ public class ConfigManager {
             }
         }
 
+        migrateMovedKeys(merged);
         merged.setDefaults(defaults);
         this.config = merged;
+    }
+
+    /**
+     * Ключи, переехавшие в другие секции или файлы: новое место → старое.
+     * Если у сервера настройка ещё лежит по старому пути, она продолжает работать.
+     */
+    private static final java.util.Map<String, String> MOVED = java.util.Map.ofEntries(
+            java.util.Map.entry("upgrade.item", "settings.upgrade_item"),
+            java.util.Map.entry("upgrade.cost_multiplier", "settings.upgrade_cost_multiplier"),
+            java.util.Map.entry("upgrade.tax", "settings.upgrade_tax"),
+            java.util.Map.entry("menus.command_radius", "settings.menu_command_radius"),
+            java.util.Map.entry("menus.custom", "settings.custom_menus"),
+            java.util.Map.entry("visuals.preview-messages", "settings.preview-messages"),
+            java.util.Map.entry("visuals.damage_indicator.enabled", "siege.damage_indicator"),
+            java.util.Map.entry("invites.expire_seconds", "settings.invite_expire_seconds"),
+            java.util.Map.entry("invites.sound", "settings.invite_sound"),
+            java.util.Map.entry("abandoned", "settings.abandoned"));
+
+    private void migrateMovedKeys(YamlConfiguration merged) {
+        for (var entry : MOVED.entrySet()) {
+            String now = entry.getKey(), old = entry.getValue();
+            if (merged.isSet(now) || !merged.isSet(old)) continue;
+            merged.set(now, merged.get(old));
+            plugin.getLogger().info("Настройка " + old + " переехала в " + now + " — старое место пока читается.");
+        }
     }
 
     public FileConfiguration getConfig() { return config; }
@@ -98,19 +124,19 @@ public class ConfigManager {
     }
 
     public Material getUpgradeItem() {
-        String raw = config.getString("settings.upgrade_item", "NETHERITE_INGOT");
+        String raw = config.getString("upgrade.item", "NETHERITE_INGOT");
         Material mat = raw == null ? null : Material.matchMaterial(raw);
         if (mat == null || !mat.isItem()) {
-            plugin.getLogger().warning("settings.upgrade_item: '" + raw + "' не является предметом, использую NETHERITE_INGOT.");
+            plugin.getLogger().warning("upgrade.item: '" + raw + "' не является предметом, использую NETHERITE_INGOT.");
             return Material.NETHERITE_INGOT;
         }
         return mat;
     }
 
-    public int getUpgradeMultiplier() { return Math.max(1, config.getInt("settings.upgrade_cost_multiplier", 3)); }
-    public int getUpgradeTax() { return Math.max(0, config.getInt("settings.upgrade_tax", 0)); }
+    public int getUpgradeMultiplier() { return Math.max(1, config.getInt("upgrade.cost_multiplier", 3)); }
+    public int getUpgradeTax() { return Math.max(0, config.getInt("upgrade.tax", 0)); }
     public long getDamageCooldownTicks() { return Math.max(0L, config.getLong("siege.damage_cooldown_ticks", 20L)); }
-    public int getMenuCommandRadius() { return Math.max(1, config.getInt("settings.menu_command_radius", 6)); }
+    public int getMenuCommandRadius() { return Math.max(1, config.getInt("menus.command_radius", 6)); }
     public double getExpBoostMultiplier() { return config.getDouble("effects.exp_boost_multiplier", 2.0); }
 
     public int getExplosionDamageRadius() { return Math.max(0, config.getInt("siege.explosion_damage_radius", 4)); }
@@ -121,7 +147,7 @@ public class ConfigManager {
         return seconds > 0 ? seconds : 300L;
     }
 
-    public boolean isDamageIndicatorEnabled() { return config.getBoolean("siege.damage_indicator", true); }
+    public boolean isDamageIndicatorEnabled() { return config.getBoolean("visuals.damage_indicator.enabled", true); }
 
     public boolean isSiegeEnabled() { return config.getBoolean("siege.enabled", true); }
 
@@ -226,7 +252,10 @@ public class ConfigManager {
 
     private String holoKey(String typeId, String key) {
         String modern = "hologram_settings." + key;
-        return regions().has(typeId, modern) ? modern : "fancyholograms_settings." + key;
+        String legacy = "fancyholograms_settings." + key;
+        if (regions().raw().isSet("region_types." + typeId + "." + modern)) return modern;
+        if (regions().raw().isSet("region_types." + typeId + "." + legacy)) return legacy;
+        return regions().has(typeId, modern) ? modern : legacy;
     }
 
     private boolean holo(String typeId, String key, boolean fallback) {

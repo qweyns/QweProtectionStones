@@ -37,12 +37,12 @@ public class BackupTask {
                 + keepCount() + ".");
     }
 
-    public void run() {
+    public synchronized void run() {
         int keep = keepCount();
 
         plugin.getSchedulers().runAsync(() -> {
             try {
-                plugin.getRegionExporter().export();
+                plugin.getRegionExporter().backup();
             } catch (IOException e) {
                 plugin.getLogger().log(Level.WARNING, "Автобэкап: выгрузка не удалась", e);
                 return;
@@ -52,7 +52,7 @@ public class BackupTask {
     }
 
     private void rotate(int keep) {
-        File folder = new File(plugin.getDataFolder(), "exports");
+        File folder = new File(plugin.getDataFolder(), "backups");
         File[] files = folder.listFiles((dir, name) -> name.startsWith("regions_") && name.endsWith(".json"));
         if (files == null || files.length <= keep) return;
 

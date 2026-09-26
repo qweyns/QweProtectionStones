@@ -24,7 +24,13 @@ public interface Schedulers {
 
     void runAtLocationLater(Location location, Runnable action, long delayTicks);
 
+    /** Выполнение на следующем тике владельца сущности (не внутри InventoryClickEvent). */
     void runAtEntity(Entity entity, Runnable action);
+
+    /** retired выполняет только очистку памяти, без доступа к Bukkit-сущностям/блокам. */
+    default void runAtEntity(Entity entity, Runnable action, Runnable retired) {
+        runAtEntity(entity, action);
+    }
 
     void runAtEntityLater(Entity entity, Runnable action, long delayTicks);
 
@@ -33,6 +39,15 @@ public interface Schedulers {
     void cancelAll();
 
     boolean isFolia();
+
+    default boolean ownsEntity(Entity entity) {
+        return !isFolia() ? org.bukkit.Bukkit.isPrimaryThread() : org.bukkit.Bukkit.isOwnedByCurrentRegion(entity);
+    }
+
+    /** Проверка владения локацией, без обращения к блокам. */
+    default boolean ownsLocation(Location location) {
+        return !isFolia() ? org.bukkit.Bukkit.isPrimaryThread() : org.bukkit.Bukkit.isOwnedByCurrentRegion(location);
+    }
 
     static Schedulers create(Plugin plugin) {
         return FoliaSchedulers.isFoliaServer()

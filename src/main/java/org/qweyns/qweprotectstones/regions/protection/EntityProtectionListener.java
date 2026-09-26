@@ -5,7 +5,6 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Villager;
@@ -55,9 +54,9 @@ public class EntityProtectionListener implements Listener {
         }
 
         // враждебных бить можно всегда, иначе приват ферма мобов
-        if (victim instanceof Monster) return;
+        if (hostile(victim)) return;
 
-        if (protection.has(region, attacker, protection.requiredFor(Tunables.TrustAction.ENTITY))) return;
+        if (protection.can(region, attacker, Tunables.TrustAction.ENTITY)) return;
 
         boolean protectedVictim = victim instanceof Animals || victim instanceof Villager || victim instanceof Tameable;
         if (protectedVictim && !protection.flag(region, RegionFlag.ANIMAL_PROTECTION)) return;
@@ -66,8 +65,18 @@ public class EntityProtectionListener implements Listener {
         event.setCancelled(true);
     }
 
+    /**
+     * Враждебный моб. Monster не покрывает слизней, фантомов, гастов, шалкеров и хоглинов —
+     * они реализуют только Enemy; без этого их нельзя было бить в чужом привате,
+     * а их спавн шёл по флагу животных.
+     */
+    static boolean hostile(Entity entity) {
+        return entity instanceof org.bukkit.entity.Enemy || entity instanceof Monster;
+    }
+
     private Player resolveAttacker(Entity damager) {
         if (damager instanceof Player player) return player;
+        if (damager instanceof org.bukkit.entity.TNTPrimed tnt && tnt.getSource() instanceof Player player) return player;
 
         if (damager instanceof Projectile projectile) {
             ProjectileSource shooter = projectile.getShooter();
@@ -88,12 +97,23 @@ public class EntityProtectionListener implements Listener {
         if (!(event.getPotion().getShooter() instanceof Player thrower)) return;
 
         // зельем не обойти запрет pvp
-        event.getAffectedEntities().removeIf(entity -> {
-            if (!(entity instanceof Player target) || target.equals(thrower)) return false;
+        // API возвращает снимок целей; изменение коллекции не меняет само событие.
+        for (var entity : event.getAffectedEntities()) {
+            if (!(entity instanceof Player target) || target.equals(thrower)) continue;
 
             Region region = protection.regionAt(target.getLocation());
-            return region != null && !protection.flag(region, RegionFlag.PVP);
-        });
+            if (region != null && !protection.flag(region, RegionFlag.PVP)) {
+                event.setIntensity(target, 0.0);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onCloudApply(org.bukkit.event.entity.AreaEffectCloudApplyEvent event) {
+        if (!(event.getEntity().getSource() instanceof Player thrower)) return;
+        // В отличие от splash, этот список по контракту события изменяемый.
+        event.getAffectedEntities().removeIf(target -> target instanceof Player && !target.equals(thrower)
+                && !protection.flagAt(target.getLocation(), RegionFlag.PVP));
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -107,7 +127,7 @@ public class EntityProtectionListener implements Listener {
             return;
         }
 
-        if (!protection.has(region, remover, protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (!protection.can(region, remover, Tunables.TrustAction.ENTITY)) {
             protection.notifyDenied(remover, region, "interact");
             event.setCancelled(true);
         }
@@ -125,7 +145,7 @@ public class EntityProtectionListener implements Listener {
         Player attacker = resolveAttacker(event.getAttacker());
         if (attacker == null) return;
 
-        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), Tunables.TrustAction.ENTITY)) {
             event.setCancelled(true);
         }
     }
@@ -135,7 +155,7 @@ public class EntityProtectionListener implements Listener {
         Player attacker = resolveAttacker(event.getAttacker());
         if (attacker == null) return;
 
-        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), protection.requiredFor(Tunables.TrustAction.ENTITY))) {
+        if (protection.denyInteract(attacker, event.getVehicle().getLocation(), Tunables.TrustAction.ENTITY)) {
             event.setCancelled(true);
         }
     }
@@ -152,7 +172,7 @@ public class EntityProtectionListener implements Listener {
             return;
         }
 
-        boolean monster = event.getEntity() instanceof Monster;
+        boolean monster = hostile(event.getEntity());
         RegionFlag flag = monster ? RegionFlag.MONSTER_SPAWNING : RegionFlag.ANIMAL_SPAWNING;
         if (!protection.flag(region, flag)) event.setCancelled(true);
     }
@@ -164,7 +184,7 @@ public class EntityProtectionListener implements Listener {
         Region region = protection.regionAt(event.getItem().getLocation());
         if (region == null) return;
 
-        if (protection.has(region, player, protection.requiredFor(Tunables.TrustAction.INTERACT))) return;
+        if (protection.can(region, player, Tunables.TrustAction.INTERACT)) return;
         if (!protection.flag(region, RegionFlag.ITEM_PICKUP)) event.setCancelled(true);
     }
 }

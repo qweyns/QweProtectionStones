@@ -1,9 +1,28 @@
-# Конфигурация
+[← QweProtectStones](../README.md) / [Документация](README.md)
+
+![CONFIG](https://img.shields.io/badge/QPS-CONFIG-a78bfa?style=flat-square&labelColor=181825)
+
+# ⚙️ Конфигурация
+
+> [!IMPORTANT]
+> Существующие YAML не перезаписываются. Общие недостающие ключи читаются из JAR; типы и меню редактируются отдельно.
+
+<details>
+<summary><strong>На этой странице</strong></summary>
+
+[config.yml](#configyml) · [protection.yml](#protectionyml) · [visuals.yml](#visualsyml) · [Дополнительные настраиваемые параметры](#дополнительные-настраиваемые-параметры) · [Локализация и хардкод](#локализация-и-хардкод)
+
+</details>
+
+---
 
 Настройки разложены по темам, чтобы каждый файл был коротким. Отсутствующие
 ключи берутся из встроенных значений по умолчанию, поэтому после обновлений
 старые конфиги продолжают работать. Почти всё применяется командой
-`/qps reload`; исключения — имя команды и настройки базы данных.
+`/qps reload`; исключения — команда/алиасы, БД, connect timeout HTTP-клиентов
+и регистрация интеграций при старте. Подробнее — [установка](installation.md).
+Это fallback в памяти: существующие YAML не перезаписываются. Для `regions.yml`
+наследование идёт из вашего `default_region`; меню редактируются отдельно.
 
 | Файл | Содержание |
 | --- | --- |
@@ -23,6 +42,7 @@
 database:
   type: "SQLITE"        # SQLITE или MYSQL
   table_prefix: "qps_"  # префикс таблиц
+  sqlite_busy_timeout_ms: 5000 # SQLite; 0..60000 мс, нужен рестарт
   # дальше — только для MYSQL:
   host: "localhost"
   port: 3306
@@ -36,7 +56,7 @@ database:
 Один сервер — одна база данных. Кэш регионов живёт в памяти инстанса:
 при подключении одной MySQL к сети серверов соседний инстанс не увидит
 созданий, удалений и сделок рынка до перезапуска. Для сети серверов
-нужна общая шина изменений (Redis pub/sub) — её в плагине пока нет.
+используйте отдельную БД для каждого сервера; общей шины изменений в плагине нет.
 
 ### settings
 
@@ -47,13 +67,8 @@ database:
 | `language` | `ru_RU`, `en_US`, `es_ES`, `zh_CN` |
 | `command.name` / `command.aliases` | Игровая команда и алиасы (рестарт) |
 | `region_cooldown_seconds` | Пауза между созданием приватов (антиспам; 0 — выкл) |
-| `preview-messages` | Подсказка в actionbar при ядре в руке: влезет ли приват |
-| `invite_expire_seconds` | Сколько живёт приглашение `/ps invite` |
-| `upgrade_item` | Предмет оплаты прокачки (тип может переопределить) |
-| `upgrade_cost_multiplier` / `upgrade_tax` | Цена уровня: N × множитель + налог |
-| `menu_command_radius` | С какого расстояния `/ps menu` достаёт до ядра |
 
-**Заброшенные приваты** (`settings.abandoned`): `enable`, `inactive_days`,
+**Заброшенные приваты** (features.yml → `abandoned`): `enable`, `inactive_days`,
 `check_interval_minutes`, `keep_upgraded` (не трогать прокачанные),
 `skip_listed` (не трогать выставленные на продажу и в аренду).
 
@@ -67,7 +82,14 @@ database:
 `file-name`, `rotate-size-mb` (при превышении файл переименовывается
 в `.old`, хранится одна предыдущая копия).
 
-**Свои меню** (`settings.custom_menus`): позволяет отдать меню стороннему
+**Прокачка** (config.yml → `upgrade`): `item` — предмет оплаты, `cost_multiplier` и `tax` —
+цена уровня N × множитель + налог. Тип привата может переопределить всё это в regions.yml.
+
+**Меню** (config.yml → `menus`): `command_radius` — с какого расстояния `/ps menu` достаёт до ядра.
+
+**Приглашения** (features.yml → `invites`): `expire_seconds`, `sound`.
+
+**Свои меню** (config.yml → `menus.custom`): позволяет отдать меню стороннему
 плагину (DeluxeMenus и т.п.). Для каждого из `main` / `upgrade` / `effects`:
 `action: MENU` (встроенное) или `COMMAND` + список команд с `%player%` и
 `%region_id%` (форматы `[console]` / `[message]` / от игрока).
@@ -100,44 +122,51 @@ database:
 
 ```yaml
 help:
+  no-args: help       # /ps без аргументов: help — справка, menu — меню привата
   page-size: 8        # команд на страницу в /ps help
   admin-page-size: 10 # команд на страницу в /qps help
 ```
 
-### region-messages
+### Сообщения входа и выхода
 
-Тексты входа/выхода — шаблоны `region_enter` / `region_leave` из
-lang-файла; игроки их менять не могут.
+Всегда приходят в чат. Тексты — шаблоны `region_enter` / `region_leave` в
+lang-файле (пустая строка — не показывать). Флаг привата `greeting`
+(`/ps flag greeting`) выключает оба сообщения для конкретного привата.
 
-```yaml
-region-messages:
-  enter:
-    enabled: true
-    channel: "CHAT"   # CHAT | NONE
-  leave:
-    enabled: true
-    channel: "CHAT"
-```
+### Роли (roles.yml)
 
-Флаг привата `greeting` (`/ps flag greeting`) выключает оба сообщения
-для конкретного привата.
-
-### trust
-
-Минимальный уровень для действий внутри чужого привата
-(`access` < `container` < `build` < `manager` < `owner`):
+Роли участников полностью настраиваются в `roles.yml`: id, название,
+старшинство (`weight`), наследование (`inherit`) и список действий (`actions`).
+Стандартные `access`, `container`, `build`, `manager` — обычные записи,
+их можно переименовать, удалить или добавить свои. Встроенная только роль
+владельца (`owner`), у неё все действия; название задаётся в `owner-display`.
 
 ```yaml
-trust:
-  required:
-    interact: ACCESS      # двери, кнопки, рычаги, кровати
-    container: CONTAINER  # сундуки, бочки, печи, воронки
-    build: BUILD          # ставить и ломать блоки
-    entity: BUILD         # рамки, стойки брони, вагонетки
-    manage: MANAGER       # меню, журнал, приглашения
-  flag_edit_level: MANAGER    # кто меняет флаги
-  member_edit_level: MANAGER  # кто выдаёт доступ и банит
+roles:
+  owner-display: "Владелец"
+  default-role: build            # /ps trust <ник> без роли, автодобавление, импорт
+  public-access-role: container  # что даёт флаг public-access ("" — ничего)
+  aliases: {}                    # старый id -> новый, если переименовали id
+  list:
+    farmer:
+      display: "<#86EFAC>Фермер"
+      weight: 25                 # выдавать/снимать можно только роли ниже своей
+      grantable: true
+      inherit: access
+      actions:  # "-действие" убирает унаследованное, "*" — все
+        - build
+        - container
+        - -glow
 ```
+
+Действия: `interact`, `container`, `build`, `entity`, `menu`, `manage`, `flags`,
+`members`, `ban`, `rename`, `upgrade`, `home`, `view-members`, `glow`, `effects`,
+`alerts`, `entry`. Продавать и сдавать приват в аренду может только владелец.
+
+id роли хранится в базе. Если роль удалить из конфига, у участников с ней не будет
+прав, но id не потеряется: верните роль или добавьте псевдоним в `aliases`.
+Старая секция `trust` в `config.yml` больше не читается — при запуске в консоль
+выводится предупреждение, если она осталась.
 
 ### admin
 
@@ -162,7 +191,6 @@ updates:
 ```yaml
 metrics:
   enable: true     # анонимная статистика bStats
-  plugin-id: 33994 # id плагина на bstats.org; 0 — ничего не отправлять
 ```
 
 Отправляются число приватов и распределение по типам. Полностью
@@ -210,7 +238,7 @@ flags:
 
 ### visuals.particle — частицы границ
 
-`type` (учитывается у DUST), `size`, `density` (0.5 — вдвое плотнее,
+`type` (тип частицы; цвет учитывается только у DUST), `size`, `density` (0.5 — вдвое плотнее,
 2.0 — вдвое реже и дешевле), `max_points` (потолок точек на каркас).
 
 ### visuals.boundaries — подсветка
@@ -218,14 +246,100 @@ flags:
 Цвета кратковременной подсветки: `color_open` (создание), `color_closed`
 (удаление), `color_info` (`/ps info`), `show_time_ticks`.
 
-### sounds
+### Звуки
 
 Формат: `ЗВУК`, `ЗВУК:громкость` или `ЗВУК:громкость:высота`.
 `none` / `off` / `false` — выключить. Опечатка в имени не роняет плагин —
-в лог уйдёт предупреждение. Свои значения для: `menu_denied`, `menu_success`,
-`raid_attack`, `raid_destroyed`, `raid_nearby`, `intruder_alert`,
-`invite_received`.
+в лог уйдёт предупреждение. Каждый звук лежит рядом со своей механикой:
+
+| Звук | Где |
+|---|---|
+| удар по привату, приват уничтожен, чужак на территории | `features.yml` → `notifications.sounds` (`attack`, `destroyed`, `intruder`) |
+| сигнал соседям о рейде | `siege.yml` → `siege.neighbour_alert_sound` |
+| приглашение в приват | `features.yml` → `invites.sound` |
+| прокачка прочности | `menus/upgrade.yml` → `sounds` (`success`, `denied`) |
+| остальные кнопки меню | действие `[sound] ЗВУК` в `click_commands` |
+
+Старая секция `sounds` из `visuals.yml` ещё читается как запасной вариант.
 
 ### map — Dynmap и BlueMap
 
 См. [Интеграции → Карты](integrations.md#карты).
+
+## Дополнительные настраиваемые параметры
+
+Значения по умолчанию сохраняют прежнее поведение. Новые числовые параметры
+ограничиваются диапазоном, не допускают бесконечного ожидания/переполнения;
+NaN/Infinity у double заменяются fallback. Диапазоны — техническая защита.
+
+| Файл | Ключ | По умолчанию | Диапазон / применение |
+|---|---|---|---|
+| config.yml | `database.sqlite_busy_timeout_ms` | 5000 | 0..60000 мс, рестарт |
+| config.yml | `settings.critical_log.flush_ticks` | 100 | 1..72000 тиков, reload |
+| config.yml | `settings.action_log.prune_interval_minutes` | 1440 | 1..525600 минут, reload |
+| config.yml | `settings.action_log.prune_initial_delay_seconds` | 120 | 1..86400 секунд, reload |
+| config.yml | `timings.autoadd_retry_ticks` | 100 | 1..72000 тиков, следующий повтор |
+| config.yml | `updates.initial-delay-ticks` | 100 | 1..72000 тиков, reload |
+| config.yml | `updates.http-timeout-seconds` | 10 | 1..120 секунд; request — следующий запрос, connect — рестарт |
+| features.yml | `notifications.rate-limit-seconds` | 15 | 0..86400 секунд; 0 — без задержки, следующий alert |
+| features.yml | `notifications.http-timeout-seconds` | 5 | 1..120 секунд; request — следующий запрос, connect — рестарт |
+| siege.yml | `siege.damage_per_explosion` | 1 | 1..1000000 HP за Bukkit-взрыв, следующий взрыв |
+| visuals.yml | `visuals.boundaries.vertical_radius` | 8 | 1..256 блоков вверх/вниз вокруг ядра, новая подсветка |
+| visuals.yml | `visuals.boundaries.glow_color_first` | #00FF00 | Первый цвет /ps glow |
+| visuals.yml | `visuals.boundaries.glow_color_second` | #008000 | Второй цвет /ps glow |
+| visuals.yml | `visuals.damage_indicator.enabled` | true | всплывающие цифры урона над ядром |
+| visuals.yml | `visuals.preview-messages` | false | подсказка в actionbar при ядре в руке: влезет ли приват |
+| visuals.yml | `visuals.damage_indicator.offset_y` | 1.2 | 0..16 блоков, следующий индикатор |
+| visuals.yml | `visuals.damage_indicator.rise` | 1.2 | 0..16 блоков |
+| visuals.yml | `visuals.damage_indicator.spread` | 0.2 | 0..1 блока; 0 — без случайного смещения |
+| visuals.yml | `visuals.damage_indicator.animation_ticks` | 30 | 0..59 тиков, ограничение TextDisplay |
+| visuals.yml | `visuals.damage_indicator.lifetime_ticks` | 35 | 1..1200 тиков |
+
+## Локализация и хардкод
+
+`lang/*.yml` содержит сообщения игроков. `%command%` подставляет фактически
+зарегистрированное имя игровой команды (до рестарта оно прежнее, даже если
+config уже отредактирован). `menu_default_title` — заголовок меню без `menu_title`.
+Оформление конкретного меню задаётся в самом `menus/*.yml`; язык сообщений
+не переводит автоматически ваши lore, названия типов и строк голограмм.
+
+Консольные сообщения об ошибках, SQL-схема, имена PDC, HTTP-протокол,
+защитные границы поиска и контракты атомарных операций остаются в коде.
+Не следует превращать их в произвольные настройки: это нарушит совместимость
+данных или позволит обойти защиту. Все значения fallback тоже остаются в JAR.
+
+---
+
+[← Команды и права](commands.md) · [Все разделы](README.md) · [Типы приватов →](region-types.md)
+
+## Установка привата: антиабуз (protection.yml → creation)
+
+| Ключ | По умолчанию | Что делает |
+| --- | --- | --- |
+| `recreate-cooldown-seconds` | `0` | Пауза после того, как игрок сам снёс свой приват, до установки нового |
+| `near-siege-radius` | `48` | Нельзя ставить приват рядом с чужим приватом в осаде |
+| `spawn-radius` | `0` | Нельзя ставить приват у точки спавна мира |
+| `forbidden-blocks` | порталы Незера и Энда | Приват не может закрывать эти блоки (шаблоны и теги как в `interact`) |
+| `forbidden-blocks-radius` | `4` | Отступ от запрещённых блоков, до 32 |
+
+Право `qweprotectstones.bypass.creation-rules` (по умолчанию у операторов) снимает все эти ограничения.
+
+## Проверка конфигов
+
+Если плагин не понял какую-то настройку (неизвестный материал, роль, сущность, значение не из списка), он заменяет её значением по умолчанию и пишет предупреждение. `/qps reload` показывает все такие предупреждения списком, а при запуске в консоль выводится их общее число.
+
+
+## Перенесённые настройки
+
+Если на сервере настройка лежит по старому пути, она продолжает работать, а в консоли
+при загрузке появится подсказка, куда её перенести.
+
+| Было | Стало |
+|---|---|
+| `settings.upgrade_item`, `upgrade_cost_multiplier`, `upgrade_tax` | config.yml → `upgrade.item`, `cost_multiplier`, `tax` |
+| `settings.menu_command_radius`, `settings.custom_menus` | config.yml → `menus.command_radius`, `menus.custom` |
+| `settings.invite_expire_seconds`, `settings.invite_sound` | features.yml → `invites.expire_seconds`, `invites.sound` |
+| `settings.abandoned` | features.yml → `abandoned` |
+| `settings.preview-messages` | visuals.yml → `visuals.preview-messages` |
+| `siege.damage_indicator` | visuals.yml → `visuals.damage_indicator.enabled` |
+| `map` в visuals.yml | features.yml → `map` (путь тот же) |

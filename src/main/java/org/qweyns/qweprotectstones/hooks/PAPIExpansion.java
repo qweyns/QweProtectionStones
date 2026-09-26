@@ -75,7 +75,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
             }
             case "standing_trust" -> {
                 TrustLevel trust = plugin.getProtectionService().trustOf(region, player);
-                yield plugin.getLanguageManager().getRawMessage(trust == null ? "trust_none" : "trust_" + trust.key());
+                yield trust == null ? plugin.getLanguageManager().getRawMessage("trust_none") : trust.displayName();
             }
             case "standing_penalty" -> plugin.getPenaltyManager().hasPenalty(region)
                     ? String.valueOf(plugin.getPenaltyManager().getPenaltyMultiplier())

@@ -82,7 +82,7 @@ public class MemberAdminCommands {
             for (RegionMember member : region.getMembers()) {
                 sender.sendMessage(plugin.getLanguageManager().getMessage("admin_members_entry",
                         "%player%", member.name(),
-                        "%level%", plugin.getLanguageManager().rawTemplate("trust_" + member.trust().key())));
+                        "%level%", member.trust().displayName()));
             }
         }
 
@@ -112,11 +112,11 @@ public class MemberAdminCommands {
         }
         String targetName = target.getName() != null ? target.getName() : args[2];
 
+        TrustLevel level = TrustLevel.defaultRole();
         if (grant) {
-            TrustLevel level = TrustLevel.BUILD;
             if (args.length > 3) {
                 var parsed = TrustLevel.parse(args[3]);
-                if (parsed.isEmpty() || parsed.get() == TrustLevel.OWNER) {
+                if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().isGrantable())) {
                     List<String> names = new ArrayList<>();
                     for (TrustLevel l : TrustLevel.grantable()) names.add(l.key());
                     sender.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level",
@@ -141,6 +141,7 @@ public class MemberAdminCommands {
                 sender.sendMessage(plugin.getLanguageManager().getMessage("admin_action_cancelled"));
                 return;
             }
+            level = region.getMember(target.getUniqueId()).map(org.qweyns.qweprotectstones.regions.RegionMember::trust).orElse(level);
             region.removeMember(target.getUniqueId());
         }
 
@@ -149,6 +150,6 @@ public class MemberAdminCommands {
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 grant ? "admin_trust_done" : "admin_untrust_done",
                 "%id%", region.getShortId(), "%player%", targetName,
-                "%level%", plugin.getLanguageManager().rawTemplate("trust_build")));
+                "%level%", level.displayName()));
     }
 }

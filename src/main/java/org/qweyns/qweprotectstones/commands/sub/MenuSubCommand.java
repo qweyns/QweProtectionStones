@@ -35,7 +35,7 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
 
     @Override
     public void execute(CommandSender sender, Player player, String[] args) {
-        Region region = regionWithTrust(player, plugin.getProtectionService().requiredFor(Tunables.TrustAction.CONTAINER));
+        Region region = regionWithTrust(player, Tunables.TrustAction.MENU);
         if (region == null) return;
 
         RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
@@ -52,7 +52,7 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
         }
 
         String action = plugin.getConfigManager().getConfig()
-                .getString("settings.custom_menus." + menuName + ".action", "MENU");
+                .getString("menus.custom." + menuName + ".action", "MENU");
         if (action.equalsIgnoreCase("COMMAND")) {
             runCustomCommands(player, region);
             return;
@@ -75,7 +75,7 @@ public class MenuSubCommand extends AbstractRegionSubCommand {
 
     private void runCustomCommands(Player player, Region region) {
         ConfigurationSection section = plugin.getConfigManager().getConfig()
-                .getConfigurationSection("settings.custom_menus." + menuName);
+                .getConfigurationSection("menus.custom." + menuName);
         if (section == null) return;
 
         for (String raw : section.getStringList("commands")) {

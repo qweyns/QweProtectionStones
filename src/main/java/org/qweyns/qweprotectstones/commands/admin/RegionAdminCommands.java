@@ -330,17 +330,12 @@ public class RegionAdminCommands {
             return;
         }
 
-        if (RegionEvents.fireTransfer(region, player, target.getUniqueId(), target.getName())) {
-            sender.sendMessage(plugin.getLanguageManager().getMessage("admin_action_cancelled"));
-            return;
-        }
-
         UUID previousOwner = region.getOwnerId();
-        plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName());
-        if (forgetPrevious && previousOwner != null) {
-            region.removeMember(previousOwner);
-            plugin.getRegionStorage().save(region);
-        }
+        String previousName = region.getOwnerName();
+        // setowner — всегда без доступа прежнему владельцу; transfer — роль из конфига (по умолчанию тоже без доступа)
+        var previousRole = forgetPrevious ? null
+                : plugin.getRegionManager().configuredRole("transfer.admin-previous-owner-role", "");
+        if (!plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName(), player, previousRole)) return;
         if (plugin.getDynmapIntegration() != null) plugin.getDynmapIntegration().update(region);
         if (plugin.getBlueMapIntegration() != null) plugin.getBlueMapIntegration().update(region);
 
@@ -348,7 +343,7 @@ public class RegionAdminCommands {
         sender.sendMessage(plugin.getLanguageManager().getMessage(
                 forgetPrevious ? "admin_setowner_done" : "admin_transfer_done",
                 "%id%", region.getShortId(),
-                "%old%", previousOwner == null ? "-" : region.getOwnerName(),
+                "%old%", previousOwner == null ? "-" : previousName,
                 "%new%", target.getName()));
     }
 }

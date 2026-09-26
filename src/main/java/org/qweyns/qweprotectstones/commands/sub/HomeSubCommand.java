@@ -46,8 +46,14 @@ public class HomeSubCommand extends AbstractRegionSubCommand {
             }
             target = regions.get(0);
         } else {
-            target = plugin.getRegionManager().getByShortId(args[0]);
-            if (target == null || !regions.contains(target)) {
+            // ищем только среди своих приватов: чужой приват с тем же префиксом не мешает
+            String needle = args[0].trim().toLowerCase(java.util.Locale.ROOT);
+            List<Region> matches = new java.util.ArrayList<>();
+            for (Region candidate : regions) {
+                if (!needle.isEmpty() && candidate.getId().toString().startsWith(needle)) matches.add(candidate);
+            }
+            target = matches.size() == 1 ? matches.get(0) : null;
+            if (target == null) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("region_not_found", "%id%", args[0]));
                 return;
             }

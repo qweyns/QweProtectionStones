@@ -19,7 +19,7 @@ public class RegionConfig {
     private final QweProtectStones plugin;
     private final File file;
 
-    private FileConfiguration config;
+    private volatile FileConfiguration config;
 
     public RegionConfig(QweProtectStones plugin) {
         this.plugin = plugin;

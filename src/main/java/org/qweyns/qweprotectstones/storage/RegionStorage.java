@@ -23,14 +23,16 @@ public class RegionStorage {
     private final QweProtectStones plugin;
     private RegionDao dao;
     private Schedulers.Task flushTask;
+    // Читается и меняется под монитором конвейера записи.
+    private boolean closed;
+    private boolean recoveryBlocked;
 
-    private final Map<UUID, Region> pendingSaves = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingDeletes = ConcurrentHashMap.newKeySet();
-    private final java.util.Queue<RegionLogEntry> pendingLog = new java.util.concurrent.ConcurrentLinkedQueue<>();
-    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> pendingSales = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingSaleDeletes = ConcurrentHashMap.newKeySet();
-    private final Map<UUID, org.qweyns.qweprotectstones.features.market.RegionRental> pendingRentals = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingRentalDeletes = ConcurrentHashMap.newKeySet();
+    private final RegionWriteQueue regions = new RegionWriteQueue();
+    private final RetryQueue<UUID> sales = new RetryQueue<>();
+    private final RetryQueue<UUID> rentals = new RetryQueue<>();
+    private final RetryQueue<UUID> autoadd = new RetryQueue<>();
+    private final RetryQueue<UUID> players = new RetryQueue<>();
+    private final LogWriteQueue logs = new LogWriteQueue();
     private volatile long lastFlushMillis;
 
     public RegionStorage(QweProtectStones plugin) {
@@ -38,6 +40,7 @@ public class RegionStorage {
     }
 
     public List<Region> init() {
+        recoveryBlocked = true;
         String dbType = plugin.getConfigManager().getConfig()
                 .getString("database.type", "SQLITE").toUpperCase(Locale.ROOT);
 
@@ -53,7 +56,11 @@ public class RegionStorage {
         }
 
         dao.init();
+        try { StorageRecovery.replay(recoveryPath(), dao); }
+        catch (java.io.IOException e) { throw new IllegalStateException("Журнал восстановления не применён; запуск запрещён", e); }
         List<Region> loaded = dao.loadAll();
+        loaded.forEach(regions::markPersisted);
+        recoveryBlocked = false;
 
         plugin.getLogger().info("Загружено приватов: " + loaded.size() + " (база " + dbType + ").");
         restartFlushTask();
@@ -72,8 +79,7 @@ public class RegionStorage {
 
     public void save(Region region) {
         if (region == null || !isLive(region)) return;
-        // удаление не снимается: flush пишет удаления после сохранений, при гонке побеждает удаление
-        pendingSaves.put(region.getId(), region);
+        regions.save(region, this::isLive);
     }
 
     /** Жив ли регион: удалённые из менеджера не должны возвращаться в базу. */
@@ -87,15 +93,15 @@ public class RegionStorage {
     }
 
     public int pendingCount() {
-        return pendingSaves.size() + pendingDeletes.size() + pendingLog.size()
-                + pendingSales.size() + pendingSaleDeletes.size()
-                + pendingRentals.size() + pendingRentalDeletes.size();
+        return regions.size() + sales.size() + rentals.size() + autoadd.size() + players.size() + logs.size();
     }
 
     public void saveNow(Region region) {
         if (region == null || !isLive(region)) return;
-        pendingSaves.remove(region.getId());
-        plugin.getSchedulers().runAsync(() -> dao.saveAll(List.of(region)));
+        // Срочная запись идёт тем же конвейером: иначе она могла обогнать
+        // удаление и воскресить приват в БД после завершения flush().
+        save(region);
+        plugin.getSchedulers().runAsync(this::flush);
     }
 
     /**
@@ -108,109 +114,136 @@ public class RegionStorage {
         int count = 0;
         for (Region region : regions) {
             if (region == null || !isLive(region)) continue;
-            pendingSaves.put(region.getId(), region);
+            save(region);
             count++;
         }
         flush();
         return count;
     }
 
+    /** Поставить в очередь приваты, изменённые после последней записи (страховка при остановке). */
+    public int saveDirty(java.util.Collection<Region> all) {
+        if (dao == null || all == null) return 0;
+        int count = 0;
+        for (Region region : all) {
+            if (region == null || !isLive(region) || !regions.isDirty(region)) continue;
+            save(region);
+            count++;
+        }
+        return count;
+    }
+
     public void delete(UUID regionId) {
         if (regionId == null) return;
-        pendingSaves.remove(regionId);
-        pendingDeletes.add(regionId);
+        regions.delete(regionId);
     }
 
     public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback) {
-        // колбэк прыгает на главный поток: в нём трогают игроков
-        plugin.getSchedulers().runAsync(() -> dao.loadAutoAdd(uuid,
-                (friends, toggledOff) -> plugin.getSchedulers().runNextTick(() -> callback.accept(friends, toggledOff))));
+        loadAutoAddAsync(uuid, callback, () -> { });
+    }
+
+    public void loadAutoAddAsync(UUID uuid, BiConsumer<Set<String>, Boolean> callback, Runnable failed) {
+        plugin.getSchedulers().runAsync(() -> {
+            synchronized (this) {
+                if (closed || dao == null) return;
+                flush();
+                if (autoadd.size() != 0) { failed.run(); return; }
+                try { dao.loadAutoAdd(uuid, callback); }
+                catch (RuntimeException e) { writeFailed(e); failed.run(); }
+            }
+        });
     }
 
     public void saveAutoAddAsync(UUID uuid, Set<String> friends, boolean toggledOff) {
         Set<String> snapshot = Set.copyOf(friends);
-        plugin.getSchedulers().runAsync(() -> dao.saveAutoAdd(uuid, snapshot, toggledOff));
+        autoadd.put(uuid, () -> dao.saveAutoAdd(uuid, snapshot, toggledOff),
+                StorageRecovery.command("autoadd",uuid,"friends",List.copyOf(snapshot),"off",toggledOff));
     }
 
-    public void saveAutoAddSync(UUID uuid, Set<String> friends, boolean toggledOff) {
-        if (dao != null) dao.saveAutoAdd(uuid, friends, toggledOff);
+    public synchronized void saveAutoAddSync(UUID uuid, Set<String> friends, boolean toggledOff) {
+        saveAutoAddAsync(uuid, friends, toggledOff);
+        flush();
     }
 
     public void touchPlayerAsync(UUID uuid, String name) {
         long now = System.currentTimeMillis();
-        plugin.getSchedulers().runAsync(() -> dao.touchPlayer(uuid, name, now));
+        players.put(uuid, () -> dao.touchPlayer(uuid, name, now), StorageRecovery.command("player",uuid,"name",name,"at",now));
     }
 
-    public Map<UUID, Long> loadLastSeen() {
-        return dao == null ? Map.of() : dao.loadLastSeen();
+    public synchronized Map<UUID, Long> loadLastSeen() {
+        return dao == null || closed ? Map.of() : dao.loadLastSeen();
     }
 
     public void log(RegionLogEntry entry) {
-        if (entry != null) pendingLog.add(entry);
+        if (entry != null) logs.add(entry);
     }
 
     public void readLogAsync(UUID regionId, int limit, java.util.function.Consumer<List<RegionLogEntry>> callback) {
         plugin.getSchedulers().runAsync(() -> {
-            List<RegionLogEntry> entries = dao.readLog(regionId, limit);
+            List<RegionLogEntry> entries;
+            synchronized (this) {
+                if (dao == null || closed) return;
+                entries = dao.readLog(regionId, limit);
+            }
             plugin.getSchedulers().runNextTick(() -> callback.accept(entries));
         });
     }
 
-    public int pruneLog(long olderThan) {
-        return dao == null ? 0 : dao.pruneLog(olderThan);
+    public void findLoggedRegionsAsync(String idPrefix, int limit, java.util.function.Consumer<List<UUID>> callback) {
+        plugin.getSchedulers().runAsync(() -> {
+            List<UUID> ids;
+            synchronized (this) {
+                if (dao == null || closed) return;
+                ids = dao.findLoggedRegions(idPrefix, limit);
+            }
+            plugin.getSchedulers().runNextTick(() -> callback.accept(ids));
+        });
     }
 
-    private void flush() {
-        if (dao == null) return;
+    public synchronized int pruneLog(long olderThan) {
+        return dao == null || closed ? 0 : dao.pruneLog(olderThan);
+    }
+
+    private void writeFailed(RuntimeException failure) {
+        plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                "Запись БД не подтверждена; операция оставлена для повтора", failure);
+    }
+
+    private synchronized void flush() {
+        if (dao == null || closed || recoveryBlocked) return;
         lastFlushMillis = System.currentTimeMillis();
 
-        if (!pendingSaves.isEmpty()) {
-            // забираем по ключу, правка во время флаша не теряется
-            List<Region> toSave = new ArrayList<>(pendingSaves.size());
-            for (UUID id : List.copyOf(pendingSaves.keySet())) {
-                Region region = pendingSaves.remove(id);
-                if (region != null) toSave.add(region);
-            }
-            dao.saveAll(toSave);
-        }
+        // Если остался аварийный журнал, сначала обновляем его: старое сохранение
+        // после рестарта не должно отменить более новое успешное удаление.
+        if (plugin.getDataFolder() != null && java.nio.file.Files.exists(recoveryPath()) && !checkpoint()) return;
+        regions.flush(dao, this::isLive, this::writeFailed);
+        sales.flush(this::writeFailed);
+        rentals.flush(this::writeFailed);
+        autoadd.flush(this::writeFailed);
+        players.flush(this::writeFailed);
+        logs.flush(dao,this::writeFailed);
+        checkpoint();
+    }
 
-        if (!pendingDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingDeletes);
-            pendingDeletes.removeAll(toDelete);
-            dao.deleteAll(toDelete);
-        }
+    private java.nio.file.Path recoveryPath() {
+        return plugin.getDataFolder().toPath().resolve("storage-recovery.yml");
+    }
 
-        if (!pendingLog.isEmpty()) {
-            List<RegionLogEntry> entries = new ArrayList<>();
-            for (RegionLogEntry entry = pendingLog.poll(); entry != null; entry = pendingLog.poll()) {
-                entries.add(entry);
-            }
-            dao.appendLog(entries);
-        }
-
-        for (UUID id : List.copyOf(pendingSales.keySet())) {
-            org.qweyns.qweprotectstones.features.market.RegionSale sale = pendingSales.remove(id);
-            if (sale != null) dao.saveSale(sale);
-        }
-        if (!pendingSaleDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingSaleDeletes);
-            pendingSaleDeletes.removeAll(toDelete);
-            for (UUID id : toDelete) dao.deleteSale(id);
-        }
-
-        for (UUID id : List.copyOf(pendingRentals.keySet())) {
-            org.qweyns.qweprotectstones.features.market.RegionRental rental = pendingRentals.remove(id);
-            if (rental != null) dao.saveRental(rental);
-        }
-        if (!pendingRentalDeletes.isEmpty()) {
-            List<UUID> toDelete = List.copyOf(pendingRentalDeletes);
-            pendingRentalDeletes.removeAll(toDelete);
-            for (UUID id : toDelete) dao.deleteRental(id);
+    private boolean checkpoint() {
+        // JavaPlugin всегда имеет dataFolder; null допустим только в unit-моке.
+        if (plugin.getDataFolder() == null) return true;
+        List<Map<String,Object>> operations = new ArrayList<>(regions.recovery(this::isLive));
+        operations.addAll(sales.recovery()); operations.addAll(rentals.recovery());
+        operations.addAll(autoadd.recovery()); operations.addAll(players.recovery()); operations.addAll(logs.recovery());
+        try { StorageRecovery.write(recoveryPath(),operations); return true; }
+        catch (java.io.IOException e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,"Не удалось записать аварийный журнал БД",e);
+            return false;
         }
     }
 
-    public void saveAll(java.util.Collection<Region> regions) {
-        if (dao != null) dao.saveAll(regions);
+    public synchronized void saveAll(java.util.Collection<Region> regions) {
+        if (dao != null && !closed) saveSnapshot(regions);
     }
 
     public Map<UUID, org.qweyns.qweprotectstones.features.market.RegionSale> loadSales() {
@@ -226,34 +259,36 @@ public class RegionStorage {
 
     public void saveSale(org.qweyns.qweprotectstones.features.market.RegionSale sale) {
         if (sale == null) return;
-        pendingSaleDeletes.remove(sale.regionId());
-        pendingSales.put(sale.regionId(), sale);
+        sales.put(sale.regionId(), () -> dao.saveSale(sale), StorageRecovery.command("sale",sale.regionId(),
+                "owner",sale.sellerId().toString(),"name",sale.sellerName(),"price",sale.price(),"at",sale.createdAt()));
     }
 
     public void deleteSale(UUID regionId) {
-        if (regionId == null) return;
-        pendingSales.remove(regionId);
-        pendingSaleDeletes.add(regionId);
+        if (regionId != null) sales.put(regionId, () -> dao.deleteSale(regionId), StorageRecovery.command("deleteSale",regionId));
     }
 
     public void saveRental(org.qweyns.qweprotectstones.features.market.RegionRental rental) {
-        if (rental == null) return;
-        pendingRentalDeletes.remove(rental.regionId());
-        pendingRentals.put(rental.regionId(), rental);
+        if (rental != null) rentals.put(rental.regionId(), () -> dao.saveRental(rental), StorageRecovery.command("rental",rental.regionId(),
+                "owner",rental.ownerId().toString(),"name",rental.ownerName(),"price",rental.price(),"minutes",rental.durationMinutes(),
+                "tenant",rental.tenantId() == null ? "" : rental.tenantId().toString(),"tenantName",rental.tenantName(),"until",rental.rentedUntil()));
     }
 
     public void deleteRental(UUID regionId) {
-        if (regionId == null) return;
-        pendingRentals.remove(regionId);
-        pendingRentalDeletes.add(regionId);
+        if (regionId != null) rentals.put(regionId, () -> dao.deleteRental(regionId), StorageRecovery.command("deleteRental",regionId));
     }
 
-    public void close() {
+    public synchronized void close() {
+        if (closed) return;
         if (flushTask != null) {
             flushTask.cancel();
             flushTask = null;
         }
         flush();
-        if (dao != null) dao.close();
+        if (pendingCount() > 0) plugin.getLogger().severe("Остановка с неподтверждёнными записями: "
+                + pendingCount() + ". Проверьте storage-recovery.yml и сообщения о его записи; он применяется до загрузки приватов.");
+        if (dao != null) {
+            dao.close();
+            closed = true;
+        }
     }
 }

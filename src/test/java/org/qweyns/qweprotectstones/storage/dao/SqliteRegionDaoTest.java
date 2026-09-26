@@ -41,8 +41,8 @@ class SqliteRegionDaoTest {
                 new RegionBounds(-10, 0, -10, 10, 60, 10),
                 0, 32, 0, "small",
                 UUID.randomUUID(), "Owner", 50, 100, System.currentTimeMillis());
-        region.setMember(UUID.randomUUID(), "Friend", TrustLevel.BUILD);
-        region.setMember(UUID.randomUUID(), "Manager", TrustLevel.MANAGER);
+        region.setMember(UUID.randomUUID(), "Friend", TrustLevel.parse("build").orElseThrow());
+        region.setMember(UUID.randomUUID(), "Manager", TrustLevel.parse("manager").orElseThrow());
         region.setFlag(RegionFlag.PVP, true);
         region.ban(UUID.randomUUID(), "Griefer");
         region.setDisplayName("База");
@@ -78,14 +78,14 @@ class SqliteRegionDaoTest {
     void membersFlagsAndBansSurviveRoundtrip() {
         Region region = sampleRegion();
         UUID friendId = region.getMembers().stream()
-                .filter(m -> m.trust() == TrustLevel.BUILD)
+                .filter(m -> m.trust().equals(TrustLevel.parse("build").orElseThrow()))
                 .findFirst().orElseThrow().uuid();
 
         dao.saveAll(List.of(region));
 
         Region restored = dao.loadAll().get(0);
         assertEquals(2, restored.getMemberCount());
-        assertEquals(TrustLevel.BUILD, restored.getTrust(friendId));
+        assertEquals(TrustLevel.parse("build").orElseThrow(), restored.getTrust(friendId));
         assertEquals(1, restored.getFlagOverrides().size());
         assertEquals(Boolean.TRUE, restored.getFlagOverride(RegionFlag.PVP).orElse(null));
         assertEquals(1, restored.getBannedPlayers().size());
@@ -97,7 +97,7 @@ class SqliteRegionDaoTest {
         dao.saveAll(List.of(region));
 
         region.setDurability(75);
-        region.setMember(UUID.randomUUID(), "NewFriend", TrustLevel.ACCESS);
+        region.setMember(UUID.randomUUID(), "NewFriend", TrustLevel.parse("access").orElseThrow());
         dao.saveAll(List.of(region));
 
         List<Region> loaded = dao.loadAll();
