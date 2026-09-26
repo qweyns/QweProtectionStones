@@ -165,6 +165,8 @@ public class SiegeService {
 
     private String attackerNameNear(Region region, Location core, String primerName) {
         if (primerName != null) return primerName;
+        // Угадывание по ближайшему игроку часто обвиняет прохожего — только по желанию.
+        if (!plugin.getConfigManager().getConfig().getBoolean("siege.guess_attacker", false)) return "";
         // Не приписываем атаку случайному игроку из чужого Folia-региона.
         if (plugin.getSchedulers().isFolia()) return "";
 
