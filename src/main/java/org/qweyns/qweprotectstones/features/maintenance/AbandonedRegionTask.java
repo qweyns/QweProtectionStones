@@ -58,7 +58,17 @@ public class AbandonedRegionTask {
 
     public void sweep() {
         plugin.getSchedulers().runAsync(() -> {
-            Map<UUID, Long> lastSeen = plugin.getRegionStorage().loadLastSeen();
+            Map<UUID, Long> lastSeen = new java.util.HashMap<>(plugin.getRegionStorage().loadLastSeen());
+            // getLastPlayed читает файл игрока с диска — делаем это здесь, вне основного потока,
+            // иначе на тысячах приватов проход подвешивал сервер.
+            java.util.Set<UUID> players = new java.util.HashSet<>();
+            for (Region region : plugin.getRegionManager().getAllRegions()) {
+                if (region.getOwnerId() != null) players.add(region.getOwnerId());
+                for (var member : region.getMembers()) players.add(member.uuid());
+            }
+            for (UUID player : players) {
+                lastSeen.merge(player, Bukkit.getOfflinePlayer(player).getLastPlayed(), Math::max);
+            }
             plugin.getSchedulers().runNextTick(() -> removeAbandoned(lastSeen));
         });
     }
@@ -120,9 +130,7 @@ public class AbandonedRegionTask {
     /** Последняя активность игрока: онлайн, запись о входе, данные сервера, иначе — не раньше начала слежения. */
     private long lastActivity(UUID player, Map<UUID, Long> lastSeen, Region region, long trackingSince) {
         if (Bukkit.getPlayer(player) != null) return Long.MAX_VALUE;
-        long seen = lastSeen.getOrDefault(player, 0L);
-        long played = Bukkit.getOfflinePlayer(player).getLastPlayed();
-        long best = Math.max(seen, played);
+        long best = lastSeen.getOrDefault(player, 0L);
         if (best > 0) return best;
         return Math.max(region.getCreatedAt(), trackingSince);
     }

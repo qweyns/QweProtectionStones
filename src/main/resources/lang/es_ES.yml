@@ -85,6 +85,7 @@ home_teleported: "%prefix%<#86EFAC>Teletransportado a la parcela <#FDE68A>%id%<#
 # --- Передача и удаление ---
 transfer_usage: "%prefix%<#FDE68A>/%command% transfer <jugador>"
 transfer_already_owner: "%prefix%<#FB7185>Ese jugador ya es el dueño."
+transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>ya tiene el máximo de regiones de este tipo (<#FDE68A>%limit%<#FB7185>)."
 transfer_done: "%prefix%<#86EFAC>Parcela transferida a <#FDE68A>%player%<#86EFAC>. Sigues como encargado."
 transfer_sale_cancelled: "%prefix%<#FB7185>La venta de la parcela <#FDE68A>%id% <#FB7185>fue cancelada — la parcela fue transferida."
 transfer_received: "%prefix%<#86EFAC>¡<#FDE68A>%player% <#86EFAC>te transfirió una parcela!"

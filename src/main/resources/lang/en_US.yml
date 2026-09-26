@@ -85,6 +85,7 @@ home_teleported: "%prefix%<#86EFAC>Teleported to region <#FDE68A>%id%<#86EFAC>."
 # --- Передача и удаление ---
 transfer_usage: "%prefix%<#FDE68A>/%command% transfer <player>"
 transfer_already_owner: "%prefix%<#FB7185>That player already owns this region."
+transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>already has the maximum of this region type (<#FDE68A>%limit%<#FB7185>)."
 transfer_done: "%prefix%<#86EFAC>Region transferred to <#FDE68A>%player%<#86EFAC>. You remain a manager."
 transfer_sale_cancelled: "%prefix%<#FB7185>The sale of region <#FDE68A>%id% <#FB7185>was cancelled — the region has been transferred."
 transfer_received: "%prefix%<#86EFAC><#FDE68A>%player% <#86EFAC>transferred a region to you!"

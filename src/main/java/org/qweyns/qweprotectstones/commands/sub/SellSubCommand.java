@@ -118,6 +118,12 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
             player.sendMessage(plugin.getLanguageManager().getMessage("economy_required"));
             return;
         }
+        int limit = plugin.getConfigManager().getConfig().getBoolean("market.sell.respect-limits", true)
+                ? plugin.getRegionManager().limitReachedFor(player, region) : -1;
+        if (limit >= 0) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("region_limit_reached", "%limit%", String.valueOf(limit)));
+            return;
+        }
         if (!plugin.getVaultHook().hasMoney(player, sale.price())) {
             player.sendMessage(plugin.getLanguageManager().getMessage("buy_no_money",
                     "%price%", money(sale.price())));

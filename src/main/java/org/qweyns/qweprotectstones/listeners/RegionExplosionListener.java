@@ -77,11 +77,25 @@ public class RegionExplosionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockExplode(BlockExplodeEvent event) { protect(event.blockList()); }
+    public void onBlockExplode(BlockExplodeEvent event) { protect(event.blockList(), false); }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityExplode(EntityExplodeEvent event) { protect(event.blockList()); }
+    public void onEntityExplode(EntityExplodeEvent event) { protect(event.blockList(), causedByMob(event.getEntity())); }
 
-    private void protect(List<Block> blocks) {
+    /**
+     * Взрыв устроил моб: крипер, визер, дракон или снаряд моба (огненный шар гаста, череп визера).
+     * Такие взрывы ломают блоки, только если у привата включены И explosion_damage, И mob_griefing —
+     * иначе на анархии с explosion_damage криперы разносили бы базы без всякого рейда.
+     */
+    static boolean causedByMob(Entity entity) {
+        if (entity instanceof org.bukkit.entity.Mob || entity instanceof org.bukkit.entity.EnderDragon) return true;
+        if (entity instanceof org.bukkit.entity.Projectile projectile) {
+            var shooter = projectile.getShooter();
+            return shooter instanceof org.bukkit.entity.LivingEntity && !(shooter instanceof Player);
+        }
+        return false;
+    }
+
+    private void protect(List<Block> blocks, boolean mobCaused) {
         if (blocks.isEmpty()) return;
         String world = blocks.get(0).getWorld().getName();
         var manager = plugin.getRegionManager();
@@ -97,7 +111,8 @@ public class RegionExplosionListener implements Listener {
             if (region.isCore(x, y, z)) return true;
             if (region != last[0]) {
                 last[0] = region;
-                lastAllows[0] = protection.flag(region, RegionFlag.EXPLOSION_DAMAGE);
+                lastAllows[0] = protection.flag(region, RegionFlag.EXPLOSION_DAMAGE)
+                        && (!mobCaused || protection.flag(region, RegionFlag.MOB_GRIEFING));
             }
             return !lastAllows[0];
         });

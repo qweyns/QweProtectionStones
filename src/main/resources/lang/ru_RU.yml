@@ -85,6 +85,7 @@ home_teleported: "%prefix%<#86EFAC>Вы перемещены к привату <
 # --- Передача и удаление ---
 transfer_usage: "%prefix%<#FDE68A>/%command% transfer <ник>"
 transfer_already_owner: "%prefix%<#FB7185>Этот игрок уже владелец привата."
+transfer_target_limit: "%prefix%<#FB7185>У <#FDE68A>%player% <#FB7185>уже максимум приватов этого типа (<#FDE68A>%limit%<#FB7185>)."
 transfer_done: "%prefix%<#86EFAC>Приват передан игроку <#FDE68A>%player%<#86EFAC>. Вы остались управляющим."
 transfer_sale_cancelled: "%prefix%<#FB7185>Продажа привата <#FDE68A>%id% <#FB7185>снята — приват передан."
 transfer_received: "%prefix%<#86EFAC>Игрок <#FDE68A>%player% <#86EFAC>передал вам приват!"

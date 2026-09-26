@@ -85,6 +85,7 @@ home_teleported: "%prefix%<#86EFAC>已传送到领地 <#FDE68A>%id%<#86EFAC>。"
 # --- Передача и удаление ---
 transfer_usage: "%prefix%<#FDE68A>/%command% transfer <玩家>"
 transfer_already_owner: "%prefix%<#FB7185>该玩家已是领地主人。"
+transfer_target_limit: "%prefix%<#FDE68A>%player% <#FB7185>的此类领地已达上限（<#FDE68A>%limit%<#FB7185>）。"
 transfer_done: "%prefix%<#86EFAC>领地已转让给 <#FDE68A>%player%<#86EFAC>，你仍是管理。"
 transfer_sale_cancelled: "%prefix%<#FB7185>领地 <#FDE68A>%id% <#FB7185>的出售已取消——领地已转让。"
 transfer_received: "%prefix%<#86EFAC><#FDE68A>%player% <#86EFAC>把领地转让给了你！"

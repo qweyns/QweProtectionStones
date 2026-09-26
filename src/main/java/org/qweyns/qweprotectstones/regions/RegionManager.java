@@ -491,6 +491,18 @@ public class RegionManager {
         return best >= 0 ? best : type.maxPerPlayer();
     }
 
+    /**
+     * Лимит игрока по типу уже исчерпан: получить ещё один такой приват (покупкой, передачей)
+     * он не может. Возвращает лимит или -1, если место есть.
+     */
+    public int limitReachedFor(Player player, Region region) {
+        RegionType type = plugin.getRegionTypes().byId(region.getTypeId());
+        if (type == null) return -1;
+        int limit = resolveLimit(player, type);
+        if (limit <= 0) return -1;
+        return countRegionsOfType(player.getUniqueId(), type.id()) >= limit ? limit : -1;
+    }
+
     public boolean isAreaFree(World world, RegionBounds bounds) {
         return world != null && index.firstIntersecting(world.getName(), bounds) == null;
     }

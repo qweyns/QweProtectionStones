@@ -138,8 +138,14 @@ public class MarketManager {
                 return false;
             }
             // участники и баны остаются — покупатель сам решит, кого оставить
-            plugin.getRegionManager().transferWithin(region, buyer.getUniqueId(), buyer.getName(), op,
-                    plugin.getRegionManager().configuredRole("market.sell.seller-role", ""));
+            if (!plugin.getRegionManager().transferWithin(region, buyer.getUniqueId(), buyer.getName(), op,
+                    plugin.getRegionManager().configuredRole("market.sell.seller-role", ""))) {
+                // приват исчез между оплатой и передачей — деньги возвращаем покупателю
+                refund(buyer, sale.price(), region);
+                plugin.getLogger().severe("Покупка " + region.getId() + " сорвалась после оплаты: продавцу "
+                        + sale.sellerId() + " уже выплачено " + payout + ", покупателю возвращено " + sale.price() + ".");
+                return false;
+            }
             return true;
         }
     }

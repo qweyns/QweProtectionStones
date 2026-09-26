@@ -58,6 +58,9 @@ public class RegionMovementListener implements Listener {
             return;
         }
 
+        // Телепорт внутри привата, где игрок уже находится (жемчуг, хорус), — не «вход снаружи».
+        if (to.equals(protection.regionAt(event.getFrom()))) return;
+
         Player player = event.getPlayer();
         boolean trusted = protection.can(to, player, Tunables.TrustAction.ENTRY);
 

@@ -54,7 +54,7 @@ public class EntityProtectionListener implements Listener {
         }
 
         // враждебных бить можно всегда, иначе приват ферма мобов
-        if (victim instanceof Monster) return;
+        if (hostile(victim)) return;
 
         if (protection.can(region, attacker, Tunables.TrustAction.ENTITY)) return;
 
@@ -63,6 +63,15 @@ public class EntityProtectionListener implements Listener {
 
         protection.notifyDenied(attacker, region, "interact");
         event.setCancelled(true);
+    }
+
+    /**
+     * Враждебный моб. Monster не покрывает слизней, фантомов, гастов, шалкеров и хоглинов —
+     * они реализуют только Enemy; без этого их нельзя было бить в чужом привате,
+     * а их спавн шёл по флагу животных.
+     */
+    static boolean hostile(Entity entity) {
+        return entity instanceof org.bukkit.entity.Enemy || entity instanceof Monster;
     }
 
     private Player resolveAttacker(Entity damager) {
@@ -163,7 +172,7 @@ public class EntityProtectionListener implements Listener {
             return;
         }
 
-        boolean monster = event.getEntity() instanceof Monster;
+        boolean monster = hostile(event.getEntity());
         RegionFlag flag = monster ? RegionFlag.MONSTER_SPAWNING : RegionFlag.ANIMAL_SPAWNING;
         if (!protection.flag(region, flag)) event.setCancelled(true);
     }

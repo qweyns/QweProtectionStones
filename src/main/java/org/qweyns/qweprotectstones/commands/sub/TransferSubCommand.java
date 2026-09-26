@@ -58,6 +58,14 @@ public class TransferSubCommand extends AbstractRegionSubCommand {
             return;
         }
 
+        int limit = plugin.getConfigManager().getConfig().getBoolean("transfer.respect-limits", true)
+                ? plugin.getRegionManager().limitReachedFor(target, region) : -1;
+        if (limit >= 0) {
+            player.sendMessage(plugin.getLanguageManager().getMessage("transfer_target_limit",
+                    "%player%", target.getName(), "%limit%", String.valueOf(limit)));
+            return;
+        }
+
         boolean hadSale = plugin.getMarketManager().getSale(region) != null;
         if (!plugin.getRegionManager().transferRegion(region, target.getUniqueId(), target.getName(), player)) return;
         if (hadSale) player.sendMessage(plugin.getLanguageManager().getMessage("transfer_sale_cancelled", "%id%", region.getShortId()));
