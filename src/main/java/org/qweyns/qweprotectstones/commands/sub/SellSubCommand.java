@@ -84,7 +84,7 @@ public class SellSubCommand extends AbstractRegionSubCommand implements SubComma
         }
 
         double max = maxPrice();
-        if (price <= 0 || price > max) {
+        if (!Double.isFinite(price) || price <= 0 || price > max) {
             player.sendMessage(plugin.getLanguageManager().getMessage("sell_too_much", "%max%", money(max)));
             return;
         }

@@ -363,10 +363,11 @@ public class MenuManager implements Listener {
     public void onRegionDelete(RegionDeleteEvent event) {
         UUID regionId = event.getRegion().getId();
         for (Player viewer : Bukkit.getOnlinePlayers()) {
-            if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) continue;
-            if (holder.getRegion() == null || !holder.getRegion().getId().equals(regionId)) continue;
-
             plugin.getSchedulers().runAtEntity(viewer, () -> {
+                // Инвентарь читаем в потоке игрока и перепроверяем именно в момент закрытия:
+                // за тик он мог открыть сундук или меню другого привата.
+                if (!(viewer.getOpenInventory().getTopInventory().getHolder() instanceof MenuHolder holder)) return;
+                if (holder.getRegion() == null || !holder.getRegion().getId().equals(regionId)) return;
                 viewer.closeInventory();
                 viewer.sendMessage(plugin.getLanguageManager().getMessage("menu_region_gone"));
             });

@@ -75,7 +75,7 @@ public class RentSubCommand extends AbstractRegionSubCommand implements SubComma
         int minMinutes = Math.max(1, plugin.getConfigManager().getConfig().getInt("market.rent.min-duration-minutes", 10));
         int maxMinutes = Math.max(minMinutes, plugin.getConfigManager().getConfig().getInt("market.rent.max-duration-minutes", 4320));
 
-        if (price <= 0 || price > maxPrice) {
+        if (!Double.isFinite(price) || price <= 0 || price > maxPrice) {
             player.sendMessage(plugin.getLanguageManager().getMessage("rent_bad_price",
                     "%max%", SellSubCommand.money(maxPrice)));
             return;

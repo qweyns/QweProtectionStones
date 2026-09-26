@@ -111,8 +111,8 @@ public class MenuActions {
     private Double parseAmount(String raw) {
         try {
             double value = Double.parseDouble(raw.trim());
-            if (value < 0) {
-                plugin.getLogger().warning("Отрицательная сумма в действии меню: " + raw);
+            if (!Double.isFinite(value) || value < 0) {
+                plugin.getLogger().warning("Недопустимая сумма в действии меню: " + raw);
                 return null;
             }
             return value;
