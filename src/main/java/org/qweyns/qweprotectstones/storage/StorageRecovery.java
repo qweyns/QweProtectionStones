@@ -102,7 +102,10 @@ final class StorageRecovery {
         Files.createDirectories(path.getParent());
         Path temp = Files.createTempFile(path.getParent(),".qps-recovery-",".tmp");
         try {
-            Files.writeString(temp, new Yaml().dump(Map.of("version",1,"operations",operations)));
+            var options = new org.yaml.snakeyaml.DumperOptions();
+            // Иначе SnakeYAML превращает строки с control-символами в !!binary/byte[].
+            options.setNonPrintableStyle(org.yaml.snakeyaml.DumperOptions.NonPrintableStyle.ESCAPE);
+            Files.writeString(temp, new Yaml(options).dump(Map.of("version",1,"operations",operations)));
             Files.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
         } finally { Files.deleteIfExists(temp); }
     }

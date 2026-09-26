@@ -51,4 +51,21 @@ class StorageRecoveryTest {
         verify(dao).close();
         verify(dao,never()).deleteAll(anyCollection());
     }
+    @Test void persistedRecoveryPreservesControlCharactersAsStrings() throws Exception {
+        Path journal = folder.resolve("storage-recovery.yml");
+        Region region = new Region(UUID.randomUUID(),"world",new RegionBounds(0,0,0,2,2,2),1,1,1,
+                "small",UUID.randomUUID(),"owner",5,10,1);
+        String name = "start" + (char)0 + (char)0x85 + (char)0x2028 + "end";
+        region.restoreDecoration(name);
+        StorageRecovery.write(journal,List.of(StorageRecovery.region(region)));
+        RegionDao dao = mock(RegionDao.class);
+        doAnswer(call -> {
+            Collection<Region> regions = call.getArgument(0);
+            assertEquals(name,regions.iterator().next().getDisplayName());
+            return null;
+        }).when(dao).saveAll(anyCollection());
+        StorageRecovery.replay(journal,dao);
+        verify(dao).saveAll(anyCollection());
+        assertFalse(Files.exists(journal));
+    }
 }
