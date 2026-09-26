@@ -1,32 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo1OTk3OTZiZi1lMjMyLTRkNTctYWZhNS02YmI3NjBhMTAxZmUAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaMLHRJdmDDmT9SPIC9SxAV4AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDo1YjhhMzNhZi04MWFkLTQ4YTEtYjQyMi05ZmFmYzE4NzMyYzRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoiSGK4CA7X6b+c8pPDAL62wAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggzh/M6tqRZGGTURuWmqpqgNiMvROUACcRAfmf5rfzYVWkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaHq+FqoApZruY8elghWNHeMAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCB8yEL9/CMWH/5gwipFqpSsVNHX+ymYPz0sVgIlNJXULGRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjAZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjU5OTc5NmJmLWUyMzItNGQ1Ny1hZmE1LTZiYjc2MGExMDFmZS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmIxZTgxOGIzLWE0MzktNDY1Yy1iMDI0LTg2MzdkODViZDM4OXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDOH8zq2pFkYZNRG5aaqmqA2Iy9E5QAJxEB+Z/mt/NhVaJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgge0FjY1Nfu2kYw96fGX0/0iSweWuZl6MXvzFaR7BonliiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFgg7BIt68MJk8wcSGBjtRORrsBOsYNNcBNFcEho/AOLbmh0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQKXTSVCESiJcDcI5HgCaqiMiHGCtNb6WS1EaSqs5JjupVGtte5sRLJHNFENtY68lgL5CN2Sa1LsI3nCabBdr1YM=</c2pa:manifest></metadata>
   <title id="title">QweProtectStones</title>
-  <desc id="desc">Приваты с характером. Защита территорий, осады и управление. Абстрактное светящееся блок-ядро на тёмном фоне.</desc>
+  <desc id="desc">Приваты с характером. Защита территорий, осады и управление. Светящийся кристалл-ядро на тёмном фоне.</desc>
   <defs>
-    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101326"/><stop offset="1" stop-color="#211b3b"/></linearGradient>
-    <linearGradient id="accent" x2="1" y2="0"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#67e8f9"/></linearGradient>
-    <linearGradient id="top" x2="1" y2="1"><stop stop-color="#ddd6fe"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
-    <linearGradient id="left" x2="0" y2="1"><stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#493780"/></linearGradient>
-    <linearGradient id="right" x2="0" y2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#51429b"/></linearGradient>
-    <radialGradient id="halo"><stop stop-color="#8b5cf6" stop-opacity=".3"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#c4b5fd" stroke-opacity=".05"/></pattern>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0e1f"/>
+      <stop offset="0.55" stop-color="#161233"/>
+      <stop offset="1" stop-color="#241a45"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#67e8f9"/>
+    </linearGradient>
+    <linearGradient id="titleFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9d0ff"/>
+    </linearGradient>
+    <linearGradient id="faceTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#efe9ff"/>
+      <stop offset="1" stop-color="#a48bfa"/>
+    </linearGradient>
+    <linearGradient id="faceLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9067f0"/>
+      <stop offset="1" stop-color="#3c2c72"/>
+    </linearGradient>
+    <linearGradient id="faceRight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fe3f5"/>
+      <stop offset="1" stop-color="#4a3f96"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.35"/>
+      <stop offset="0.6" stop-color="#8b5cf6" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="haloCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#67e8f9" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#67e8f9" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.35"/>
+    </radialGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1.2" cy="1.2" r="1.2" fill="#c4b5fd" fill-opacity="0.14"/>
+    </pattern>
+    <mask id="dotsMask">
+      <linearGradient id="dotsFade" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#000"/>
+        <stop offset="0.45" stop-color="#000"/>
+        <stop offset="0.75" stop-color="#fff"/>
+        <stop offset="1" stop-color="#fff"/>
+      </linearGradient>
+      <rect width="1200" height="340" fill="url(#dotsFade)"/>
+    </mask>
+    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="glowSmall" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
   </defs>
-  <rect width="1200" height="340" rx="24" fill="url(#bg)"/>
-  <rect width="1200" height="340" rx="24" fill="url(#grid)"/>
-  <circle cx="972" cy="166" r="210" fill="url(#halo)"/>
-  <rect x="56" y="51" width="36" height="4" rx="2" fill="url(#accent)"/>
-  <text x="108" y="60" fill="#b7b2d0" font-family="Arial, sans-serif" font-size="15" letter-spacing="3">YOUR WORLD. YOUR RULES.</text>
-  <text x="54" y="133" fill="#f5f3ff" font-family="Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="-2">QweProtectStones</text>
-  <text x="57" y="185" fill="#c4b5fd" font-family="Arial, sans-serif" font-size="29">Приваты с характером.</text>
-  <text x="57" y="224" fill="#b7b2d0" font-family="Arial, sans-serif" font-size="19">Защита территорий · Осады · Управление</text>
-  <rect x="57" y="267" width="305" height="32" rx="16" fill="#c4b5fd" fill-opacity=".09" stroke="#c4b5fd" stroke-opacity=".2"/>
-  <text x="76" y="288" fill="#d9d3ef" font-family="Arial, sans-serif" font-size="13" letter-spacing="1">PAPER 1.21.4   /   JAVA 21   /   QPS</text>
-  <path d="M804 253 976 161 1148 253 976 323Z" fill="none" stroke="#a78bfa" stroke-opacity=".22"/>
-  <path d="M839 249 976 175 1113 249 976 306Z" fill="none" stroke="#67e8f9" stroke-opacity=".18"/>
-  <path d="M886 111 976 65 1066 111 976 160Z" fill="url(#top)"/>
-  <path d="M886 111 976 160 976 263 886 215Z" fill="url(#left)"/>
-  <path d="M976 160 1066 111 1066 215 976 263Z" fill="url(#right)"/>
-  <path d="M886 111 976 160 1066 111M976 160V263" fill="none" stroke="#e9d5ff" stroke-opacity=".5" stroke-width="2"/>
-  <path d="m962 204 10 10 23-30" fill="none" stroke="#ecfeff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="852" cy="81" r="3" fill="#a78bfa"/><circle cx="1101" cy="177" r="4" fill="#67e8f9"/>
-  <path d="M1093 59v14m-7-7h14" stroke="#c4b5fd" stroke-width="2" opacity=".6"/>
+
+  <rect width="1200" height="340" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="340" rx="28" fill="url(#dots)" mask="url(#dotsMask)"/>
+  <circle cx="955" cy="172" r="230" fill="url(#halo)"/>
+  <circle cx="1030" cy="120" r="140" fill="url(#haloCyan)"/>
+
+  <g>
+    <rect x="56" y="60" width="30" height="6" rx="3" fill="url(#accentLine)"/>
+    <rect x="92" y="60" width="10" height="6" rx="3" fill="url(#accentLine)" opacity="0.5"/>
+
+    <text x="56" y="128" fill="url(#titleFade)" font-family="'Segoe UI', Arial, sans-serif" font-size="54" font-weight="700" letter-spacing="-1.5">QweProtectStones</text>
+
+    <text x="57" y="172" fill="#c9bdfb" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="500">Приваты с характером</text>
+    <text x="57" y="205" fill="#9891b8" font-family="'Segoe UI', Arial, sans-serif" font-size="18">Защита территорий, осады и управление командой</text>
+
+    <g font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#e3ddfb">
+      <rect x="57" y="246" width="128" height="34" rx="17" fill="#ffffff" fill-opacity="0.06" stroke="#c4b5fd" stroke-opacity="0.25"/>
+      <circle cx="76" cy="263" r="4" fill="#a78bfa"/>
+      <text x="88" y="268">Paper 1.21.4</text>
+
+      <rect x="197" y="246" width="96" height="34" rx="17" fill="#ffffff" fill-opacity="0.06" stroke="#c4b5fd" stroke-opacity="0.25"/>
+      <circle cx="216" cy="263" r="4" fill="#67e8f9"/>
+      <text x="228" y="268">Java 21</text>
+
+      <rect x="305" y="246" width="76" height="34" rx="17" fill="#ffffff" fill-opacity="0.06" stroke="#c4b5fd" stroke-opacity="0.25"/>
+      <circle cx="324" cy="263" r="4" fill="#a78bfa"/>
+      <text x="336" y="268">QPS</text>
+    </g>
+  </g>
+
+  <g>
+    <ellipse cx="965" cy="290" rx="130" ry="18" fill="#000000" opacity="0.25" filter="url(#softBlur)"/>
+
+    <!-- защитное силовое поле вокруг камня-претензии -->
+    <g fill="none" stroke-linecap="round">
+      <ellipse cx="965" cy="174" rx="158" ry="58" stroke="url(#accentLine)" stroke-opacity="0.35" stroke-width="1.6"/>
+      <ellipse cx="965" cy="174" rx="158" ry="58" stroke="#a78bfa" stroke-opacity="0.26" stroke-width="1.4" transform="rotate(60 965 174)"/>
+      <ellipse cx="965" cy="174" rx="158" ry="58" stroke="#67e8f9" stroke-opacity="0.26" stroke-width="1.4" transform="rotate(120 965 174)">
+        <animateTransform attributeName="transform" type="rotate" from="120 965 174" to="480 965 174" dur="26s" repeatCount="indefinite"/>
+      </ellipse>
+    </g>
+
+    <circle cx="965" cy="116" r="3" fill="#c4b5fd"/>
+    <circle cx="965" cy="116" r="7" fill="#c4b5fd" opacity="0.4" filter="url(#glowSmall)"/>
+    <circle cx="1108" cy="174" r="2.6" fill="#67e8f9"/>
+    <circle cx="1108" cy="174" r="6" fill="#67e8f9" opacity="0.35" filter="url(#glowSmall)"/>
+    <circle cx="822" cy="174" r="2.6" fill="#a78bfa"/>
+    <circle cx="822" cy="174" r="6" fill="#a78bfa" opacity="0.35" filter="url(#glowSmall)"/>
+
+    <!-- парящий камень-претензия -->
+    <path d="M895 138 965 100 1035 138 965 176Z" fill="url(#faceTop)"/>
+    <path d="M895 138 965 176 965 248 895 210Z" fill="url(#faceLeft)"/>
+    <path d="M965 176 1035 138 1035 210 965 248Z" fill="url(#faceRight)"/>
+    <path d="M895 138 965 176 1035 138M965 176V248" fill="none" stroke="#f3ecff" stroke-opacity="0.55" stroke-width="1.8"/>
+
+    <!-- гравировка-руна вместо галочки -->
+    <path d="M965 114 983 128 965 143 947 128Z" fill="none" stroke="#ecfeff" stroke-width="2.4" stroke-linejoin="round" stroke-opacity="0.9"/>
+    <circle cx="965" cy="128" r="3.2" fill="#ecfeff"/>
+
+    <!-- осколки, удерживаемые полем -->
+    <path d="M1076 209 1089 202 1102 209 1089 217Z" fill="url(#faceRight)" opacity="0.9"/>
+    <path d="M846 149 857 143 868 149 857 156Z" fill="url(#faceLeft)" opacity="0.9"/>
+
+    <path d="M1093 59v13m-6.5-6.5h13" stroke="#c4b5fd" stroke-width="2" opacity="0.55"/>
+  </g>
+
+  <rect width="1200" height="340" rx="28" fill="url(#vignette)"/>
 </svg>
