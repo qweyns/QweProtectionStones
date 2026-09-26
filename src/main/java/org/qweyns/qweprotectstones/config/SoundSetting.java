@@ -63,7 +63,7 @@ public record SoundSetting(Sound sound, float volume, float pitch) {
         if (index == null) {
             index = new HashMap<>();
             for (Sound sound : RegistryAccess.registryAccess().getRegistry(RegistryKey.SOUND_EVENT)) {
-                index.put(compact(sound.getKey().getKey()), sound);
+                index.put(compact(sound.key().value()), sound);
             }
             legacyIndex = index;
         }

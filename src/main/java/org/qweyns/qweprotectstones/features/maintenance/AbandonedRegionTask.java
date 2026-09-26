@@ -59,7 +59,7 @@ public class AbandonedRegionTask {
     public void sweep() {
         plugin.getSchedulers().runAsync(() -> {
             Map<UUID, Long> lastSeen = new java.util.HashMap<>(plugin.getRegionStorage().loadLastSeen());
-            // getLastPlayed читает файл игрока с диска — делаем это здесь, вне основного потока,
+            // getLastSeen читает файл игрока с диска — делаем это здесь, вне основного потока,
             // иначе на тысячах приватов проход подвешивал сервер.
             java.util.Set<UUID> players = new java.util.HashSet<>();
             for (Region region : plugin.getRegionManager().getAllRegions()) {
@@ -67,7 +67,7 @@ public class AbandonedRegionTask {
                 for (var member : region.getMembers()) players.add(member.uuid());
             }
             for (UUID player : players) {
-                lastSeen.merge(player, Bukkit.getOfflinePlayer(player).getLastPlayed(), Math::max);
+                lastSeen.merge(player, Bukkit.getOfflinePlayer(player).getLastSeen(), Math::max);
             }
             plugin.getSchedulers().runNextTick(() -> removeAbandoned(lastSeen));
         });
