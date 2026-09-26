@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public enum RegionFlag {
     /** Разрешён ли PvP внутри привата. */
-    PVP(false, true),
+    PVP(true, true),
     /** Пускать ли внутрь посторонних игроков. */
     ENTRY(true, true),
     /** Могут ли посторонние взаимодействовать без выданного доступа (публичный приват). */
@@ -34,7 +34,7 @@ public enum RegionFlag {
     /** Вытаптывание грядок. */
     CROP_TRAMPLE(false, true),
     /** Урон от взрывов постройкам привата (ядро считается отдельно, по прочности). */
-    EXPLOSION_DAMAGE(false, true),
+    EXPLOSION_DAMAGE(true, true),
     /** Телепортация внутрь привата посторонними (в т.ч. жемчугом Края). */
     TELEPORT_IN(true, true),
     /**

@@ -24,8 +24,9 @@ softdepend:
 commands:
   qweprotectstones:
     description: Администрирование приватов
-    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|debug>
-    permission: qweprotectstones.admin
+    usage: /<command> <reload|bypass|info|delete|save|stats|export|cleanup|give|setdurability|setmax|settype|setbounds|tp|flag|transfer|setowner|ban|unban|members|trust|untrust|import|restore|backup|log|debug|help>
+    # Права проверяет сам плагин: модератору с одним qweprotectstones.admin.tp
+    # команда тоже должна открываться (см. admin.require-per-action).
     aliases: [qps, qpstones]
 
 permissions:

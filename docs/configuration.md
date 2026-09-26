@@ -120,6 +120,7 @@ database:
 
 ```yaml
 help:
+  no-args: help       # /ps без аргументов: help — справка, menu — меню привата
   page-size: 8        # команд на страницу в /ps help
   admin-page-size: 10 # команд на страницу в /qps help
 ```
