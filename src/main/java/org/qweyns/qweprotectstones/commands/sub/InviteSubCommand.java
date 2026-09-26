@@ -78,7 +78,7 @@ public class InviteSubCommand extends AbstractRegionSubCommand {
         TrustLevel level = TrustLevel.defaultRole();
         if (args.length > 1) {
             var parsed = TrustLevel.parse(args[1]);
-            if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().grantable())) {
+            if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().isGrantable())) {
                 player.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level", "%levels%", levelNames()));
                 return;
             }

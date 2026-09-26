@@ -116,7 +116,7 @@ public class MemberAdminCommands {
         if (grant) {
             if (args.length > 3) {
                 var parsed = TrustLevel.parse(args[3]);
-                if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().grantable())) {
+                if (parsed.isEmpty() || (parsed.get().isOwner() || !parsed.get().isGrantable())) {
                     List<String> names = new ArrayList<>();
                     for (TrustLevel l : TrustLevel.grantable()) names.add(l.key());
                     sender.sendMessage(plugin.getLanguageManager().getMessage("trust_unknown_level",

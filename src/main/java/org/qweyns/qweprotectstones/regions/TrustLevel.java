@@ -72,7 +72,7 @@ public final class TrustLevel {
     public Set<TrustAction> actions() { return actions; }
 
     /** Можно ли выдать роль командой/меню (у владельца и служебных ролей — нет). */
-    public boolean grantable() { return grantable; }
+    public boolean isGrantable() { return grantable; }
 
     /** false — роль удалена из конфига: прав нет, id сохраняется при записи. */
     public boolean known() { return known; }
@@ -182,7 +182,7 @@ public final class TrustLevel {
             this.byId = Map.copyOf(copy);
             this.aliases = Map.copyOf(aliasCopy);
             this.ordered = List.copyOf(withOwner);
-            this.grantable = sorted.stream().filter(TrustLevel::grantable).toList();
+            this.grantable = sorted.stream().filter(TrustLevel::isGrantable).toList();
             TrustLevel def = find(defaultRoleId);
             if (def == null || def.isOwner()) def = grantable.isEmpty() ? (sorted.isEmpty() ? owner : sorted.get(0))
                     : grantable.get(grantable.size() - 1);
